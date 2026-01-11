@@ -1,0 +1,45 @@
+{
+  "Comment": "Weekly report generation workflow for PKM agent",
+  "StartAt": "GenerateWeeklyReport",
+  "States": {
+    "GenerateWeeklyReport": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${generate_weekly_report_lambda_arn}",
+        "Payload": {
+          "date.$": "$$.Execution.StartTime"
+        }
+      },
+      "ResultPath": "$.reportResult",
+      "Next": "CheckReportSuccess",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ReportFailed"
+        }
+      ]
+    },
+    "CheckReportSuccess": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.reportResult.Payload.statusCode",
+          "NumericEquals": 200,
+          "Next": "ReportSucceeded"
+        }
+      ],
+      "Default": "ReportFailed"
+    },
+    "ReportSucceeded": {
+      "Type": "Succeed",
+      "OutputPath": "$.reportResult.Payload"
+    },
+    "ReportFailed": {
+      "Type": "Fail",
+      "Error": "WeeklyReportGenerationFailed",
+      "Cause": "Failed to generate weekly report"
+    }
+  }
+}

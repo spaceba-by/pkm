@@ -1,0 +1,11 @@
+[pkm-s3]
+type = s3
+provider = AWS
+env_auth = true
+region = us-east-1
+acl = private
+
+# To use this config:
+# 1. Replace 'us-east-1' with your AWS region if different
+# 2. Ensure AWS credentials are configured (via aws configure or environment variables)
+# 3. Copy this file to ~/.config/rclone/rclone.conf (Linux/macOS) or %APPDATA%\rclone\rclone.conf (Windows)

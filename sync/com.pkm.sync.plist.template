@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pkm.sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/rclone</string>
+        <string>bisync</string>
+        <string>/Users/USERNAME/vault</string>
+        <string>pkm-s3:BUCKET_NAME</string>
+        <string>--conflict-resolve</string>
+        <string>newer</string>
+        <string>--conflict-loser</string>
+        <string>rename</string>
+        <string>--verbose</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/USERNAME/.pkm-sync.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/USERNAME/.pkm-sync-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
+
+<!--
+To use this launchd plist:
+1. Replace USERNAME with your macOS username
+2. Replace BUCKET_NAME with your S3 bucket name
+3. Ensure rclone is installed at /usr/local/bin/rclone (or update path)
+4. Copy to ~/Library/LaunchAgents/com.pkm.sync.plist
+5. Load with: launchctl load ~/Library/LaunchAgents/com.pkm.sync.plist
+6. Start with: launchctl start com.pkm.sync
+
+To stop/unload:
+- launchctl stop com.pkm.sync
+- launchctl unload ~/Library/LaunchAgents/com.pkm.sync.plist
+
+Note: First-time bisync requires initialization:
+rclone bisync /Users/USERNAME/vault pkm-s3:BUCKET_NAME --resync
+-->
