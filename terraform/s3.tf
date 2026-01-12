@@ -45,6 +45,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "vault" {
     id     = "expire-old-versions"
     status = "Enabled"
 
+    filter {}
+
     noncurrent_version_expiration {
       noncurrent_days = 90
     }
@@ -53,6 +55,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "vault" {
   rule {
     id     = "cleanup-incomplete-multipart"
     status = "Enabled"
+
+    filter {}
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7

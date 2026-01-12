@@ -140,6 +140,25 @@ resource "aws_iam_role_policy" "lambda_xray" {
   })
 }
 
+# Policy for SQS Dead Letter Queue access
+resource "aws_iam_role_policy" "lambda_sqs_access" {
+  name = "sqs-dlq-access"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = aws_sqs_queue.lambda_dlq.arn
+      }
+    ]
+  })
+}
+
 # Policy for Lambda to invoke other Lambda functions (for update-classification-index)
 resource "aws_iam_role_policy" "lambda_invoke" {
   name = "lambda-invoke"
@@ -211,11 +230,19 @@ resource "aws_iam_role_policy" "stepfunctions_cloudwatch_logs" {
       {
         Effect = "Allow"
         Action = [
+          "logs:CreateLogDelivery",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:DeleteLogDelivery",
+          "logs:DescribeLogGroups",
+          "logs:DescribeResourcePolicies",
+          "logs:GetLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:PutLogEvents",
+          "logs:PutResourcePolicy",
+          "logs:UpdateLogDelivery"
         ]
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vendedlogs/states/${var.project_name}-*:*"
+        Resource = "*"
       }
     ]
   })

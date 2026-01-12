@@ -95,7 +95,7 @@ aws bedrock list-foundation-models --region us-east-1 --query 'modelSummaries[?c
 
 ```bash
 git clone <repository-url>
-cd pkm-agent-system
+cd pkm
 ```
 
 ## Step 3: Choose S3 Bucket Name
