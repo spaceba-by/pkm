@@ -57,6 +57,7 @@ htmlcov/
 # Environment variables
 .env
 .env.local
+.envrc
 
 # AWS credentials (should never be committed)
 credentials

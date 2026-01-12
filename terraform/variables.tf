@@ -10,12 +10,6 @@ variable "project_name" {
   default     = "pkm-agent"
 }
 
-variable "environment" {
-  description = "Environment name (dev, staging, prod)"
-  type        = string
-  default     = "prod"
-}
-
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket for PKM vault (must be globally unique)"
   type        = string
