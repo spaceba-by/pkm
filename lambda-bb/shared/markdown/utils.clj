@@ -46,7 +46,8 @@
         _ (when frontmatter
             (when-let [fm-tags (:tags frontmatter)]
               (cond
-                (vector? fm-tags) (swap! tags into (map str fm-tags))
+                ;; Handle any sequential collection (vector, list, lazy-seq)
+                (sequential? fm-tags) (swap! tags into (map str fm-tags))
                 (string? fm-tags) (swap! tags into (str/split fm-tags #",\s*")))))
 
         ;; Extract inline hashtags
