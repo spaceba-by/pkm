@@ -1,7 +1,8 @@
 (ns aws.dynamodb
-  "DynamoDB operations using awwyeah client"
-  (:require [awyeah.client.api :as aws]
-            [clojure.walk :as walk]))
+  "DynamoDB operations using awyeah client"
+  (:require [com.grzm.awyeah.client.api :as aws]
+            [clojure.walk :as walk]
+            [clojure.string :as str]))
 
 (defonce ^:private ddb-client
   (delay (aws/client {:api :dynamodb})))
@@ -167,7 +168,6 @@
 (defn store-entities
   "Store extracted entities for a document"
   [table-name file-path entities]
-  (require '[clojure.string :as str])
   (let [now (str (java.time.Instant/now))]
     ;; Update document metadata with entities
     (update-item table-name
@@ -194,7 +194,6 @@
 (defn get-entity-mentions
   "Get all documents that mention a specific entity"
   [table-name entity-type entity-name]
-  (require '[clojure.string :as str])
   (let [entity-key (str "entity#" entity-type "#" (str/lower-case entity-name))
         results (query table-name
                       :key-condition-expr "pk = :ek"

@@ -1,4 +1,4 @@
-(ns extract-entities.handler
+(ns handler
   "Lambda function to extract entities from markdown documents using Bedrock"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]

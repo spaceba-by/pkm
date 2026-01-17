@@ -1,29 +1,56 @@
-(ns generate-weekly-report.handler
+(ns handler
   "Lambda function to generate weekly reports of PKM activity"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json]
-            [java-time.api :as time]))
+            [clojure.data.json :as json])
+  (:import [java.time Instant ZonedDateTime ZoneOffset Duration DayOfWeek]
+           [java.time.format DateTimeFormatter]
+           [java.time.temporal ChronoUnit TemporalAdjusters]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def bedrock-model (System/getenv "BEDROCK_MODEL_ID"))
 
+(def ^:private date-formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
+
+(defn- format-date
+  "Format an Instant as yyyy-MM-dd"
+  [inst]
+  (.format (.atZone inst ZoneOffset/UTC) date-formatter))
+
+(defn- parse-instant
+  "Parse a date string to Instant"
+  [date-str]
+  (Instant/parse date-str))
+
+(defn- minus-days
+  "Subtract days from an Instant"
+  [inst days]
+  (.minus inst (Duration/ofDays days)))
+
+(defn- plus-days
+  "Add days to an Instant"
+  [inst days]
+  (.plus inst (Duration/ofDays days)))
+
 (defn get-target-date
   "Get target date from event or default to last week"
   [event]
   (if-let [date-str (:date event)]
-    (time/instant date-str)
+    (parse-instant date-str)
     ;; Default to last week (report runs on Sunday for previous week)
-    (time/minus (time/instant) (time/days 7))))
+    (minus-days (Instant/now) 7)))
 
 (defn calculate-week-boundaries
   "Calculate week start (Monday) and end (Sunday) for given date"
   [target-date]
-  (let [week-start (time/adjust target-date :previous-or-same-day-of-week :monday)
-        week-end (time/plus week-start (time/days 7))]
+  (let [zdt (.atZone target-date ZoneOffset/UTC)
+        ;; Adjust to previous or same Monday
+        week-start-zdt (.with zdt (TemporalAdjusters/previousOrSame DayOfWeek/MONDAY))
+        week-start (.toInstant week-start-zdt)
+        week-end (plus-days week-start 7)]
     {:start week-start
      :end week-end}))
 
@@ -42,8 +69,8 @@
   (println "Retrieving daily summaries for the week")
   (let [summaries (atom [])]
     (doseq [i (range 7)]
-      (let [day (time/plus week-start (time/days i))
-            day-str (time/format "yyyy-MM-dd" day)
+      (let [day (plus-days week-start i)
+            day-str (format-date day)
             summary (s3/get-daily-summary s3-bucket day-str)]
         (when summary
           (swap! summaries conj {:date day-str
@@ -69,8 +96,8 @@
                        sample-docs)]
 
     {:week week-str
-     :start_date (time/format "yyyy-MM-dd" week-start)
-     :end_date (time/format "yyyy-MM-dd" (time/minus week-end (time/days 1)))
+     :start_date (format-date week-start)
+     :end_date (format-date (minus-days week-end 1))
      :document_count (count week-docs)
      :daily_summaries daily-summaries
      :documents documents

@@ -1,6 +1,6 @@
 (ns aws.lambda
-  "Lambda invocation utilities using awwyeah client"
-  (:require [awyeah.client.api :as aws]
+  "Lambda invocation utilities using awyeah client"
+  (:require [com.grzm.awyeah.client.api :as aws]
             [clojure.data.json :as json]))
 
 (defonce ^:private lambda-client

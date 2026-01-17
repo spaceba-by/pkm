@@ -1,23 +1,52 @@
-(ns generate-daily-summary.handler
+(ns handler
   "Lambda function to generate daily summaries of PKM activity"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json]
-            [java-time.api :as time]))
+            [clojure.data.json :as json])
+  (:import [java.time Instant ZonedDateTime ZoneOffset Duration]
+           [java.time.format DateTimeFormatter]
+           [java.time.temporal ChronoUnit]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def bedrock-model (System/getenv "BEDROCK_MODEL_ID"))
 
+(def ^:private date-formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
+
+(defn- format-date
+  "Format an Instant as yyyy-MM-dd"
+  [inst]
+  (.format (.atZone inst ZoneOffset/UTC) date-formatter))
+
+(defn- parse-instant
+  "Parse a date string to Instant"
+  [date-str]
+  (Instant/parse date-str))
+
+(defn- minus-days
+  "Subtract days from an Instant"
+  [inst days]
+  (.minus inst (Duration/ofDays days)))
+
+(defn- plus-days
+  "Add days to an Instant"
+  [inst days]
+  (.plus inst (Duration/ofDays days)))
+
+(defn- truncate-to-day
+  "Truncate Instant to start of day (UTC)"
+  [inst]
+  (.truncatedTo inst ChronoUnit/DAYS))
+
 (defn get-target-date
   "Get target date from event or default to yesterday"
   [event]
   (if-let [date-str (:date event)]
-    (time/instant date-str)
+    (parse-instant date-str)
     ;; Default to yesterday (summary runs at 6 AM for previous day)
-    (time/minus (time/instant) (time/days 1))))
+    (minus-days (Instant/now) 1)))
 
 (defn filter-day-docs
   "Filter documents to those within target day"
@@ -43,17 +72,19 @@
         (if (.startsWith doc-path "_agent/")
           (recur (rest remaining) documents)
 
-          (try
-            (let [content (s3/get-object s3-bucket doc-path)]
-              (when (and content (not (empty? content)))
-                (recur (rest remaining)
-                       (conj documents
+          (let [result (try
+                         (let [content (s3/get-object s3-bucket doc-path)]
+                           (when (and content (not (empty? content)))
                              {:path doc-path
                               :content (subs content 0 (min 2000 (count content)))
-                              :title (or (:title doc) "Untitled")}))))
-            (catch Exception e
-              (println "Error retrieving" doc-path ":" (.getMessage e))
-              (recur (rest remaining) documents))))))))
+                              :title (or (:title doc) "Untitled")}))
+                         (catch Exception e
+                           (println "Error retrieving" doc-path ":" (.getMessage e))
+                           nil))]
+            (recur (rest remaining)
+                   (if result
+                     (conj documents result)
+                     documents))))))))
 
 (defn handler
   "Lambda handler for scheduled EventBridge event"
@@ -63,12 +94,12 @@
 
     ;; Get target date
     (let [target-date (get-target-date event)
-          date-str (time/format "yyyy-MM-dd" target-date)
+          date-str (format-date target-date)
           _ (println "Target date:" date-str)
 
           ;; Calculate day boundaries
-          since (time/truncate-to target-date :days)
-          until (time/plus since (time/days 1))
+          since (truncate-to-day target-date)
+          until (plus-days since 1)
           since-iso (str since)
           until-iso (str until)]
 

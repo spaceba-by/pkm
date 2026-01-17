@@ -1,12 +1,11 @@
-(ns classify-document.handler
+(ns handler
   "Lambda function to classify markdown documents using Bedrock"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
             [aws.lambda :as lambda]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json]
-            [java-time.api :as time]))
+            [clojure.data.json :as json]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -49,7 +48,7 @@
           ;; Add classification and timestamp to metadata
           metadata (assoc metadata
                          :classification classification
-                         :modified (str (time/instant))
+                         :modified (str (java.time.Instant/now))
                          :s3_key object-key)]
 
       ;; Store classification in DynamoDB

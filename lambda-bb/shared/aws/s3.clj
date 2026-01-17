@@ -1,6 +1,6 @@
 (ns aws.s3
-  "S3 operations using awwyeah client"
-  (:require [awyeah.client.api :as aws]))
+  "S3 operations using awyeah client"
+  (:require [com.grzm.awyeah.client.api :as aws]))
 
 (defonce ^:private s3-client
   (delay (aws/client {:api :s3})))
@@ -12,7 +12,13 @@
                              {:op :GetObject
                               :request {:Bucket bucket
                                        :Key key}})]
-    (slurp (:Body response))))
+    (if-let [body (:Body response)]
+      (slurp body)
+      (throw (ex-info "S3 object not found or empty"
+                      {:bucket bucket
+                       :key key
+                       :error (:cognitect.anomalies/category response)
+                       :message (:Message response)})))))
 
 (defn put-object
   "Uploads string content to S3 bucket"

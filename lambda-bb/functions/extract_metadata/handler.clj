@@ -1,10 +1,9 @@
-(ns extract-metadata.handler
+(ns handler
   "Lambda function to extract metadata from markdown documents"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
             [markdown.utils :as md]
-            [clojure.data.json :as json]
-            [java-time.api :as time]))
+            [clojure.data.json :as json]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -34,7 +33,7 @@
 
     ;; Parse metadata (no AI needed - pure parsing)
     (let [metadata (md/parse-markdown-metadata content)
-          now (str (time/instant))
+          now (str (java.time.Instant/now))
           metadata (-> metadata
                        (assoc :s3_key object-key)
                        (assoc :modified now)
@@ -93,8 +92,8 @@
           {:statusCode 200
            :body (json/write-str {:document object-key
                                   :metadata {:title (:title metadata)
-                                            :tags (:tags metadata [])
-                                            :links (count (:links_to metadata []))}})})))
+                                             :tags (:tags metadata [])
+                                             :links (count (:links_to metadata []))}})})))
 
     (catch Exception e
       (println "Error extracting metadata:" (.getMessage e))
