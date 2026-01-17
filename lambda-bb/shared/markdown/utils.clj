@@ -1,8 +1,12 @@
 (ns markdown.utils
   "Markdown parsing and manipulation utilities for PKM agent"
   (:require [clj-yaml.core :as yaml]
-            [clojure.string :as str]
-            [java-time.api :as time]))
+            [clojure.string :as str]))
+
+(defn- now-iso
+  "Get current timestamp as ISO string"
+  []
+  (str (java.time.Instant/now)))
 
 (defn extract-frontmatter
   "Extract YAML frontmatter from markdown content.
@@ -77,7 +81,7 @@
 (defn create-summary-document
   "Create a formatted daily summary markdown document"
   [date summary-content source-docs doc-count]
-  (let [frontmatter {:generated (str (time/instant))
+  (let [frontmatter {:generated (now-iso)
                      :agent "summarization"
                      :period "daily"
                      :source_docs doc-count
@@ -94,7 +98,7 @@
 (defn create-weekly-report-document
   "Create a formatted weekly report markdown document"
   [week report-content source-count]
-  (let [frontmatter {:generated (str (time/instant))
+  (let [frontmatter {:generated (now-iso)
                      :agent "reporting"
                      :period "weekly"
                      :week week
@@ -111,7 +115,7 @@
   [entity-name entity-type mentions]
   (let [frontmatter {:type entity-type
                      :mentioned_in (mapv :path mentions)
-                     :last_updated (str (time/instant))}
+                     :last_updated (now-iso)}
         mentions-text (str/join "\n"
                                (map #(str "- [[" (:path %) "]] - " (get % :context ""))
                                     mentions))]
@@ -123,7 +127,7 @@
 (defn create-classification-index
   "Create a formatted classification index markdown document"
   [classifications]
-  (let [frontmatter {:generated (str (time/instant))
+  (let [frontmatter {:generated (now-iso)
                      :tags ["index" "agent-generated"]}
         classification-order ["meeting" "idea" "reference" "journal" "project"]
         sections (for [classification classification-order
@@ -148,11 +152,54 @@
       (str/replace #"^-+|-+$" "")))
 
 (defn get-week-string
-  "Get ISO week string for a date in YYYY-Www format"
+  "Get ISO week string for a date in YYYY-Www format.
+   Accepts java.time.Instant, java.time.LocalDate, java.util.Date, or date string."
   [date]
-  (let [year (time/as date :year)
-        week (time/as date :week-of-week-based-year)]
-    (format "%d-W%02d" year week)))
+  (let [;; Convert various date types to millis since epoch
+        millis (cond
+                 (instance? java.time.Instant date)
+                 (.toEpochMilli date)
+
+                 (instance? java.time.LocalDate date)
+                 (-> date
+                     (.atStartOfDay (java.time.ZoneId/of "UTC"))
+                     (.toInstant)
+                     (.toEpochMilli))
+
+                 (instance? java.util.Date date)
+                 (.getTime date)
+
+                 (string? date)
+                 (-> (java.time.LocalDate/parse date)
+                     (.atStartOfDay (java.time.ZoneId/of "UTC"))
+                     (.toInstant)
+                     (.toEpochMilli))
+
+                 :else
+                 (throw (ex-info "Unsupported date type" {:date date :type (type date)})))
+
+        ;; Calculate days since epoch (1970-01-01, which was a Thursday)
+        ;; ISO weeks start on Monday, and 1970-01-01 was day 4 of week 1
+        days-since-epoch (quot millis 86400000)
+
+        ;; Adjust to make Monday = 0 (epoch was Thursday = 3)
+        adjusted-days (+ days-since-epoch 3)
+
+        ;; Calculate week number (0-indexed)
+        week-num (quot adjusted-days 7)
+
+        ;; Get year and week using epoch calculation
+        ;; Start from 1970-01-05 (first Monday of 1970, which is in week 2)
+        ;; Actually, let's use a simpler approach - use the Instant directly
+        instant (java.time.Instant/ofEpochMilli millis)
+        zdt (.atZone instant (java.time.ZoneId/of "UTC"))
+        local-date (.toLocalDate zdt)
+
+        ;; Use DateTimeFormatter to get ISO week date
+        formatter (java.time.format.DateTimeFormatter/ofPattern "YYYY-'W'ww")
+        week-str (.format local-date formatter)]
+
+    week-str))
 
 (defn parse-markdown-metadata
   "Parse markdown content and extract all metadata"
