@@ -7,6 +7,18 @@
 (defonce ^:private ddb-client
   (delay (aws/client {:api :dynamodb})))
 
+(defn- check-error
+  "Check AWS response for errors and throw if found"
+  [response operation]
+  (when-let [error-category (:cognitect.anomalies/category response)]
+    (throw (ex-info (str "DynamoDB " operation " failed: "
+                         (or (:message response) error-category))
+                    {:operation operation
+                     :error-category error-category
+                     :error-code (:cognitect.aws.error/code response)
+                     :response response})))
+  response)
+
 (defn- marshall-value
   "Converts Clojure value to DynamoDB attribute value format"
   [v]
@@ -15,7 +27,8 @@
     (number? v) {:N (str v)}
     (boolean? v) {:BOOL v}
     (nil? v) {:NULL true}
-    (vector? v) {:L (mapv marshall-value v)}
+    ;; Handle any sequential collection (vector, list, lazy-seq)
+    (sequential? v) {:L (mapv marshall-value v)}
     (set? v) (cond
                (every? string? v) {:SS (vec v)}
                (every? number? v) {:NS (mapv str v)}
@@ -66,10 +79,11 @@
 (defn put-item
   "Writes item to DynamoDB table"
   [table-name item]
-  (aws/invoke @ddb-client
-              {:op :PutItem
-               :request {:TableName table-name
-                        :Item (marshall-item item)}}))
+  (-> (aws/invoke @ddb-client
+                  {:op :PutItem
+                   :request {:TableName table-name
+                            :Item (marshall-item item)}})
+      (check-error "PutItem")))
 
 (defn get-item
   "Retrieves item from DynamoDB table by key"

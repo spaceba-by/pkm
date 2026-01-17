@@ -45,16 +45,16 @@
       ;; Use s3_key as partition key for document metadata
       (ddb/put-item ddb-table
                     (assoc metadata
-                           :pk object-key
-                           :sk "METADATA"))
+                           :PK object-key
+                           :SK "METADATA"))
 
       ;; Store tag index entries
       (when-let [tags (:tags metadata)]
         (doseq [tag tags]
           (try
             (ddb/put-item ddb-table
-                          {:pk (str "tag#" tag)
-                           :sk (str "doc#" object-key)
+                          {:PK (str "tag#" tag)
+                           :SK (str "doc#" object-key)
                            :tag_name tag
                            :document_path object-key
                            :modified now})
