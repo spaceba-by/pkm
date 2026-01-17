@@ -66,7 +66,7 @@
     (if (empty? remaining)
       documents
       (let [doc (first remaining)
-            doc-path (:pk doc)]
+            doc-path (:PK doc)]
 
         ;; Skip agent-generated documents
         (if (.startsWith doc-path "_agent/")

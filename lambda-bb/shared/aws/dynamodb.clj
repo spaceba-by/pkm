@@ -156,7 +156,7 @@
   "Queries documents by tag"
   [table-name tag]
   (query table-name
-         :key-condition-expr "pk = :pk"
+         :key-condition-expr "PK = :pk"
          :expr-attr-values {":pk" (str "TAG#" tag)}))
 
 (defn query-recent-documents
@@ -185,7 +185,7 @@
   (let [now (str (java.time.Instant/now))]
     ;; Update document metadata with entities
     (update-item table-name
-                 {:pk file-path :sk "METADATA"}
+                 {:PK file-path :SK "METADATA"}
                  "SET entities = :e, modified = :m"
                  {":e" entities
                   ":m" now})
@@ -195,8 +195,8 @@
             entity-name entity-list]
       (let [entity-key (str "entity#" (name entity-type) "#" (str/lower-case entity-name))]
         (put-item table-name
-                  {:pk entity-key
-                   :sk (str "doc#" file-path)
+                  {:PK entity-key
+                   :SK (str "doc#" file-path)
                    :entity_key entity-key
                    :entity_type (name entity-type)
                    :entity_name entity-name
@@ -210,7 +210,7 @@
   [table-name entity-type entity-name]
   (let [entity-key (str "entity#" entity-type "#" (str/lower-case entity-name))
         results (query table-name
-                      :key-condition-expr "pk = :ek"
+                      :key-condition-expr "PK = :ek"
                       :expr-attr-values {":ek" entity-key})]
     (mapv :document_path results)))
 
@@ -220,7 +220,7 @@
   (let [response (aws/invoke @ddb-client
                              {:op :Scan
                               :request {:TableName table-name
-                                       :FilterExpression "begins_with(pk, :prefix) AND sk = :sk AND modified >= :since"
+                                       :FilterExpression "begins_with(PK, :prefix) AND SK = :sk AND modified >= :since"
                                        :ExpressionAttributeValues (marshall-item
                                                                    {":prefix" "doc#"
                                                                     ":sk" "METADATA"

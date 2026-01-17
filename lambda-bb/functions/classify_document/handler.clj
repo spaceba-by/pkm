@@ -54,8 +54,8 @@
       ;; Store classification in DynamoDB
       (ddb/put-item ddb-table
                     (assoc metadata
-                           :pk object-key
-                           :sk "METADATA"
+                           :PK object-key
+                           :SK "METADATA"
                            :document_path object-key))
 
       ;; Invoke update-classification-index Lambda asynchronously

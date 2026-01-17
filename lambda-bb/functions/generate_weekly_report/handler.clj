@@ -86,10 +86,10 @@
 
         ;; Sample documents (up to 30)
         sample-docs (take 30
-                         (remove #(.startsWith (:pk %) "_agent/") week-docs))
+                         (remove #(.startsWith (:PK %) "_agent/") week-docs))
 
         documents (mapv (fn [doc]
-                         {:path (:pk doc)
+                         {:path (:PK doc)
                           :title (or (:title doc) "Untitled")
                           :classification (or (:classification doc) "unknown")
                           :tags (or (:tags doc) [])})
