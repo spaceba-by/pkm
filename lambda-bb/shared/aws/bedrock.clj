@@ -1,16 +1,23 @@
 (ns aws.bedrock
-  "AWS Bedrock client for Claude models"
-  (:require [babashka.http-client :as http]
+  "AWS Bedrock client for Claude models using awyeah"
+  (:require [com.grzm.awyeah.client.api :as aws]
             [clojure.data.json :as json]
             [clojure.string :as str]))
 
-(def ^:private bedrock-region (or (System/getenv "AWS_REGION") "us-east-1"))
+(defonce ^:private bedrock-client
+  (delay (aws/client {:api :bedrock-runtime})))
 
-(defn- bedrock-endpoint
-  "Constructs Bedrock API endpoint"
-  [model-id]
-  (str "https://bedrock-runtime." bedrock-region ".amazonaws.com"
-       "/model/" model-id "/invoke"))
+(defn- check-error
+  "Check AWS response for errors and throw if found"
+  [response operation]
+  (when-let [error-category (:cognitect.anomalies/category response)]
+    (throw (ex-info (str "Bedrock " operation " failed: "
+                         (or (:message response) error-category))
+                    {:operation operation
+                     :error-category error-category
+                     :error-code (:cognitect.aws.error/code response)
+                     :response response})))
+  response)
 
 (defn invoke-model
   "Invokes Bedrock Claude model with prompt
@@ -26,12 +33,14 @@
                       :messages [{:role "user"
                                  :content prompt}]}
                system (assoc :system system))
-        response (http/post (bedrock-endpoint model-id)
-                           {:headers {"Content-Type" "application/json"}
-                            :body (json/write-str body)
-                            :aws/sign {:service "bedrock"
-                                      :region bedrock-region}})]
-    (json/read-str (:body response) :key-fn keyword)))
+        response (-> (aws/invoke @bedrock-client
+                                 {:op :InvokeModel
+                                  :request {:modelId model-id
+                                           :contentType "application/json"
+                                           :accept "application/json"
+                                           :body (.getBytes (json/write-str body) "UTF-8")}})
+                     (check-error "InvokeModel"))]
+    (json/read-str (slurp (:body response)) :key-fn keyword)))
 
 (defn extract-text
   "Extracts text content from Bedrock response"
@@ -47,12 +56,13 @@
                    "Title: " title "\n\n"
                    "Content:\n" content "\n\n"
                    "Return ONLY the classification category name, nothing else.")
-        response (invoke-model model-id prompt {:max-tokens 50 :temperature 0.3})]
-    (-> response
-        extract-text
-        str/trim
-        str/lower-case
-        (str/replace #"[^a-z]" ""))))
+        response (invoke-model model-id prompt {:max-tokens 50 :temperature 0.3})
+        text (extract-text response)]
+    (when text
+      (-> text
+          str/trim
+          str/lower-case
+          (str/replace #"[^a-z]" "")))))
 
 (defn extract-entities
   "Extracts named entities (people, organizations, concepts, locations)"
@@ -69,6 +79,7 @@
     (try
       (json/read-str (extract-text response) :key-fn keyword)
       (catch Exception e
+        (println "Error parsing entities response:" (.getMessage e))
         {:people [] :organizations [] :concepts [] :locations []}))))
 
 (defn generate-summary

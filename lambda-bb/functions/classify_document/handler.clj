@@ -110,3 +110,7 @@
                              :object {:key "test.md"}}}]
     (println "Running test with event:" test-event)
     (println "Result:" (handler test-event nil))))
+
+
+(comment 
+  (-main))
