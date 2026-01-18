@@ -9,7 +9,7 @@ Before you begin, ensure you have:
 1. **AWS Account** with appropriate permissions
 2. **AWS CLI** installed and configured
 3. **Terraform** >= 1.5.0 installed
-4. **Python** 3.12 or later
+4. **[Babashka](https://github.com/babashka/babashka)** >= 1.3.0
 5. **rclone** for vault synchronization
 6. **jq** for JSON processing (optional but recommended)
 
@@ -22,7 +22,7 @@ Before you begin, ensure you have:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install required tools
-brew install awscli terraform python@3.12 rclone jq
+brew install awscli terraform babashka rclone jq
 ```
 
 #### Linux
@@ -38,6 +38,9 @@ wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/sha
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
 sudo apt update && sudo apt install terraform
 
+# Babashka
+bash < <(curl -s https://raw.githubusercontent.com/babashka/babashka/master/install)
+
 # rclone
 curl https://rclone.org/install.sh | sudo bash
 
@@ -49,7 +52,7 @@ sudo apt install jq
 
 1. Install [AWS CLI](https://aws.amazon.com/cli/)
 2. Install [Terraform](https://www.terraform.io/downloads)
-3. Install [Python](https://www.python.org/downloads/)
+3. Install [Babashka](https://github.com/babashka/babashka/releases)
 4. Install [rclone](https://rclone.org/downloads/)
 5. Install [jq](https://stedolan.github.io/jq/download/)
 
