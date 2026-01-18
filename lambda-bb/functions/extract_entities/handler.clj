@@ -4,7 +4,7 @@
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json]))
+            [cheshire.core :as json]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -77,41 +77,42 @@
          :entity-pages-created @total-entities}))))
 
 (defn handler
-  "Lambda handler for EventBridge S3 events"
-  [event context]
+  "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
+  [request]
   (try
-    (println "Received event:" (json/write-str event))
+    (let [event (json/parse-string (:body request) true)]
+      (println "Received event:" (json/generate-string event))
 
-    ;; Extract S3 object details from EventBridge event
-    (let [detail (get event :detail {})
-          bucket-name (get-in detail [:bucket :name])
-          object-key (get-in detail [:object :key])]
+      ;; Extract S3 object details from EventBridge event
+      (let [detail (get event :detail {})
+            bucket-name (get-in detail [:bucket :name])
+            object-key (get-in detail [:object :key])]
 
-      ;; Validate event
-      (when (or (nil? bucket-name) (nil? object-key))
-        (println "Error: Missing bucket name or object key in event")
-        (throw (ex-info "Invalid event format" {:event event})))
+        ;; Validate event
+        (when (or (nil? bucket-name) (nil? object-key))
+          (println "Error: Missing bucket name or object key in event")
+          (throw (ex-info "Invalid event format" {:event event})))
 
-      ;; Check if should skip
-      (if (should-skip? object-key)
-        (do
-          (println "Skipping file:" object-key)
-          {:statusCode 200
-           :body (json/write-str {:message "Skipped file"
-                                  :object-key object-key})})
+        ;; Check if should skip
+        (if (should-skip? object-key)
+          (do
+            (println "Skipping file:" object-key)
+            {:statusCode 200
+             :body (json/generate-string {:message "Skipped file"
+                                          :object-key object-key})})
 
-        ;; Extract entities from the document
-        (let [result (extract-and-store-entities bucket-name object-key)]
-          {:statusCode 200
-           :body (json/write-str {:document object-key
-                                  :entities (:entities result)
-                                  :entity-pages-created (:entity-pages-created result)})})))
+          ;; Extract entities from the document
+          (let [result (extract-and-store-entities bucket-name object-key)]
+            {:statusCode 200
+             :body (json/generate-string {:document object-key
+                                          :entities (:entities result)
+                                          :entity-pages-created (:entity-pages-created result)})}))))
 
     (catch Exception e
       (println "Error extracting entities:" (.getMessage e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/write-str {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; For local testing
 (defn -main [& args]

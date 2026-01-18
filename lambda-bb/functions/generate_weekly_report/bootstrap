@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /opt/bin/bb -cp $(dirname $0) -m generate-weekly-report.handler handler
