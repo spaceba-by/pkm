@@ -37,3 +37,4 @@ Thumbs.db
 
 #clj/bb cacche
 .cpcache
+terraform/*.plan
