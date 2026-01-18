@@ -98,13 +98,13 @@
 (defn generate-weekly-report
   "Generates comprehensive weekly report"
   [model-id week-data]
-  (let [{:keys [daily-summaries documents classifications]} week-data
+  (let [{:keys [daily_summaries documents classification_counts]} week-data
         prompt (str "Create a comprehensive weekly review report based on this data:\n\n"
                    "## Daily Summaries\n"
-                   (str/join "\n\n" (map :content daily-summaries))
+                   (str/join "\n\n" (map :content daily_summaries))
                    "\n\n## Document Statistics\n"
                    "Total documents: " (count documents) "\n"
-                   "By classification: " (pr-str classifications) "\n\n"
+                   "By classification: " (pr-str classification_counts) "\n\n"
                    "Structure your report with:\n"
                    "1. Overview (2-3 sentences)\n"
                    "2. Key Themes (3-5 main themes)\n"
