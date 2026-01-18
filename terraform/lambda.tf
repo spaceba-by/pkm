@@ -32,11 +32,11 @@ resource "aws_sqs_queue" "lambda_dlq" {
 
 # 1. classify-document Lambda (Babashka)
 resource "aws_lambda_function" "classify_document" {
-  filename         = "${path.module}/../lambda-bb/target/classify_document.zip"
+  filename         = "${path.module}/../lambda/target/classify_document.zip"
   function_name    = "${var.project_name}-classify-document"
   role             = aws_iam_role.lambda_execution.arn
   handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/classify_document.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambda/target/classify_document.zip")
   runtime          = "provided.al2023"
   timeout          = 30
   memory_size      = 512
@@ -69,11 +69,11 @@ resource "aws_lambda_function" "classify_document" {
 
 # 2. extract-entities Lambda (Babashka)
 resource "aws_lambda_function" "extract_entities" {
-  filename         = "${path.module}/../lambda-bb/target/extract_entities.zip"
+  filename         = "${path.module}/../lambda/target/extract_entities.zip"
   function_name    = "${var.project_name}-extract-entities"
   role             = aws_iam_role.lambda_execution.arn
   handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/extract_entities.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambda/target/extract_entities.zip")
   runtime          = "provided.al2023"
   timeout          = 30
   memory_size      = 512
@@ -105,11 +105,11 @@ resource "aws_lambda_function" "extract_entities" {
 
 # 3. extract-metadata Lambda (Babashka)
 resource "aws_lambda_function" "extract_metadata" {
-  filename         = "${path.module}/../lambda-bb/target/extract_metadata.zip"
+  filename         = "${path.module}/../lambda/target/extract_metadata.zip"
   function_name    = "${var.project_name}-extract-metadata"
   role             = aws_iam_role.lambda_execution.arn
   handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/extract_metadata.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambda/target/extract_metadata.zip")
   runtime          = "provided.al2023"
   timeout          = 10
   memory_size      = 256
@@ -140,11 +140,11 @@ resource "aws_lambda_function" "extract_metadata" {
 
 # 4. generate-daily-summary Lambda (Babashka)
 resource "aws_lambda_function" "generate_daily_summary" {
-  filename         = "${path.module}/../lambda-bb/target/generate_daily_summary.zip"
+  filename         = "${path.module}/../lambda/target/generate_daily_summary.zip"
   function_name    = "${var.project_name}-generate-daily-summary"
   role             = aws_iam_role.lambda_execution.arn
   handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/generate_daily_summary.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambda/target/generate_daily_summary.zip")
   runtime          = "provided.al2023"
   timeout          = 60
   memory_size      = 1024
@@ -176,11 +176,11 @@ resource "aws_lambda_function" "generate_daily_summary" {
 
 # 5. generate-weekly-report Lambda (Babashka)
 resource "aws_lambda_function" "generate_weekly_report" {
-  filename         = "${path.module}/../lambda-bb/target/generate_weekly_report.zip"
+  filename         = "${path.module}/../lambda/target/generate_weekly_report.zip"
   function_name    = "${var.project_name}-generate-weekly-report"
   role             = aws_iam_role.lambda_execution.arn
   handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/generate_weekly_report.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambda/target/generate_weekly_report.zip")
   runtime          = "provided.al2023"
   timeout          = 120
   memory_size      = 2048
@@ -212,11 +212,11 @@ resource "aws_lambda_function" "generate_weekly_report" {
 
 # 6. update-classification-index Lambda (Babashka)
 resource "aws_lambda_function" "update_classification_index" {
-  filename         = "${path.module}/../lambda-bb/target/update_classification_index.zip"
+  filename         = "${path.module}/../lambda/target/update_classification_index.zip"
   function_name    = "${var.project_name}-update-classification-index"
   role             = aws_iam_role.lambda_execution.arn
   handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/update_classification_index.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambda/target/update_classification_index.zip")
   runtime          = "provided.al2023"
   timeout          = 30
   memory_size      = 256
