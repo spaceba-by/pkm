@@ -1,2 +1,4 @@
 #!/bin/sh
-exec bb -cp $(dirname $0) -m extract-metadata.handler handler
+set -e
+cd /var/task
+exec /opt/bin/bb -cp .:/var/task/shared -e '(require (quote runtime) (quote handler)) (runtime/run-loop handler/handler)'

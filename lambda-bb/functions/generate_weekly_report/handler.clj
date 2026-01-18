@@ -4,7 +4,7 @@
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json])
+            [cheshire.core :as json])
   (:import [java.time Instant ZonedDateTime ZoneOffset Duration DayOfWeek]
            [java.time.format DateTimeFormatter]
            [java.time.temporal ChronoUnit TemporalAdjusters]))
@@ -104,13 +104,14 @@
      :classification_counts classification-counts}))
 
 (defn handler
-  "Lambda handler for Step Functions or scheduled EventBridge event"
-  [event context]
+  "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
+  [request]
   (try
-    (println "Generating weekly report")
+    (let [event (json/parse-string (:body request) true)]
+      (println "Generating weekly report")
 
-    ;; Get target date
-    (let [target-date (get-target-date event)
+      ;; Get target date
+      (let [target-date (get-target-date event)
           week-str (md/get-week-string target-date)
           _ (println "Target week:" week-str)
 
@@ -156,16 +157,16 @@
       (println "Created weekly report:" report-key)
 
       {:statusCode 200
-       :body (json/write-str {:week week-str
+       :body (json/generate-string {:week week-str
                               :report-key report-key
                               :document-count (count week-docs)
-                              :daily-summaries-count (count daily-summaries)})})
+                              :daily-summaries-count (count daily-summaries)})}))
 
     (catch Exception e
       (println "Error generating weekly report:" (.getMessage e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/write-str {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; For local testing
 (defn -main [& args]

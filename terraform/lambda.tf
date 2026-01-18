@@ -1,19 +1,5 @@
-# Archive Lambda source code
-data "archive_file" "lambda_shared" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/shared"
-  output_path = "${path.module}/.terraform/lambda-shared.zip"
-}
-
-# Lambda layer for shared utilities
-resource "aws_lambda_layer_version" "shared_utilities" {
-  filename            = data.archive_file.lambda_shared.output_path
-  layer_name          = "${var.project_name}-shared-utilities"
-  source_code_hash    = data.archive_file.lambda_shared.output_base64sha256
-  compatible_runtimes = ["python3.12"]
-
-  description = "Shared utilities for PKM agent Lambda functions"
-}
+# NOTE: Babashka binary is now bundled in each Lambda ZIP (via bblf uberjar approach)
+# No separate layer needed
 
 # CloudWatch log groups for Lambda functions
 resource "aws_cloudwatch_log_group" "lambda_logs" {
@@ -44,24 +30,16 @@ resource "aws_sqs_queue" "lambda_dlq" {
   }
 }
 
-# 1. classify-document Lambda
-data "archive_file" "classify_document" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/classify_document"
-  output_path = "${path.module}/.terraform/classify-document.zip"
-}
-
+# 1. classify-document Lambda (Babashka)
 resource "aws_lambda_function" "classify_document" {
-  filename         = data.archive_file.classify_document.output_path
+  filename         = "${path.module}/../lambda-bb/target/classify_document.zip"
   function_name    = "${var.project_name}-classify-document"
   role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.classify_document.output_base64sha256
-  runtime          = "python3.12"
+  handler          = "handler/handler"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/classify_document.zip")
+  runtime          = "provided.al2023"
   timeout          = 30
   memory_size      = 512
-
-  layers = [aws_lambda_layer_version.shared_utilities.arn]
 
   environment {
     variables = {
@@ -69,7 +47,7 @@ resource "aws_lambda_function" "classify_document" {
       DYNAMODB_TABLE_NAME  = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID     = var.bedrock_haiku_model_id
       UPDATE_INDEX_LAMBDA  = "${var.project_name}-update-classification-index"
-    }
+          }
   }
 
   dead_letter_config {
@@ -89,31 +67,23 @@ resource "aws_lambda_function" "classify_document" {
   }
 }
 
-# 2. extract-entities Lambda
-data "archive_file" "extract_entities" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/extract_entities"
-  output_path = "${path.module}/.terraform/extract-entities.zip"
-}
-
+# 2. extract-entities Lambda (Babashka)
 resource "aws_lambda_function" "extract_entities" {
-  filename         = data.archive_file.extract_entities.output_path
+  filename         = "${path.module}/../lambda-bb/target/extract_entities.zip"
   function_name    = "${var.project_name}-extract-entities"
   role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.extract_entities.output_base64sha256
-  runtime          = "python3.12"
+  handler          = "handler/handler"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/extract_entities.zip")
+  runtime          = "provided.al2023"
   timeout          = 30
   memory_size      = 512
-
-  layers = [aws_lambda_layer_version.shared_utilities.arn]
 
   environment {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_haiku_model_id
-    }
+          }
   }
 
   dead_letter_config {
@@ -133,30 +103,22 @@ resource "aws_lambda_function" "extract_entities" {
   }
 }
 
-# 3. extract-metadata Lambda
-data "archive_file" "extract_metadata" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/extract_metadata"
-  output_path = "${path.module}/.terraform/extract-metadata.zip"
-}
-
+# 3. extract-metadata Lambda (Babashka)
 resource "aws_lambda_function" "extract_metadata" {
-  filename         = data.archive_file.extract_metadata.output_path
+  filename         = "${path.module}/../lambda-bb/target/extract_metadata.zip"
   function_name    = "${var.project_name}-extract-metadata"
   role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.extract_metadata.output_base64sha256
-  runtime          = "python3.12"
+  handler          = "handler/handler"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/extract_metadata.zip")
+  runtime          = "provided.al2023"
   timeout          = 10
   memory_size      = 256
-
-  layers = [aws_lambda_layer_version.shared_utilities.arn]
 
   environment {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
-    }
+          }
   }
 
   dead_letter_config {
@@ -176,31 +138,23 @@ resource "aws_lambda_function" "extract_metadata" {
   }
 }
 
-# 4. generate-daily-summary Lambda
-data "archive_file" "generate_daily_summary" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/generate_daily_summary"
-  output_path = "${path.module}/.terraform/generate-daily-summary.zip"
-}
-
+# 4. generate-daily-summary Lambda (Babashka)
 resource "aws_lambda_function" "generate_daily_summary" {
-  filename         = data.archive_file.generate_daily_summary.output_path
+  filename         = "${path.module}/../lambda-bb/target/generate_daily_summary.zip"
   function_name    = "${var.project_name}-generate-daily-summary"
   role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.generate_daily_summary.output_base64sha256
-  runtime          = "python3.12"
+  handler          = "handler/handler"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/generate_daily_summary.zip")
+  runtime          = "provided.al2023"
   timeout          = 60
   memory_size      = 1024
-
-  layers = [aws_lambda_layer_version.shared_utilities.arn]
 
   environment {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_sonnet_model_id
-    }
+          }
   }
 
   dead_letter_config {
@@ -220,31 +174,23 @@ resource "aws_lambda_function" "generate_daily_summary" {
   }
 }
 
-# 5. generate-weekly-report Lambda
-data "archive_file" "generate_weekly_report" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/generate_weekly_report"
-  output_path = "${path.module}/.terraform/generate-weekly-report.zip"
-}
-
+# 5. generate-weekly-report Lambda (Babashka)
 resource "aws_lambda_function" "generate_weekly_report" {
-  filename         = data.archive_file.generate_weekly_report.output_path
+  filename         = "${path.module}/../lambda-bb/target/generate_weekly_report.zip"
   function_name    = "${var.project_name}-generate-weekly-report"
   role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.generate_weekly_report.output_base64sha256
-  runtime          = "python3.12"
+  handler          = "handler/handler"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/generate_weekly_report.zip")
+  runtime          = "provided.al2023"
   timeout          = 120
   memory_size      = 2048
-
-  layers = [aws_lambda_layer_version.shared_utilities.arn]
 
   environment {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_sonnet_model_id
-    }
+          }
   }
 
   dead_letter_config {
@@ -264,30 +210,22 @@ resource "aws_lambda_function" "generate_weekly_report" {
   }
 }
 
-# 6. update-classification-index Lambda
-data "archive_file" "update_classification_index" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda/update_classification_index"
-  output_path = "${path.module}/.terraform/update-classification-index.zip"
-}
-
+# 6. update-classification-index Lambda (Babashka)
 resource "aws_lambda_function" "update_classification_index" {
-  filename         = data.archive_file.update_classification_index.output_path
+  filename         = "${path.module}/../lambda-bb/target/update_classification_index.zip"
   function_name    = "${var.project_name}-update-classification-index"
   role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.update_classification_index.output_base64sha256
-  runtime          = "python3.12"
+  handler          = "handler/handler"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-bb/target/update_classification_index.zip")
+  runtime          = "provided.al2023"
   timeout          = 30
   memory_size      = 256
-
-  layers = [aws_lambda_layer_version.shared_utilities.arn]
 
   environment {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
-    }
+          }
   }
 
   dead_letter_config {

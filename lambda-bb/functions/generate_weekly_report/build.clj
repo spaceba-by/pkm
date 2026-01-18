@@ -15,9 +15,10 @@
   (fs/delete (str function-name ".zip")))
 
 ;; Create bootstrap script
+;; /opt/bin/bb is where the Lambda layer extracts the babashka binary
 (spit "bootstrap"
       (str "#!/bin/sh\n"
-           "exec bb -cp $(dirname $0) -m " handler-ns " handler\n"))
+           "exec /opt/bin/bb -cp $(dirname $0) -m " handler-ns " handler\n"))
 
 ;; Make bootstrap executable
 (fs/set-posix-file-permissions "bootstrap" "rwxr-xr-x")

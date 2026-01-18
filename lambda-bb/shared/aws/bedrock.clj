@@ -1,7 +1,7 @@
 (ns aws.bedrock
   "AWS Bedrock client for Claude models using awyeah"
   (:require [com.grzm.awyeah.client.api :as aws]
-            [clojure.data.json :as json]
+            [cheshire.core :as json]
             [clojure.string :as str]))
 
 (defonce ^:private bedrock-client
@@ -38,9 +38,9 @@
                                   :request {:modelId model-id
                                            :contentType "application/json"
                                            :accept "application/json"
-                                           :body (.getBytes (json/write-str body) "UTF-8")}})
+                                           :body (.getBytes (json/generate-string body) "UTF-8")}})
                      (check-error "InvokeModel"))]
-    (json/read-str (slurp (:body response)) :key-fn keyword)))
+    (json/parse-string (slurp (:body response)) true)))
 
 (defn extract-text
   "Extracts text content from Bedrock response"
@@ -77,7 +77,7 @@
                    "Text:\n" content)
         response (invoke-model model-id prompt {:max-tokens 1000 :temperature 0.5})]
     (try
-      (json/read-str (extract-text response) :key-fn keyword)
+      (json/parse-string (extract-text response) true)
       (catch Exception e
         (println "Error parsing entities response:" (.getMessage e))
         {:people [] :organizations [] :concepts [] :locations []}))))

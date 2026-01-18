@@ -1,7 +1,7 @@
 (ns aws.lambda
   "Lambda invocation utilities using awyeah client"
   (:require [com.grzm.awyeah.client.api :as aws]
-            [clojure.data.json :as json]))
+            [cheshire.core :as json]))
 
 (defonce ^:private lambda-client
   (delay (aws/client {:api :lambda})))
@@ -25,7 +25,7 @@
                   {:op :Invoke
                    :request {:FunctionName function-name
                             :InvocationType "Event"
-                            :Payload (.getBytes (json/write-str payload) "UTF-8")}})
+                            :Payload (.getBytes (json/generate-string payload) "UTF-8")}})
       (check-error "Invoke")))
 
 (defn invoke-sync
@@ -35,7 +35,7 @@
                                  {:op :Invoke
                                   :request {:FunctionName function-name
                                            :InvocationType "RequestResponse"
-                                           :Payload (.getBytes (json/write-str payload) "UTF-8")}})
+                                           :Payload (.getBytes (json/generate-string payload) "UTF-8")}})
                      (check-error "Invoke"))]
     (when-let [payload-bytes (:Payload response)]
-      (json/read-str (slurp payload-bytes) :key-fn keyword))))
+      (json/parse-string (slurp payload-bytes) true))))

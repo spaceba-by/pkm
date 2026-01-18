@@ -5,7 +5,7 @@
             [aws.lambda :as lambda]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json]))
+            [cheshire.core :as json]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -69,40 +69,42 @@
        :title (:title metadata)})))
 
 (defn handler
-  "Lambda handler for EventBridge S3 events"
-  [event context]
+  "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
+  [request]
   (try
-    (println "Received event:" (json/write-str event))
+    ;; bblf.runtime passes the raw HTTP response from Lambda Runtime API
+    (let [event (json/parse-string (:body request) true)]
+      (println "Received event:" (json/generate-string event))
 
-    ;; Extract S3 object details from EventBridge event
-    (let [detail (get event :detail {})
-          bucket-name (get-in detail [:bucket :name])
-          object-key (get-in detail [:object :key])]
+      ;; Extract S3 object details from EventBridge event
+      (let [detail (get event :detail {})
+            bucket-name (get-in detail [:bucket :name])
+            object-key (get-in detail [:object :key])]
 
-      ;; Validate event
-      (when (or (nil? bucket-name) (nil? object-key))
-        (println "Error: Missing bucket name or object key in event")
-        (throw (ex-info "Invalid event format" {:event event})))
+        ;; Validate event
+        (when (or (nil? bucket-name) (nil? object-key))
+          (println "Error: Missing bucket name or object key in event")
+          (throw (ex-info "Invalid event format" {:event event})))
 
-      ;; Check if should skip
-      (if (should-skip? object-key)
-        (do
-          (println "Skipping file:" object-key)
-          {:statusCode 200
-           :body (json/write-str {:message "Skipped file"
-                                  :object-key object-key})})
+        ;; Check if should skip
+        (if (should-skip? object-key)
+          (do
+            (println "Skipping file:" object-key)
+            {:statusCode 200
+             :body (json/generate-string {:message "Skipped file"
+                                          :object-key object-key})})
 
-        ;; Classify the document
-        (let [result (classify-document bucket-name object-key)]
-          {:statusCode 200
-           :body (json/write-str {:document object-key
-                                  :classification (:classification result)})})))
+          ;; Classify the document
+          (let [result (classify-document bucket-name object-key)]
+            {:statusCode 200
+             :body (json/generate-string {:document object-key
+                                          :classification (:classification result)})}))))
 
     (catch Exception e
       (println "Error processing document:" (.getMessage e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/write-str {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; For local testing
 (defn -main [& args]

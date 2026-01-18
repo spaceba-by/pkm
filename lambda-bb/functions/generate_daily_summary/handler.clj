@@ -4,7 +4,7 @@
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [clojure.data.json :as json])
+            [cheshire.core :as json])
   (:import [java.time Instant ZonedDateTime ZoneOffset Duration]
            [java.time.format DateTimeFormatter]
            [java.time.temporal ChronoUnit]))
@@ -87,13 +87,14 @@
                      documents))))))))
 
 (defn handler
-  "Lambda handler for scheduled EventBridge event"
-  [event context]
+  "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
+  [request]
   (try
-    (println "Generating daily summary")
+    (let [event (json/parse-string (:body request) true)]
+      (println "Generating daily summary")
 
-    ;; Get target date
-    (let [target-date (get-target-date event)
+      ;; Get target date
+      (let [target-date (get-target-date event)
           date-str (format-date target-date)
           _ (println "Target date:" date-str)
 
@@ -117,7 +118,7 @@
           (do
             (println "No documents to summarize")
             {:statusCode 200
-             :body (json/write-str {:message "No documents to summarize"
+             :body (json/generate-string {:message "No documents to summarize"
                                     :date date-str})})
 
           ;; Retrieve document content
@@ -127,7 +128,7 @@
               (do
                 (println "No valid documents to summarize")
                 {:statusCode 200
-                 :body (json/write-str {:message "No valid documents to summarize"
+                 :body (json/generate-string {:message "No valid documents to summarize"
                                         :date date-str})})
 
               (do
@@ -152,15 +153,15 @@
                   (println "Created daily summary:" summary-key)
 
                   {:statusCode 200
-                   :body (json/write-str {:date date-str
+                   :body (json/generate-string {:date date-str
                                           :summary-key summary-key
-                                          :document-count (count documents)})})))))))
+                                          :document-count (count documents)})})))))))))
 
     (catch Exception e
       (println "Error generating daily summary:" (.getMessage e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/write-str {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; For local testing
 (defn -main [& args]
