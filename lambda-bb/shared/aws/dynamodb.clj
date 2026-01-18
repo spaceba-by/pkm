@@ -153,7 +153,7 @@
   "Queries documents by classification type"
   [table-name classification]
   (query table-name
-         :index-name "ClassificationIndex"
+         :index-name "classification-index"
          :key-condition-expr "classification = :class"
          :expr-attr-values {":class" classification}))
 
