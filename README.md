@@ -38,7 +38,7 @@ Agent Outputs ← rclone ←─────────────────�
 - AWS Account with Bedrock access
 - AWS CLI configured
 - Terraform >= 1.5.0
-- Python 3.12+
+- [Babashka](https://github.com/babashka/babashka) >= 1.3.0
 - rclone
 
 ### Installation
@@ -145,32 +145,35 @@ pkm-agent-system/
 │   ├── cloudwatch.tf
 │   ├── variables.tf
 │   └── outputs.tf
-├── lambda/                # Lambda functions
-│   ├── requirements.txt
-│   ├── shared/            # Shared utilities (Lambda Layer)
-│   │   ├── bedrock_client.py
-│   │   ├── dynamodb_client.py
-│   │   ├── s3_client.py
-│   │   └── markdown_utils.py
-│   ├── classify_document/
-│   ├── extract_entities/
-│   ├── extract_metadata/
-│   ├── generate_daily_summary/
-│   ├── generate_weekly_report/
-│   └── update_classification_index/
+├── lambda/                # Lambda functions (Babashka/Clojure)
+│   ├── bb.edn             # Babashka configuration
+│   ├── deps.edn           # Clojure dependencies
+│   ├── shared/            # Shared utilities
+│   │   ├── aws/
+│   │   │   ├── bedrock.clj
+│   │   │   ├── dynamodb.clj
+│   │   │   ├── s3.clj
+│   │   │   └── lambda.clj
+│   │   └── markdown/
+│   │       └── utils.clj
+│   ├── functions/         # Individual lambda functions
+│   │   ├── classify_document/
+│   │   ├── extract_entities/
+│   │   ├── extract_metadata/
+│   │   ├── generate_daily_summary/
+│   │   ├── generate_weekly_report/
+│   │   └── update_classification_index/
+│   └── tests/             # Babashka tests
 ├── stepfunctions/         # Step Functions workflows
 │   └── weekly_report_workflow.json
 ├── scripts/               # Deployment and setup scripts
 │   ├── deploy.sh
 │   ├── setup-sync.sh
 │   └── test-workflow.sh
-├── sync/                  # Sync configuration
-│   ├── rclone.conf.template
-│   ├── com.pkm.sync.plist.template
-│   └── README.md
-└── tests/                 # Test suite
-    ├── unit/
-    └── integration/
+└── sync/                  # Sync configuration
+    ├── rclone.conf.template
+    ├── com.pkm.sync.plist.template
+    └── README.md
 ```
 
 ## Configuration
@@ -303,27 +306,21 @@ rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --resync
 ### Running Tests
 
 ```bash
-# Install dependencies
-pip install -r lambda/requirements.txt
-pip install pytest
-
-# Run unit tests
-pytest tests/unit/ -v
-
-# Run all tests
-pytest tests/ -v
+# Run all tests with Babashka
+cd lambda
+bb test
 ```
 
 ### Local Development
 
 ```bash
-# Set up Python environment
-python3 -m venv venv
-source venv/bin/activate
-pip install -r lambda/requirements.txt
+# Start REPL for interactive development
+cd lambda
+bb repl
 
-# Test utilities
-python -c "from lambda.shared.markdown_utils import extract_frontmatter; print(extract_frontmatter('...'))"
+# Test utilities in REPL
+(require '[markdown.utils :as md])
+(md/extract-frontmatter "---\ntitle: Test\n---\nContent")
 ```
 
 ### Updating Infrastructure

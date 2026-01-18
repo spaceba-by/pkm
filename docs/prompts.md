@@ -216,74 +216,78 @@ You had an exceptionally productive week, creating 42 documents across diverse t
 
 ### Modifying Classification Categories
 
-Edit `lambda/shared/bedrock_client.py`:
+Edit `lambda/shared/aws/bedrock.clj`:
 
-```python
-prompt = f"""Classify this markdown document into exactly one of these categories:
+```clojure
+(def classification-prompt
+  "Classify this markdown document into exactly one of these categories:
 - meeting (notes from meetings or calls)
 - idea (brainstorms, concepts, proposals)
 - reference (documentation, how-tos, factual info)
 - journal (personal reflections, daily logs)
 - project (project plans, specs, tracking)
-- research (academic, investigation, analysis)  # NEW
-- personal (private, sensitive content)         # NEW
+- research (academic, investigation, analysis)  ; NEW
+- personal (private, sensitive content)         ; NEW
 
 Return ONLY the category name, nothing else.
 
 Document:
-{content}"""
+%s")
 ```
 
 Also update:
-1. `markdown_utils.py` → `create_classification_index()` to include new categories
-2. `dynamodb_client.py` → `get_all_classifications()` valid_types list
+1. `markdown/utils.clj` → `create-classification-index` to include new categories
+2. `aws/dynamodb.clj` → `get-all-classifications` valid-types vector
 
 ### Adjusting Summary Tone
 
 For first-person instead of second-person:
 
-```python
-prompt = f"""Analyze these documents created or modified today and provide a concise summary.
+```clojure
+(def summary-prompt
+  "Analyze these documents created or modified today and provide a concise summary.
 Focus on: key themes, important updates, decisions made, and action items.
-Write in first person ("I worked on...", "I decided...").  # CHANGED
+Write in first person (\"I worked on...\", \"I decided...\").  ; CHANGED
 Keep it under 500 words.
 
 Documents:
-{documents}"""
+%s")
 ```
 
 ### Adding New Entity Types
 
-Edit `lambda/shared/bedrock_client.py`:
+Edit `lambda/shared/aws/bedrock.clj`:
 
-```python
-prompt = f"""Extract named entities from this markdown document.
+```clojure
+(def entity-extraction-prompt
+  "Extract named entities from this markdown document.
 Return valid JSON only, no other text:
-{{
-  "people": ["name1", "name2"],
-  "organizations": ["org1", "org2"],
-  "concepts": ["concept1", "concept2"],
-  "locations": ["place1", "place2"],
-  "technologies": ["tech1", "tech2"],  # NEW
-  "events": ["event1", "event2"]       # NEW
-}}
+{
+  \"people\": [\"name1\", \"name2\"],
+  \"organizations\": [\"org1\", \"org2\"],
+  \"concepts\": [\"concept1\", \"concept2\"],
+  \"locations\": [\"place1\", \"place2\"],
+  \"technologies\": [\"tech1\", \"tech2\"],  ; NEW
+  \"events\": [\"event1\", \"event2\"]       ; NEW
+}
 
 Document:
-{content}"""
+%s")
 ```
 
 ### Increasing Summary Length
 
-```python
-prompt = f"""Analyze these documents created or modified today and provide a comprehensive summary.
+```clojure
+(def comprehensive-summary-prompt
+  "Analyze these documents created or modified today and provide a comprehensive summary.
 Focus on: key themes, important updates, decisions made, and action items.
-Write in second person ("You worked on...", "You decided...").
-Keep it under 1000 words.  # CHANGED from 500
+Write in second person (\"You worked on...\", \"You decided...\").
+Keep it under 1000 words.  ; CHANGED from 500
 
-Include a separate section for each major theme or project.  # NEW
+Include a separate section for each major theme or project.  ; NEW
 
 Documents:
-{documents}"""
+%s")
 ```
 
 ## Prompt Engineering Best Practices
@@ -301,64 +305,58 @@ Documents:
 
 ### Test Classification
 
-```python
-from bedrock_client import BedrockClient
+```clojure
+;; In REPL: cd lambda && bb repl
+(require '[aws.bedrock :as bedrock])
 
-client = BedrockClient()
-content = """
----
+(def content "---
 title: Team Standup
 date: 2026-01-11
 ---
 
 # Daily Standup
 
-Quick check-in with the team...
-"""
+Quick check-in with the team...")
 
-classification = client.classify_document(
-    content,
-    "anthropic.claude-3-haiku-20240307-v1:0"
-)
-print(f"Classification: {classification}")
+(def classification
+  (bedrock/classify-document
+    content
+    "anthropic.claude-3-haiku-20240307-v1:0"))
+
+(println "Classification:" classification)
 ```
 
 ### Test Entity Extraction
 
-```python
-from bedrock_client import BedrockClient
+```clojure
+(require '[aws.bedrock :as bedrock])
 
-client = BedrockClient()
-content = """
-Met with Sarah and John from Microsoft to discuss
-the Azure integration project in Seattle.
-"""
+(def content "Met with Sarah and John from Microsoft to discuss
+the Azure integration project in Seattle.")
 
-entities = client.extract_entities(
-    content,
-    "anthropic.claude-3-haiku-20240307-v1:0"
-)
-print(f"Entities: {entities}")
+(def entities
+  (bedrock/extract-entities
+    content
+    "anthropic.claude-3-haiku-20240307-v1:0"))
+
+(println "Entities:" entities)
 ```
 
 ### Test Summary Generation
 
-```python
-from bedrock_client import BedrockClient
+```clojure
+(require '[aws.bedrock :as bedrock])
 
-client = BedrockClient()
-documents = [
-    {
-        'path': 'daily/2026-01-11.md',
-        'content': 'Worked on PKM system...'
-    }
-]
+(def documents
+  [{:path "daily/2026-01-11.md"
+    :content "Worked on PKM system..."}])
 
-summary = client.generate_summary(
-    documents,
-    "anthropic.claude-3-5-sonnet-20241022-v2:0"
-)
-print(f"Summary: {summary}")
+(def summary
+  (bedrock/generate-summary
+    documents
+    "anthropic.claude-3-5-sonnet-20241022-v2:0"))
+
+(println "Summary:" summary)
 ```
 
 ## Cost Optimization
@@ -375,23 +373,23 @@ print(f"Summary: {summary}")
 ### Reducing Token Usage
 
 1. **Truncate Long Documents:**
-   ```python
-   content = content[:2000]  # Limit to ~500 tokens
+   ```clojure
+   (subs content 0 (min 2000 (count content)))  ; Limit to ~500 tokens
    ```
 
 2. **Summarize Before Summarizing:**
-   ```python
-   # For weekly reports, use daily summaries instead of full docs
+   ```clojure
+   ;; For weekly reports, use daily summaries instead of full docs
    ```
 
 3. **Batch Processing:**
-   ```python
-   # Process multiple classifications in one call
+   ```clojure
+   ;; Process multiple classifications in one call
    ```
 
 4. **Caching:**
-   ```python
-   # Cache classification results in DynamoDB
+   ```clojure
+   ;; Cache classification results in DynamoDB
    ```
 
 ## Monitoring Prompt Performance
