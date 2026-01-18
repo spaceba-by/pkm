@@ -162,7 +162,7 @@
   [table-name tag]
   (query table-name
          :key-condition-expr "PK = :pk"
-         :expr-attr-values {":pk" (str "TAG#" tag)}))
+         :expr-attr-values {":pk" (str "tag#" tag)}))
 
 (defn query-recent-documents
   "Queries recently modified documents"
@@ -213,7 +213,7 @@
 (defn get-entity-mentions
   "Get all documents that mention a specific entity"
   [table-name entity-type entity-name]
-  (let [entity-key (str "entity#" entity-type "#" (str/lower-case entity-name))
+  (let [entity-key (str "entity#" (name entity-type) "#" (str/lower-case entity-name))
         results (query table-name
                       :key-condition-expr "PK = :ek"
                       :expr-attr-values {":ek" entity-key})]
