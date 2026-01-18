@@ -225,10 +225,9 @@
   (let [response (-> (aws/invoke @ddb-client
                                  {:op :Scan
                                   :request {:TableName table-name
-                                           :FilterExpression "begins_with(PK, :prefix) AND SK = :sk AND modified >= :since"
+                                           :FilterExpression "SK = :sk AND modified >= :since"
                                            :ExpressionAttributeValues (marshall-item
-                                                                       {":prefix" "doc#"
-                                                                        ":sk" "METADATA"
+                                                                       {":sk" "METADATA"
                                                                         ":since" since-iso})
                                            :Limit limit}})
                      (check-error "Scan"))]
