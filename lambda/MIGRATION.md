@@ -88,14 +88,14 @@ We recommend a **parallel deployment** approach for safety:
 
 ### Build Individual Function
 ```bash
-cd lambda-bb/functions/extract_metadata
+cd lambda/functions/extract_metadata
 ./build.clj
 # Creates extract_metadata.zip
 ```
 
 ### Build All Functions
 ```bash
-cd lambda-bb
+cd lambda
 for func in functions/*/; do
     cd "$func"
     ./build.clj
@@ -110,7 +110,7 @@ done
 Deploy a single function for testing:
 
 ```bash
-cd lambda-bb/functions/extract_metadata
+cd lambda/functions/extract_metadata
 ./build.clj
 
 # Create lambda (first time)
@@ -136,13 +136,13 @@ Create new Terraform resources for Babashka lambdas:
 # terraform/lambda_bb.tf
 
 resource "aws_lambda_function" "extract_metadata_bb" {
-  filename         = "../lambda-bb/functions/extract_metadata/extract_metadata.zip"
+  filename         = "../lambda/functions/extract_metadata/extract_metadata.zip"
   function_name    = "pkm-extract-metadata-bb"
   role            = aws_iam_role.lambda_role.arn
   handler         = "bootstrap"
   runtime         = "provided.al2023"
 
-  source_code_hash = filebase64sha256("../lambda-bb/functions/extract_metadata/extract_metadata.zip")
+  source_code_hash = filebase64sha256("../lambda/functions/extract_metadata/extract_metadata.zip")
 
   memory_size = 256
   timeout     = 10
@@ -181,7 +181,7 @@ Deploy with Terraform:
 cd terraform
 
 # Build all lambdas first
-cd ../lambda-bb
+cd ../lambda
 for func in functions/*/; do
     (cd "$func" && ./build.clj)
 done
@@ -203,7 +203,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'lambda-bb/**'
+      - 'lambda/**'
 
 jobs:
   deploy:
@@ -217,7 +217,7 @@ jobs:
 
       - name: Build Lambdas
         run: |
-          cd lambda-bb
+          cd lambda
           for func in functions/*/; do
               (cd "$func" && ./build.clj)
           done
@@ -236,7 +236,7 @@ jobs:
 Run tests locally:
 
 ```bash
-cd lambda-bb
+cd lambda
 bb test
 ```
 
@@ -245,7 +245,7 @@ bb test
 Test individual lambda locally:
 
 ```bash
-cd lambda-bb/functions/extract_metadata
+cd lambda/functions/extract_metadata
 
 # Set environment variables
 export S3_BUCKET_NAME=your-test-bucket
@@ -357,7 +357,7 @@ Expected cost savings:
 **Problem**: Bootstrap file not executable
 **Solution**:
 ```bash
-chmod +x lambda-bb/functions/*/bootstrap
+chmod +x lambda/functions/*/bootstrap
 ```
 
 #### 2. Dependencies not found
@@ -395,7 +395,7 @@ Enable verbose logging:
 ## Support
 
 For issues or questions:
-- Review code in `lambda-bb/functions/`
+- Review code in `lambda/functions/`
 - Check CloudWatch logs
 - Review this migration guide
 - Consult Babashka documentation: https://book.babashka.org/

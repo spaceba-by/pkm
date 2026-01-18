@@ -115,7 +115,7 @@ Based on typical Babashka performance:
 - Native image benefits
 
 ### Code Organization
-- Shared utilities in `lambda-bb/shared/`
+- Shared utilities in `lambda/shared/`
 - Each function self-contained in `functions/*/`
 - Build scripts co-located with handlers
 - Clear separation of concerns
@@ -125,7 +125,7 @@ Based on typical Babashka performance:
 Each lambda can be tested locally:
 
 ```bash
-cd lambda-bb/functions/extract_metadata
+cd lambda/functions/extract_metadata
 export S3_BUCKET_NAME=test-bucket
 export DYNAMODB_TABLE_NAME=test-table
 bb -m extract-metadata.handler -main
@@ -218,7 +218,7 @@ See [MIGRATION.md](MIGRATION.md) for detailed deployment guide.
 ## Files Created
 
 ```
-lambda-bb/
+lambda/
 ├── README.md                           # Project overview
 ├── MIGRATION.md                        # Deployment guide
 ├── CONVERSION_SUMMARY.md              # This file

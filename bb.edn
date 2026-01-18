@@ -1,12 +1,12 @@
-;; Root bb.edn for PKM - delegates to lambda-bb for Babashka Lambda development
-;; Start REPL from lambda-bb/ directory for full classpath support
-{:paths ["lambda-bb/shared"
-         "lambda-bb/tests"
-         "lambda-bb/functions/extract_metadata"
-         "lambda-bb/functions/classify_document"
-         "lambda-bb/functions/extract_entities"
-         "lambda-bb/functions/generate_daily_summary"
-         "lambda-bb/functions/generate_weekly_report"]
+;; Root bb.edn for PKM - delegates to lambda for Babashka Lambda development
+;; Start REPL from lambda/ directory for full classpath support
+{:paths ["lambda/shared"
+         "lambda/tests"
+         "lambda/functions/extract_metadata"
+         "lambda/functions/classify_document"
+         "lambda/functions/extract_entities"
+         "lambda/functions/generate_daily_summary"
+         "lambda/functions/generate_weekly_report"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}

@@ -5,7 +5,7 @@ This directory contains the Babashka (Clojure) implementations of the PKM Agent 
 ## Project Structure
 
 ```
-lambda-bb/
+lambda/
 ├── deps.edn              # Clojure dependencies
 ├── bb.edn                # Babashka configuration and tasks
 ├── shared/               # Shared utilities (used by all lambdas)
