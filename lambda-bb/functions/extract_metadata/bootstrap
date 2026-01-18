@@ -1,0 +1,2 @@
+#!/bin/sh
+exec bb -cp $(dirname $0) -m extract-metadata.handler handler

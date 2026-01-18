@@ -1,31 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
-
 # Terraform
 terraform/.terraform/
 terraform/*.tfstate
@@ -35,10 +7,6 @@ terraform/tfplan
 *.zip
 
 # IDE
-.vscode/
-.idea/
-*.swp
-*.swo
 *~
 .DS_Store
 
@@ -49,19 +17,10 @@ logs/
 # Outputs
 outputs.json
 
-# Test coverage
-.coverage
-htmlcov/
-.pytest_cache/
-
 # Environment variables
 .env
 .env.local
 .envrc
-
-# AWS credentials (should never be committed)
-credentials
-config
 
 # Temporary files
 tmp/
@@ -75,3 +34,6 @@ Thumbs.db
 # rclone
 .pkm-sync.log
 .pkm-sync-error.log
+
+#clj/bb cacche
+.cpcache
