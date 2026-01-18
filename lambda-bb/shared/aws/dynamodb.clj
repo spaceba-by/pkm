@@ -88,20 +88,22 @@
 (defn get-item
   "Retrieves item from DynamoDB table by key"
   [table-name key]
-  (let [response (aws/invoke @ddb-client
-                             {:op :GetItem
-                              :request {:TableName table-name
-                                       :Key (marshall-item key)}})]
+  (let [response (-> (aws/invoke @ddb-client
+                                 {:op :GetItem
+                                  :request {:TableName table-name
+                                           :Key (marshall-item key)}})
+                     (check-error "GetItem"))]
     (when-let [item (:Item response)]
       (unmarshall-item item))))
 
 (defn delete-item
   "Deletes item from DynamoDB table"
   [table-name key]
-  (aws/invoke @ddb-client
-              {:op :DeleteItem
-               :request {:TableName table-name
-                        :Key (marshall-item key)}}))
+  (-> (aws/invoke @ddb-client
+                  {:op :DeleteItem
+                   :request {:TableName table-name
+                            :Key (marshall-item key)}})
+      (check-error "DeleteItem")))
 
 (defn query
   "Queries DynamoDB table with key condition"
@@ -112,9 +114,10 @@
                          :ExpressionAttributeValues (marshall-item expr-attr-values)
                          :Limit limit}
                   index-name (assoc :IndexName index-name))
-        response (aws/invoke @ddb-client
-                             {:op :Query
-                              :request request})]
+        response (-> (aws/invoke @ddb-client
+                                 {:op :Query
+                                  :request request})
+                     (check-error "Query"))]
     (mapv unmarshall-item (:Items response))))
 
 (defn scan
@@ -126,21 +129,23 @@
                   filter-expr (assoc :FilterExpression filter-expr)
                   expr-attr-values (assoc :ExpressionAttributeValues
                                          (marshall-item expr-attr-values)))
-        response (aws/invoke @ddb-client
-                             {:op :Scan
-                              :request request})]
+        response (-> (aws/invoke @ddb-client
+                                 {:op :Scan
+                                  :request request})
+                     (check-error "Scan"))]
     (mapv unmarshall-item (:Items response))))
 
 (defn update-item
   "Updates item in DynamoDB table"
   [table-name key update-expr expr-attr-values]
-  (let [response (aws/invoke @ddb-client
-                             {:op :UpdateItem
-                              :request {:TableName table-name
-                                       :Key (marshall-item key)
-                                       :UpdateExpression update-expr
-                                       :ExpressionAttributeValues (marshall-item expr-attr-values)
-                                       :ReturnValues "ALL_NEW"}})]
+  (let [response (-> (aws/invoke @ddb-client
+                                 {:op :UpdateItem
+                                  :request {:TableName table-name
+                                           :Key (marshall-item key)
+                                           :UpdateExpression update-expr
+                                           :ExpressionAttributeValues (marshall-item expr-attr-values)
+                                           :ReturnValues "ALL_NEW"}})
+                     (check-error "UpdateItem"))]
     (when-let [attrs (:Attributes response)]
       (unmarshall-item attrs))))
 
@@ -217,14 +222,15 @@
 (defn get-documents-modified-since
   "Get documents modified since a given ISO timestamp"
   [table-name since-iso & {:keys [limit] :or {limit 1000}}]
-  (let [response (aws/invoke @ddb-client
-                             {:op :Scan
-                              :request {:TableName table-name
-                                       :FilterExpression "begins_with(PK, :prefix) AND SK = :sk AND modified >= :since"
-                                       :ExpressionAttributeValues (marshall-item
-                                                                   {":prefix" "doc#"
-                                                                    ":sk" "METADATA"
-                                                                    ":since" since-iso})
-                                       :Limit limit}})]
+  (let [response (-> (aws/invoke @ddb-client
+                                 {:op :Scan
+                                  :request {:TableName table-name
+                                           :FilterExpression "begins_with(PK, :prefix) AND SK = :sk AND modified >= :since"
+                                           :ExpressionAttributeValues (marshall-item
+                                                                       {":prefix" "doc#"
+                                                                        ":sk" "METADATA"
+                                                                        ":since" since-iso})
+                                           :Limit limit}})
+                     (check-error "Scan"))]
     (println "Found" (count (:Items response)) "documents modified since" since-iso)
     (mapv unmarshall-item (:Items response))))

@@ -56,27 +56,30 @@
 (defn delete-object
   "Deletes object from S3 bucket"
   [bucket key]
-  (aws/invoke @s3-client
-              {:op :DeleteObject
-               :request {:Bucket bucket
-                        :Key key}}))
+  (-> (aws/invoke @s3-client
+                  {:op :DeleteObject
+                   :request {:Bucket bucket
+                            :Key key}})
+      (check-error "DeleteObject")))
 
 (defn list-objects
   "Lists objects with given prefix"
   [bucket prefix]
-  (let [response (aws/invoke @s3-client
-                             {:op :ListObjectsV2
-                              :request {:Bucket bucket
-                                       :Prefix prefix}})]
+  (let [response (-> (aws/invoke @s3-client
+                                 {:op :ListObjectsV2
+                                  :request {:Bucket bucket
+                                           :Prefix prefix}})
+                     (check-error "ListObjectsV2"))]
     (map :Key (:Contents response))))
 
 (defn get-object-metadata
   "Gets object metadata without downloading content"
   [bucket key]
-  (let [response (aws/invoke @s3-client
-                             {:op :HeadObject
-                              :request {:Bucket bucket
-                                       :Key key}})]
+  (let [response (-> (aws/invoke @s3-client
+                                 {:op :HeadObject
+                                  :request {:Bucket bucket
+                                           :Key key}})
+                     (check-error "HeadObject"))]
     {:last-modified (:LastModified response)
      :content-length (:ContentLength response)
      :content-type (:ContentType response)
