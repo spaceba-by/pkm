@@ -5,6 +5,18 @@
 (defonce ^:private s3-client
   (delay (aws/client {:api :s3})))
 
+(defn- check-error
+  "Check AWS response for errors and throw if found"
+  [response operation]
+  (when-let [error-category (:cognitect.anomalies/category response)]
+    (throw (ex-info (str "S3 " operation " failed: "
+                         (or (:Message response) (:message response) error-category))
+                    {:operation operation
+                     :error-category error-category
+                     :error-code (:cognitect.aws.error/code response)
+                     :response response})))
+  response)
+
 (defn get-object
   "Downloads object from S3 bucket and returns content as string"
   [bucket key]
@@ -23,11 +35,12 @@
 (defn put-object
   "Uploads string content to S3 bucket"
   [bucket key content]
-  (aws/invoke @s3-client
-              {:op :PutObject
-               :request {:Bucket bucket
-                        :Key key
-                        :Body (.getBytes content "UTF-8")}}))
+  (-> (aws/invoke @s3-client
+                  {:op :PutObject
+                   :request {:Bucket bucket
+                            :Key key
+                            :Body (.getBytes content "UTF-8")}})
+      (check-error "PutObject")))
 
 (defn object-exists?
   "Check if S3 object exists"

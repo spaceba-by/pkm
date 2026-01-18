@@ -1,4 +1,4 @@
-(ns update-classification-index.handler
+(ns handler
   "Lambda function to update the classification index"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
