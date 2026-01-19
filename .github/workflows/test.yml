@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lambda/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.7.0
+        with:
+          babashka-version: '1.4.192'
+
+      - name: Run tests
+        working-directory: lambda
+        run: bb test

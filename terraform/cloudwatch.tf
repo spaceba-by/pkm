@@ -1,12 +1,12 @@
 # CloudWatch alarms for Lambda function errors
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
-    "classify-document"            = aws_lambda_function.classify_document.function_name
-    "extract-entities"             = aws_lambda_function.extract_entities.function_name
-    "extract-metadata"             = aws_lambda_function.extract_metadata.function_name
-    "generate-daily-summary"       = aws_lambda_function.generate_daily_summary.function_name
-    "generate-weekly-report"       = aws_lambda_function.generate_weekly_report.function_name
-    "update-classification-index"  = aws_lambda_function.update_classification_index.function_name
+    "classify-document"           = aws_lambda_function.classify_document.function_name
+    "extract-entities"            = aws_lambda_function.extract_entities.function_name
+    "extract-metadata"            = aws_lambda_function.extract_metadata.function_name
+    "generate-daily-summary"      = aws_lambda_function.generate_daily_summary.function_name
+    "generate-weekly-report"      = aws_lambda_function.generate_weekly_report.function_name
+    "update-classification-index" = aws_lambda_function.update_classification_index.function_name
   }
 
   alarm_name          = "${var.project_name}-${each.key}-errors"
@@ -32,12 +32,12 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
 # CloudWatch alarms for Lambda function throttles
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
-    "classify-document"            = aws_lambda_function.classify_document.function_name
-    "extract-entities"             = aws_lambda_function.extract_entities.function_name
-    "extract-metadata"             = aws_lambda_function.extract_metadata.function_name
-    "generate-daily-summary"       = aws_lambda_function.generate_daily_summary.function_name
-    "generate-weekly-report"       = aws_lambda_function.generate_weekly_report.function_name
-    "update-classification-index"  = aws_lambda_function.update_classification_index.function_name
+    "classify-document"           = aws_lambda_function.classify_document.function_name
+    "extract-entities"            = aws_lambda_function.extract_entities.function_name
+    "extract-metadata"            = aws_lambda_function.extract_metadata.function_name
+    "generate-daily-summary"      = aws_lambda_function.generate_daily_summary.function_name
+    "generate-weekly-report"      = aws_lambda_function.generate_weekly_report.function_name
+    "update-classification-index" = aws_lambda_function.update_classification_index.function_name
   }
 
   alarm_name          = "${var.project_name}-${each.key}-throttles"

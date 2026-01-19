@@ -71,3 +71,34 @@ variable "tags" {
     ManagedBy = "Terraform"
   }
 }
+
+# CI/CD Variables
+
+variable "lambda_artifacts_bucket_name" {
+  description = "S3 bucket name for Lambda build artifacts. Leave empty to disable artifacts bucket."
+  type        = string
+  default     = ""
+}
+
+variable "lambda_build_tag" {
+  description = "Build tag for S3 deployment (e.g., main_abc1234_20260119153045). Required when lambda_source_type is 's3'."
+  type        = string
+  default     = ""
+}
+
+variable "lambda_source_type" {
+  description = "Source type for Lambda code: 'local' (from ../lambda/target/) or 's3' (from artifacts bucket)"
+  type        = string
+  default     = "local"
+
+  validation {
+    condition     = contains(["local", "s3"], var.lambda_source_type)
+    error_message = "lambda_source_type must be either 'local' or 's3'."
+  }
+}
+
+variable "github_repository" {
+  description = "GitHub repository for OIDC authentication (e.g., 'owner/repo'). Leave empty to disable GitHub Actions IAM role."
+  type        = string
+  default     = ""
+}

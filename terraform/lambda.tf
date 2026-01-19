@@ -1,6 +1,22 @@
 # NOTE: Babashka binary is now bundled in each Lambda ZIP (via bblf uberjar approach)
 # No separate layer needed
 
+# Local values for Lambda source configuration
+locals {
+  lambda_functions = [
+    "classify_document",
+    "extract_entities",
+    "extract_metadata",
+    "generate_daily_summary",
+    "generate_weekly_report",
+    "update_classification_index"
+  ]
+
+  # Compute paths for local vs S3 sources
+  use_local_source = var.lambda_source_type == "local"
+  use_s3_source    = var.lambda_source_type == "s3"
+}
+
 # CloudWatch log groups for Lambda functions
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   for_each = toset([
@@ -32,14 +48,20 @@ resource "aws_sqs_queue" "lambda_dlq" {
 
 # 1. classify-document Lambda (Babashka)
 resource "aws_lambda_function" "classify_document" {
-  filename         = "${path.module}/../lambda/target/classify_document.zip"
-  function_name    = "${var.project_name}-classify-document"
-  role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda/target/classify_document.zip")
-  runtime          = "provided.al2023"
-  timeout          = 30
-  memory_size      = 512
+  function_name = "${var.project_name}-classify-document"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 512
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/classify_document.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/classify_document.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/classify_document.zip" : null
 
   environment {
     variables = {
@@ -69,14 +91,20 @@ resource "aws_lambda_function" "classify_document" {
 
 # 2. extract-entities Lambda (Babashka)
 resource "aws_lambda_function" "extract_entities" {
-  filename         = "${path.module}/../lambda/target/extract_entities.zip"
-  function_name    = "${var.project_name}-extract-entities"
-  role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda/target/extract_entities.zip")
-  runtime          = "provided.al2023"
-  timeout          = 30
-  memory_size      = 512
+  function_name = "${var.project_name}-extract-entities"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 512
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/extract_entities.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/extract_entities.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/extract_entities.zip" : null
 
   environment {
     variables = {
@@ -105,14 +133,20 @@ resource "aws_lambda_function" "extract_entities" {
 
 # 3. extract-metadata Lambda (Babashka)
 resource "aws_lambda_function" "extract_metadata" {
-  filename         = "${path.module}/../lambda/target/extract_metadata.zip"
-  function_name    = "${var.project_name}-extract-metadata"
-  role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda/target/extract_metadata.zip")
-  runtime          = "provided.al2023"
-  timeout          = 10
-  memory_size      = 256
+  function_name = "${var.project_name}-extract-metadata"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 10
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/extract_metadata.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/extract_metadata.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/extract_metadata.zip" : null
 
   environment {
     variables = {
@@ -140,14 +174,20 @@ resource "aws_lambda_function" "extract_metadata" {
 
 # 4. generate-daily-summary Lambda (Babashka)
 resource "aws_lambda_function" "generate_daily_summary" {
-  filename         = "${path.module}/../lambda/target/generate_daily_summary.zip"
-  function_name    = "${var.project_name}-generate-daily-summary"
-  role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda/target/generate_daily_summary.zip")
-  runtime          = "provided.al2023"
-  timeout          = 60
-  memory_size      = 1024
+  function_name = "${var.project_name}-generate-daily-summary"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 60
+  memory_size   = 1024
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/generate_daily_summary.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/generate_daily_summary.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/generate_daily_summary.zip" : null
 
   environment {
     variables = {
@@ -176,14 +216,20 @@ resource "aws_lambda_function" "generate_daily_summary" {
 
 # 5. generate-weekly-report Lambda (Babashka)
 resource "aws_lambda_function" "generate_weekly_report" {
-  filename         = "${path.module}/../lambda/target/generate_weekly_report.zip"
-  function_name    = "${var.project_name}-generate-weekly-report"
-  role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda/target/generate_weekly_report.zip")
-  runtime          = "provided.al2023"
-  timeout          = 120
-  memory_size      = 2048
+  function_name = "${var.project_name}-generate-weekly-report"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 120
+  memory_size   = 2048
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/generate_weekly_report.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/generate_weekly_report.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/generate_weekly_report.zip" : null
 
   environment {
     variables = {
@@ -212,14 +258,20 @@ resource "aws_lambda_function" "generate_weekly_report" {
 
 # 6. update-classification-index Lambda (Babashka)
 resource "aws_lambda_function" "update_classification_index" {
-  filename         = "${path.module}/../lambda/target/update_classification_index.zip"
-  function_name    = "${var.project_name}-update-classification-index"
-  role             = aws_iam_role.lambda_execution.arn
-  handler          = "handler/handler"
-  source_code_hash = filebase64sha256("${path.module}/../lambda/target/update_classification_index.zip")
-  runtime          = "provided.al2023"
-  timeout          = 30
-  memory_size      = 256
+  function_name = "${var.project_name}-update-classification-index"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/update_classification_index.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/update_classification_index.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/update_classification_index.zip" : null
 
   environment {
     variables = {
