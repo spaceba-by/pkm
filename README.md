@@ -67,7 +67,7 @@ cd scripts
 - **[Architecture](docs/architecture.md)** - Technical architecture and design
 - **[Sync Guide](docs/sync-guide.md)** - Vault synchronization setup
 - **[Prompts](docs/prompts.md)** - Bedrock prompt templates
-- **[PRD](pkm-agent-system-prd.md)** - Complete product requirements
+- **[PRD](docs/prds/pkm-agent-system-prd.md)** - Complete product requirements
 
 ## Usage
 
@@ -230,10 +230,7 @@ terraform output cloudwatch_dashboard_url
 ### View Lambda Logs
 
 ```bash
-# Tail logs for all functions
-aws logs tail /aws/lambda/pkm-agent-* --follow
-
-# Specific function
+# Tail logs for a specific function
 aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 ```
 
@@ -372,4 +369,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Created with Claude Code** | [View PRD](pkm-agent-system-prd.md)
+**Created with Claude Code** | [View PRD](docs/prds/pkm-agent-system-prd.md)

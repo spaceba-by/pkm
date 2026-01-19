@@ -305,11 +305,8 @@ Or navigate to: CloudWatch Console → Dashboards → pkm-agent-dashboard
 ### Check Lambda Logs
 
 ```bash
-# List recent invocations
+# Tail logs for a specific function
 aws logs tail /aws/lambda/pkm-agent-classify-document --follow
-
-# View all Lambda logs
-aws logs tail /aws/lambda/pkm-agent-* --follow
 ```
 
 ### Monitor Costs

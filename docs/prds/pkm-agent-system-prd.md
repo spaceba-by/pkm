@@ -277,7 +277,7 @@ s3://pkm-vault/
 ### Lambda Functions
 
 **1. `classify-document`**
-- Runtime: Python 3.12
+- Runtime: Babashka (provided.al2023)
 - Memory: 512 MB
 - Timeout: 30 seconds
 - Trigger: EventBridge rule (S3 PUT events for `*.md`)
@@ -285,7 +285,7 @@ s3://pkm-vault/
 - Outputs: DynamoDB update, classification index update
 
 **2. `extract-entities`**
-- Runtime: Python 3.12
+- Runtime: Babashka (provided.al2023)
 - Memory: 512 MB
 - Timeout: 30 seconds
 - Trigger: EventBridge rule (S3 PUT events for `*.md`)
@@ -293,7 +293,7 @@ s3://pkm-vault/
 - Outputs: DynamoDB updates, entity pages in S3
 
 **3. `extract-metadata`**
-- Runtime: Python 3.12
+- Runtime: Babashka (provided.al2023)
 - Memory: 256 MB
 - Timeout: 10 seconds
 - Trigger: EventBridge rule (S3 PUT events for `*.md`)
@@ -301,7 +301,7 @@ s3://pkm-vault/
 - Outputs: DynamoDB updates
 
 **4. `generate-daily-summary`**
-- Runtime: Python 3.12
+- Runtime: Babashka (provided.al2023)
 - Memory: 1024 MB
 - Timeout: 60 seconds
 - Trigger: EventBridge cron (daily 6:00 AM)
@@ -309,7 +309,7 @@ s3://pkm-vault/
 - Outputs: Summary markdown in S3
 
 **5. `generate-weekly-report`**
-- Runtime: Python 3.12
+- Runtime: Babashka (provided.al2023)
 - Memory: 2048 MB
 - Timeout: 120 seconds
 - Trigger: Step Function (invoked by EventBridge cron)
@@ -317,7 +317,7 @@ s3://pkm-vault/
 - Outputs: Weekly report markdown in S3
 
 **6. `update-classification-index`**
-- Runtime: Python 3.12
+- Runtime: Babashka (provided.al2023)
 - Memory: 256 MB
 - Timeout: 30 seconds
 - Trigger: Direct invocation from `classify-document`
@@ -472,29 +472,32 @@ pkm-agent-system/
 │   ├── cloudwatch.tf
 │   └── variables.tf
 ├── lambda/
-│   ├── requirements.txt (boto3, etc.)
+│   ├── bb.edn (Babashka config & tasks)
+│   ├── deps.edn (Clojure dependencies)
+│   ├── build.clj (Lambda build script)
 │   ├── shared/
-│   │   ├── __init__.py
-│   │   ├── bedrock_client.py
-│   │   ├── dynamodb_client.py
-│   │   ├── s3_client.py
-│   │   └── markdown_utils.py
-│   ├── classify_document/
-│   │   ├── handler.py
-│   │   └── prompts.py
-│   ├── extract_entities/
-│   │   ├── handler.py
-│   │   └── prompts.py
-│   ├── extract_metadata/
-│   │   └── handler.py
-│   ├── generate_daily_summary/
-│   │   ├── handler.py
-│   │   └── prompts.py
-│   ├── generate_weekly_report/
-│   │   ├── handler.py
-│   │   └── prompts.py
-│   └── update_classification_index/
-│       └── handler.py
+│   │   ├── aws/
+│   │   │   ├── bedrock.clj
+│   │   │   ├── dynamodb.clj
+│   │   │   ├── s3.clj
+│   │   │   └── lambda.clj
+│   │   └── markdown/
+│   │       └── utils.clj
+│   ├── functions/
+│   │   ├── classify_document/
+│   │   │   └── handler.clj
+│   │   ├── extract_entities/
+│   │   │   └── handler.clj
+│   │   ├── extract_metadata/
+│   │   │   └── handler.clj
+│   │   ├── generate_daily_summary/
+│   │   │   └── handler.clj
+│   │   ├── generate_weekly_report/
+│   │   │   └── handler.clj
+│   │   └── update_classification_index/
+│   │       └── handler.clj
+│   └── tests/
+│       └── (unit tests)
 ├── stepfunctions/
 │   └── weekly_report_workflow.json
 ├── scripts/
@@ -506,12 +509,7 @@ pkm-agent-system/
 │   ├── com.pkm.sync.plist.template (macOS launchd)
 │   └── README.md
 ├── tests/
-│   ├── unit/
-│   │   ├── test_classify_document.py
-│   │   ├── test_extract_entities.py
-│   │   └── test_markdown_utils.py
 │   └── integration/
-│       ├── test_full_pipeline.py
 │       └── fixtures/
 │           └── sample.md
 └── .gitignore

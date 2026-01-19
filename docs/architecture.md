@@ -120,17 +120,17 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
-| `classify-document` | Python 3.12 | 512 MB | 30s | S3 PUT | Classify doc type using Bedrock |
-| `extract-entities` | Python 3.12 | 512 MB | 30s | S3 PUT | Extract named entities |
-| `extract-metadata` | Python 3.12 | 256 MB | 10s | S3 PUT | Parse frontmatter, links, tags |
-| `generate-daily-summary` | Python 3.12 | 1024 MB | 60s | Cron (6 AM) | Generate daily summary |
-| `generate-weekly-report` | Python 3.12 | 2048 MB | 120s | Step Function | Generate weekly report |
-| `update-classification-index` | Python 3.12 | 256 MB | 30s | Direct invoke | Update classification index |
+| `classify-document` | Babashka | 512 MB | 30s | S3 PUT | Classify doc type using Bedrock |
+| `extract-entities` | Babashka | 512 MB | 30s | S3 PUT | Extract named entities |
+| `extract-metadata` | Babashka | 256 MB | 10s | S3 PUT | Parse frontmatter, links, tags |
+| `generate-daily-summary` | Babashka | 1024 MB | 60s | Cron (6 AM) | Generate daily summary |
+| `generate-weekly-report` | Babashka | 2048 MB | 120s | Step Function | Generate weekly report |
+| `update-classification-index` | Babashka | 256 MB | 30s | Direct invoke | Update classification index |
 
-**Shared Layer:**
-- Contains common utilities: `bedrock_client`, `dynamodb_client`, `s3_client`, `markdown_utils`
-- Deployed as Lambda Layer
-- Reused across all functions
+**Shared Code:**
+- Common utilities in `lambda/shared/`: `aws/bedrock.clj`, `aws/dynamodb.clj`, `aws/s3.clj`, `markdown/utils.clj`
+- Bundled into each Lambda's uberjar via `build.clj`
+- Uses `bblf` (Babashka Lambda Framework) for runtime
 
 #### Step Functions
 - **weekly-report-workflow:**
@@ -174,9 +174,9 @@ The PKM Agent System is a serverless AWS architecture that automatically process
   - Cost: ~$3 per 1M input tokens
 
 **API Calls:**
-- All calls go through `bedrock_client.py` wrapper
+- All calls go through `lambda/shared/aws/bedrock.clj` wrapper
 - Error handling and retry logic built-in
-- Structured prompts in `prompts.py` per function
+- Prompts defined inline in each function's `handler.clj`
 
 ### 5. Sync Layer
 
