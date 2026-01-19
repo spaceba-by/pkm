@@ -74,6 +74,13 @@ resource "aws_lambda_function" "classify_document" {
     aws_cloudwatch_log_group.lambda_logs
   ]
 
+  lifecycle {
+    precondition {
+      condition     = var.lambda_source_type != "s3" || var.lambda_build_tag != ""
+      error_message = "lambda_build_tag is required when lambda_source_type is 's3'."
+    }
+  }
+
   tags = {
     Name = "${var.project_name}-classify-document"
   }
