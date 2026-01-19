@@ -89,8 +89,8 @@ resource "aws_iam_role_policy" "lambda_bedrock_access" {
           "bedrock:InvokeModelWithResponseStream"
         ]
         Resource = [
-          "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/anthropic.claude-*",
-          "arn:aws:bedrock:*:*:inference-profile/global.anthropic.claude-*:*"
+          "arn:aws:bedrock:*::foundation-model/anthropic.claude-*",
+          "arn:aws:bedrock:*:*:inference-profile/global.anthropic.claude-*"
         ]
       }
     ]
