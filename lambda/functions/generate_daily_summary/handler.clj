@@ -5,7 +5,7 @@
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
             [cheshire.core :as json])
-  (:import [java.time Instant ZonedDateTime ZoneOffset Duration]
+  (:import [java.time Instant ZoneOffset Duration]
            [java.time.format DateTimeFormatter]
            [java.time.temporal ChronoUnit]))
 
@@ -95,67 +95,67 @@
 
       ;; Get target date
       (let [target-date (get-target-date event)
-          date-str (format-date target-date)
-          _ (println "Target date:" date-str)
+            date-str (format-date target-date)
+            _ (println "Target date:" date-str)
 
           ;; Calculate day boundaries
-          since (truncate-to-day target-date)
-          until (plus-days since 1)
-          since-iso (str since)
-          until-iso (str until)]
+            since (truncate-to-day target-date)
+            until (plus-days since 1)
+            since-iso (str since)
+            until-iso (str until)]
 
-      (println "Querying documents modified between" since-iso "and" until-iso)
+       (println "Querying documents modified between" since-iso "and" until-iso)
 
       ;; Query documents modified since start of target day
-      (let [recent-docs (ddb/get-documents-modified-since ddb-table since-iso :limit 1000)
+       (let [recent-docs (ddb/get-documents-modified-since ddb-table since-iso :limit 1000)
 
-            ;; Filter to documents within target day
-            day-docs (filter-day-docs recent-docs since-iso until-iso)
+             ;; Filter to documents within target day
+             day-docs (filter-day-docs recent-docs since-iso until-iso)
 
-            _ (println "Found" (count day-docs) "documents for" date-str)]
+             _ (println "Found" (count day-docs) "documents for" date-str)]
 
-        (if (empty? day-docs)
-          (do
-            (println "No documents to summarize")
-            {:statusCode 200
-             :body (json/generate-string {:message "No documents to summarize"
-                                    :date date-str})})
+         (if (empty? day-docs)
+           (do
+             (println "No documents to summarize")
+             {:statusCode 200
+              :body (json/generate-string {:message "No documents to summarize"
+                                           :date date-str})})
 
-          ;; Retrieve document content
-          (let [documents (retrieve-document-content day-docs 20)]
+           ;; Retrieve document content
+           (let [documents (retrieve-document-content day-docs 20)]
 
-            (if (empty? documents)
-              (do
-                (println "No valid documents to summarize")
-                {:statusCode 200
-                 :body (json/generate-string {:message "No valid documents to summarize"
-                                        :date date-str})})
+             (if (empty? documents)
+               (do
+                 (println "No valid documents to summarize")
+                 {:statusCode 200
+                  :body (json/generate-string {:message "No valid documents to summarize"
+                                               :date date-str})})
 
-              (do
-                (println "Summarizing" (count documents) "documents")
+               (do
+                 (println "Summarizing" (count documents) "documents")
 
-                ;; Generate summary using Bedrock
-                (let [summary-content (bedrock/generate-summary bedrock-model documents)
+                 ;; Generate summary using Bedrock
+                 (let [summary-content (bedrock/generate-summary bedrock-model documents)
 
-                      ;; Create summary document
-                      source-paths (mapv :path documents)
-                      summary-doc (md/create-summary-document date-str
-                                                             summary-content
-                                                             source-paths
-                                                             (count documents))
+                       ;; Create summary document
+                       source-paths (mapv :path documents)
+                       summary-doc (md/create-summary-document date-str
+                                                              summary-content
+                                                              source-paths
+                                                              (count documents))
 
-                      ;; Upload summary to S3
-                      summary-key (s3/put-agent-output s3-bucket
-                                                       "summaries"
-                                                       (str date-str ".md")
-                                                       summary-doc)]
+                       ;; Upload summary to S3
+                       summary-key (s3/put-agent-output s3-bucket
+                                                        "summaries"
+                                                        (str date-str ".md")
+                                                        summary-doc)]
 
-                  (println "Created daily summary:" summary-key)
+                   (println "Created daily summary:" summary-key)
 
-                  {:statusCode 200
-                   :body (json/generate-string {:date date-str
-                                          :summary-key summary-key
-                                          :document-count (count documents)})})))))))))
+                   {:statusCode 200
+                    :body (json/generate-string {:date date-str
+                                                 :summary-key summary-key
+                                                 :document-count (count documents)})}))))))))
 
     (catch Exception e
       (println "Error generating daily summary:" (.getMessage e))
@@ -164,6 +164,6 @@
        :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (println "Running test daily summary generation")
-  (println "Result:" (handler {} nil)))
+  (println "Result:" (handler {})))

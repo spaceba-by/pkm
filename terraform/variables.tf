@@ -42,13 +42,13 @@ variable "weekly_report_schedule" {
 variable "bedrock_haiku_model_id" {
   description = "Bedrock model ID for Haiku (classification, extraction)"
   type        = string
-  default     = "anthropic.claude-3-haiku-20240307-v1:0"
+  default     = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "bedrock_sonnet_model_id" {
   description = "Bedrock model ID for Sonnet (summaries, reports)"
   type        = string
-  default     = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+  default     = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
 
 variable "enable_xray_tracing" {

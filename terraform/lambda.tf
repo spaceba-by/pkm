@@ -43,11 +43,11 @@ resource "aws_lambda_function" "classify_document" {
 
   environment {
     variables = {
-      S3_BUCKET_NAME       = aws_s3_bucket.vault.id
-      DYNAMODB_TABLE_NAME  = aws_dynamodb_table.metadata.name
-      BEDROCK_MODEL_ID     = var.bedrock_haiku_model_id
-      UPDATE_INDEX_LAMBDA  = "${var.project_name}-update-classification-index"
-          }
+      S3_BUCKET_NAME      = aws_s3_bucket.vault.id
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
+      BEDROCK_MODEL_ID    = var.bedrock_haiku_model_id
+      UPDATE_INDEX_LAMBDA = "${var.project_name}-update-classification-index"
+    }
   }
 
   dead_letter_config {
@@ -83,7 +83,7 @@ resource "aws_lambda_function" "extract_entities" {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_haiku_model_id
-          }
+    }
   }
 
   dead_letter_config {
@@ -118,7 +118,7 @@ resource "aws_lambda_function" "extract_metadata" {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
-          }
+    }
   }
 
   dead_letter_config {
@@ -154,7 +154,7 @@ resource "aws_lambda_function" "generate_daily_summary" {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_sonnet_model_id
-          }
+    }
   }
 
   dead_letter_config {
@@ -190,7 +190,7 @@ resource "aws_lambda_function" "generate_weekly_report" {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_sonnet_model_id
-          }
+    }
   }
 
   dead_letter_config {
@@ -225,7 +225,7 @@ resource "aws_lambda_function" "update_classification_index" {
     variables = {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
-          }
+    }
   }
 
   dead_letter_config {
