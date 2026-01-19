@@ -81,7 +81,7 @@ variable "lambda_artifacts_bucket_name" {
 }
 
 variable "lambda_build_tag" {
-  description = "Build tag for S3 deployment (e.g., main_abc1234_20260119153045). Required when lambda_source_type is 's3'."
+  description = "Build tag for S3 deployment (e.g., main-abc1234-20260119153045). Required when lambda_source_type is 's3'."
   type        = string
   default     = ""
 }

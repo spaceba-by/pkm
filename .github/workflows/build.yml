@@ -27,10 +27,11 @@ jobs:
         id: tag
         run: |
           # Transform branch name: replace -, /, \ with _
+          # Use hyphens between components for easy parsing
           BRANCH=$(echo "${GITHUB_REF_NAME}" | sed 's/[-/\\]/_/g')
           SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
           TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
-          BUILD_TAG="${BRANCH}_${SHA}_${TIMESTAMP}"
+          BUILD_TAG="${BRANCH}-${SHA}-${TIMESTAMP}"
           echo "build_tag=${BUILD_TAG}" >> $GITHUB_OUTPUT
           echo "Generated build tag: ${BUILD_TAG}"
 
