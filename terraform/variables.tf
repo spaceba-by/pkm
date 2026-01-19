@@ -74,10 +74,27 @@ variable "tags" {
 
 # CI/CD Variables
 
+variable "enable_github_oidc" {
+  description = "Enable GitHub Actions OIDC authentication for CI/CD"
+  type        = bool
+  default     = true
+}
+
+variable "enable_lambda_artifacts_bucket" {
+  description = "Enable S3 bucket for Lambda build artifacts"
+  type        = bool
+  default     = true
+}
+
 variable "lambda_artifacts_bucket_name" {
-  description = "S3 bucket name for Lambda build artifacts. Leave empty to disable artifacts bucket."
+  description = "S3 bucket name for Lambda build artifacts. Required when enable_lambda_artifacts_bucket is true."
   type        = string
   default     = ""
+
+  validation {
+    condition     = !var.enable_lambda_artifacts_bucket || var.lambda_artifacts_bucket_name != ""
+    error_message = "lambda_artifacts_bucket_name is required when enable_lambda_artifacts_bucket is true."
+  }
 }
 
 variable "lambda_build_tag" {
@@ -98,7 +115,12 @@ variable "lambda_source_type" {
 }
 
 variable "github_repository" {
-  description = "GitHub repository for OIDC authentication (e.g., 'owner/repo'). Leave empty to disable GitHub Actions IAM role."
+  description = "GitHub repository for OIDC authentication (e.g., 'owner/repo'). Required when enable_github_oidc is true."
   type        = string
   default     = ""
+
+  validation {
+    condition     = !var.enable_github_oidc || var.github_repository != ""
+    error_message = "github_repository is required when enable_github_oidc is true."
+  }
 }

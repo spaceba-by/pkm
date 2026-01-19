@@ -120,7 +120,7 @@ resource "aws_iam_role_policy" "lambda_cloudwatch_logs" {
 
 # Policy for X-Ray tracing (optional)
 resource "aws_iam_role_policy" "lambda_xray" {
-  count = var.enable_xray_tracing ? 1 : 0
+  for_each = local.xray_tracing
 
   name = "xray-access"
   role = aws_iam_role.lambda_execution.id
@@ -250,7 +250,7 @@ resource "aws_iam_role_policy" "stepfunctions_cloudwatch_logs" {
 
 # Policy for Step Functions X-Ray tracing (optional)
 resource "aws_iam_role_policy" "stepfunctions_xray" {
-  count = var.enable_xray_tracing ? 1 : 0
+  for_each = local.xray_tracing
 
   name = "xray-access"
   role = aws_iam_role.stepfunctions_execution.id
@@ -272,7 +272,7 @@ resource "aws_iam_role_policy" "stepfunctions_xray" {
 
 # GitHub Actions OIDC Provider (for keyless authentication)
 resource "aws_iam_openid_connect_provider" "github" {
-  count = var.github_repository != "" ? 1 : 0
+  for_each = local.github_oidc
 
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
@@ -290,7 +290,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 # IAM role for GitHub Actions
 resource "aws_iam_role" "github_actions" {
-  count = var.github_repository != "" ? 1 : 0
+  for_each = local.github_oidc
 
   name = "${var.project_name}-github-actions"
 
@@ -300,7 +300,7 @@ resource "aws_iam_role" "github_actions" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github[0].arn
+          Federated = aws_iam_openid_connect_provider.github["enabled"].arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -320,10 +320,10 @@ resource "aws_iam_role" "github_actions" {
 
 # Policy for GitHub Actions to upload to artifacts bucket
 resource "aws_iam_role_policy" "github_actions_s3" {
-  count = var.github_repository != "" && var.lambda_artifacts_bucket_name != "" ? 1 : 0
+  for_each = local.github_artifacts_policy
 
   name = "s3-artifacts-upload"
-  role = aws_iam_role.github_actions[0].id
+  role = aws_iam_role.github_actions["enabled"].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -336,8 +336,8 @@ resource "aws_iam_role_policy" "github_actions_s3" {
           "s3:ListBucket"
         ]
         Resource = [
-          aws_s3_bucket.lambda_artifacts[0].arn,
-          "${aws_s3_bucket.lambda_artifacts[0].arn}/*"
+          aws_s3_bucket.lambda_artifacts["enabled"].arn,
+          "${aws_s3_bucket.lambda_artifacts["enabled"].arn}/*"
         ]
       }
     ]

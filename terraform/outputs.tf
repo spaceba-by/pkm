@@ -77,10 +77,10 @@ output "setup_instructions" {
 
 output "lambda_artifacts_bucket_name" {
   description = "Name of the S3 bucket for Lambda build artifacts"
-  value       = var.lambda_artifacts_bucket_name != "" ? aws_s3_bucket.lambda_artifacts[0].id : null
+  value       = var.enable_lambda_artifacts_bucket ? aws_s3_bucket.lambda_artifacts["enabled"].id : null
 }
 
 output "github_actions_role_arn" {
   description = "ARN of the IAM role for GitHub Actions"
-  value       = var.github_repository != "" ? aws_iam_role.github_actions[0].arn : null
+  value       = var.enable_github_oidc ? aws_iam_role.github_actions["enabled"].arn : null
 }
