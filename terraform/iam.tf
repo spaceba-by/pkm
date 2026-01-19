@@ -92,6 +92,16 @@ resource "aws_iam_role_policy" "lambda_bedrock_access" {
           "arn:aws:bedrock:*::foundation-model/anthropic.claude-*",
           "arn:aws:bedrock:*:*:inference-profile/global.anthropic.claude-*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe"
+        ]
+        Resource = [
+          "*",
+        ]
       }
     ]
   })
