@@ -38,7 +38,7 @@ resource "aws_cloudwatch_event_rule" "s3_markdown_events_exclude_agent" {
       object = {
         key = [{
           suffix = ".md"
-        }, {
+          }, {
           anything-but = {
             prefix = "_agent/"
           }

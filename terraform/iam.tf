@@ -120,7 +120,7 @@ resource "aws_iam_role_policy" "lambda_cloudwatch_logs" {
 
 # Policy for X-Ray tracing (optional)
 resource "aws_iam_role_policy" "lambda_xray" {
-  count = var.enable_xray_tracing ? 1 : 0
+  for_each = local.xray_tracing
 
   name = "xray-access"
   role = aws_iam_role.lambda_execution.id
@@ -250,7 +250,7 @@ resource "aws_iam_role_policy" "stepfunctions_cloudwatch_logs" {
 
 # Policy for Step Functions X-Ray tracing (optional)
 resource "aws_iam_role_policy" "stepfunctions_xray" {
-  count = var.enable_xray_tracing ? 1 : 0
+  for_each = local.xray_tracing
 
   name = "xray-access"
   role = aws_iam_role.stepfunctions_execution.id
@@ -265,6 +265,80 @@ resource "aws_iam_role_policy" "stepfunctions_xray" {
           "xray:PutTelemetryRecords"
         ]
         Resource = "*"
+      }
+    ]
+  })
+}
+
+# GitHub Actions OIDC Provider (for keyless authentication)
+resource "aws_iam_openid_connect_provider" "github" {
+  for_each = local.github_oidc
+
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
+  # AWS automatically validates GitHub's OIDC provider certificate chain,
+  # so the thumbprint value is not used for verification, but we still set
+  # GitHub's documented thumbprint for clarity and to satisfy security tooling.
+  # See: https://github.com/aws-actions/configure-aws-credentials/issues/357
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-github-oidc"
+  })
+}
+
+# IAM role for GitHub Actions
+resource "aws_iam_role" "github_actions" {
+  for_each = local.github_oidc
+
+  name = "${var.project_name}-github-actions"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github["enabled"].arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/main"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-github-actions"
+  })
+}
+
+# Policy for GitHub Actions to upload to artifacts bucket
+resource "aws_iam_role_policy" "github_actions_s3" {
+  for_each = local.github_artifacts_policy
+
+  name = "s3-artifacts-upload"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.lambda_artifacts["enabled"].arn,
+          "${aws_s3_bucket.lambda_artifacts["enabled"].arn}/*"
+        ]
       }
     ]
   })

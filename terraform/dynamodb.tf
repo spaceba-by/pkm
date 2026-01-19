@@ -1,9 +1,9 @@
 # DynamoDB table for PKM metadata
 resource "aws_dynamodb_table" "metadata" {
-  name           = var.dynamodb_table_name
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "PK"
-  range_key      = "SK"
+  name         = var.dynamodb_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "PK"
+  range_key    = "SK"
 
   attribute {
     name = "PK"

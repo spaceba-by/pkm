@@ -21,12 +21,12 @@ output "dynamodb_table_arn" {
 output "lambda_function_names" {
   description = "Map of Lambda function names"
   value = {
-    classify_document            = aws_lambda_function.classify_document.function_name
-    extract_entities             = aws_lambda_function.extract_entities.function_name
-    extract_metadata             = aws_lambda_function.extract_metadata.function_name
-    generate_daily_summary       = aws_lambda_function.generate_daily_summary.function_name
-    generate_weekly_report       = aws_lambda_function.generate_weekly_report.function_name
-    update_classification_index  = aws_lambda_function.update_classification_index.function_name
+    classify_document           = aws_lambda_function.classify_document.function_name
+    extract_entities            = aws_lambda_function.extract_entities.function_name
+    extract_metadata            = aws_lambda_function.extract_metadata.function_name
+    generate_daily_summary      = aws_lambda_function.generate_daily_summary.function_name
+    generate_weekly_report      = aws_lambda_function.generate_weekly_report.function_name
+    update_classification_index = aws_lambda_function.update_classification_index.function_name
   }
 }
 
@@ -42,7 +42,7 @@ output "cloudwatch_dashboard_url" {
 
 output "rclone_remote_config" {
   description = "rclone configuration snippet for S3 remote"
-  value = <<-EOT
+  value       = <<-EOT
     [pkm-s3]
     type = s3
     provider = AWS
@@ -59,7 +59,7 @@ output "sync_command" {
 
 output "setup_instructions" {
   description = "Next steps for setup"
-  value = <<-EOT
+  value       = <<-EOT
     Infrastructure deployed successfully!
 
     Next steps:
@@ -71,4 +71,16 @@ output "setup_instructions" {
     S3 Bucket: ${aws_s3_bucket.vault.id}
     DynamoDB Table: ${aws_dynamodb_table.metadata.name}
   EOT
+}
+
+# CI/CD Outputs
+
+output "lambda_artifacts_bucket_name" {
+  description = "Name of the S3 bucket for Lambda build artifacts"
+  value       = var.enable_lambda_artifacts_bucket ? aws_s3_bucket.lambda_artifacts["enabled"].id : null
+}
+
+output "github_actions_role_arn" {
+  description = "ARN of the IAM role for GitHub Actions"
+  value       = var.enable_github_oidc ? aws_iam_role.github_actions["enabled"].arn : null
 }

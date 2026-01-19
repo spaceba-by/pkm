@@ -1,0 +1,111 @@
+name: Build and Archive
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lambda/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.7.0
+        with:
+          babashka-version: '1.4.192'
+
+      - name: Generate build tag
+        id: tag
+        run: |
+          # Transform branch name: replace -, /, \ with _
+          # Use hyphens between components for easy parsing
+          BRANCH=$(echo "${GITHUB_REF_NAME}" | sed 's/[-/\\]/_/g')
+          SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+          BUILD_TAG="${BRANCH}-${SHA}-${TIMESTAMP}"
+          echo "build_tag=${BUILD_TAG}" >> $GITHUB_OUTPUT
+          echo "Generated build tag: ${BUILD_TAG}"
+
+      - name: Build Lambda functions
+        working-directory: lambda
+        run: bb build.clj
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Upload Lambda ZIPs to S3
+        env:
+          BUCKET: ${{ secrets.LAMBDA_ARTIFACTS_BUCKET }}
+          BUILD_TAG: ${{ steps.tag.outputs.build_tag }}
+        run: |
+          set -eo pipefail
+          echo "Uploading builds to s3://${BUCKET}/builds/${BUILD_TAG}/"
+          for zip in lambda/target/*.zip; do
+            filename=$(basename "$zip")
+            echo "Uploading ${filename}..."
+            aws s3 cp "$zip" "s3://${BUCKET}/builds/${BUILD_TAG}/${filename}"
+          done
+
+      - name: Create and upload manifest
+        env:
+          BUCKET: ${{ secrets.LAMBDA_ARTIFACTS_BUCKET }}
+          BUILD_TAG: ${{ steps.tag.outputs.build_tag }}
+        run: |
+          set -eo pipefail
+          cat > manifest.json << EOF
+          {
+            "build_tag": "${BUILD_TAG}",
+            "git_sha": "${GITHUB_SHA}",
+            "git_ref": "${GITHUB_REF_NAME}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "functions": [
+              "classify_document",
+              "extract_entities",
+              "extract_metadata",
+              "generate_daily_summary",
+              "generate_weekly_report",
+              "update_classification_index"
+            ]
+          }
+          EOF
+          echo "Manifest contents:"
+          cat manifest.json
+          aws s3 cp manifest.json "s3://${BUCKET}/builds/${BUILD_TAG}/manifest.json"
+
+      - name: Print deployment instructions
+        env:
+          BUILD_TAG: ${{ steps.tag.outputs.build_tag }}
+        run: |
+          echo ""
+          echo "======================================"
+          echo "Build complete! To deploy this build:"
+          echo "======================================"
+          echo ""
+          echo "cd terraform"
+          echo "terraform apply \\"
+          echo "  -var=\"lambda_source_type=s3\" \\"
+          echo "  -var=\"lambda_build_tag=${BUILD_TAG}\""
+          echo ""
+          echo "======================================"
+          echo "Artifact retention:"
+          echo "======================================"
+          echo "Build artifacts are protected from deletion by default."
+          echo "To clean up old builds, run:"
+          echo ""
+          echo "./scripts/cleanup-old-builds.sh \\"
+          echo "  --bucket \$LAMBDA_ARTIFACTS_BUCKET \\"
+          echo "  --deployed ${BUILD_TAG} \\"
+          echo "  --days 30"
+          echo ""
