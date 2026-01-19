@@ -95,6 +95,11 @@ variable "lambda_source_type" {
     condition     = contains(["local", "s3"], var.lambda_source_type)
     error_message = "lambda_source_type must be either 'local' or 's3'."
   }
+
+  validation {
+    condition     = var.lambda_source_type != "s3" || var.lambda_build_tag != ""
+    error_message = "lambda_build_tag is required when lambda_source_type is 's3'."
+  }
 }
 
 variable "github_repository" {

@@ -3,16 +3,6 @@
 
 # Local values for Lambda source configuration
 locals {
-  lambda_functions = [
-    "classify_document",
-    "extract_entities",
-    "extract_metadata",
-    "generate_daily_summary",
-    "generate_weekly_report",
-    "update_classification_index"
-  ]
-
-  # Compute paths for local vs S3 sources
   use_local_source = var.lambda_source_type == "local"
   use_s3_source    = var.lambda_source_type == "s3"
 }

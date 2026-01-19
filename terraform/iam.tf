@@ -274,8 +274,12 @@ resource "aws_iam_role_policy" "stepfunctions_xray" {
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.github_repository != "" ? 1 : 0
 
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
+  # AWS automatically validates GitHub's OIDC provider certificate chain,
+  # so the thumbprint value is not used for verification. Using a placeholder.
+  # See: https://github.com/aws-actions/configure-aws-credentials/issues/357
   thumbprint_list = ["ffffffffffffffffffffffffffffffffffffffff"]
 
   tags = merge(var.tags, {

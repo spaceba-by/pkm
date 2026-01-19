@@ -49,6 +49,7 @@ jobs:
           BUCKET: ${{ secrets.LAMBDA_ARTIFACTS_BUCKET }}
           BUILD_TAG: ${{ steps.tag.outputs.build_tag }}
         run: |
+          set -eo pipefail
           echo "Uploading builds to s3://${BUCKET}/builds/${BUILD_TAG}/"
           for zip in lambda/target/*.zip; do
             filename=$(basename "$zip")
@@ -61,6 +62,7 @@ jobs:
           BUCKET: ${{ secrets.LAMBDA_ARTIFACTS_BUCKET }}
           BUILD_TAG: ${{ steps.tag.outputs.build_tag }}
         run: |
+          set -eo pipefail
           cat > manifest.json << EOF
           {
             "build_tag": "${BUILD_TAG}",
