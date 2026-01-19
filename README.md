@@ -230,10 +230,7 @@ terraform output cloudwatch_dashboard_url
 ### View Lambda Logs
 
 ```bash
-# Tail logs for all functions
-aws logs tail /aws/lambda/pkm-agent-* --follow
-
-# Specific function
+# Tail logs for a specific function
 aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 ```
 

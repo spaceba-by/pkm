@@ -31,9 +31,9 @@ terraform plan       # Preview changes
 terraform apply      # Deploy
 ```
 
-View Lambda logs:
+View Lambda logs (specify function name):
 ```bash
-aws logs tail /aws/lambda/pkm-agent-* --follow
+aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 ```
 
 ## Architecture
