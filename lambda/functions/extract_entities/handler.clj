@@ -115,8 +115,8 @@
        :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (let [test-event {:detail {:bucket {:name s3-bucket}
                              :object {:key "test.md"}}}]
     (println "Running test with event:" test-event)
-    (println "Result:" (handler test-event nil))))
+    (println "Result:" (handler test-event))))

@@ -52,4 +52,4 @@
 ;; For local testing
 (defn -main [& args]
   (println "Running test update of classification index")
-  (println "Result:" (handler {} nil)))
+  (println "Result:" (handler {})))

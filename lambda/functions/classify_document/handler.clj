@@ -111,7 +111,7 @@
   (let [test-event {:detail {:bucket {:name s3-bucket}
                              :object {:key "test.md"}}}]
     (println "Running test with event:" test-event)
-    (println "Result:" (handler test-event nil))))
+    (println "Result:" (handler test-event))))
 
 
 (comment 

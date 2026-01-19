@@ -74,7 +74,7 @@
             summary (s3/get-daily-summary s3-bucket day-str)]
         (when summary
           (swap! summaries conj {:date day-str
-                                :content summary}))))
+                                 :content summary}))))
     (println "Found" (count @summaries) "daily summaries")
     @summaries))
 
@@ -112,55 +112,55 @@
 
       ;; Get target date
       (let [target-date (get-target-date event)
-          week-str (md/get-week-string target-date)
-          _ (println "Target week:" week-str)
+            week-str (md/get-week-string target-date)
+            _ (println "Target week:" week-str)
 
           ;; Calculate week boundaries
-          {:keys [start end]} (calculate-week-boundaries target-date)
-          week-start start
-          week-end end
-          _ (println "Week range:" (str week-start) "to" (str week-end))
+            {:keys [start end]} (calculate-week-boundaries target-date)
+            week-start start
+            week-end end
+            _ (println "Week range:" (str week-start) "to" (str week-end))
 
           ;; Query documents modified during the week
-          week-start-iso (str week-start)
-          week-end-iso (str week-end)
-          _ (println "Querying documents modified since" week-start-iso)
+            week-start-iso (str week-start)
+            week-end-iso (str week-end)
+            _ (println "Querying documents modified since" week-start-iso)
 
-          week-docs-all (ddb/get-documents-modified-since ddb-table week-start-iso :limit 2000)
+            week-docs-all (ddb/get-documents-modified-since ddb-table week-start-iso :limit 2000)
 
           ;; Filter to target week
-          week-docs (filter-week-docs week-docs-all week-start-iso week-end-iso)
-          _ (println "Found" (count week-docs) "documents for" week-str)
+            week-docs (filter-week-docs week-docs-all week-start-iso week-end-iso)
+            _ (println "Found" (count week-docs) "documents for" week-str)
 
           ;; Retrieve daily summaries
-          daily-summaries (retrieve-daily-summaries week-start)
+            daily-summaries (retrieve-daily-summaries week-start)
 
           ;; Compile week data
-          week-data (compile-week-data week-str week-start week-end week-docs daily-summaries)
+            week-data (compile-week-data week-str week-start week-end week-docs daily-summaries)
 
-          _ (println "Generating report with" (count (:documents week-data)) "documents")
+            _ (println "Generating report with" (count (:documents week-data)) "documents")
 
           ;; Generate report using Bedrock
-          report-content (bedrock/generate-weekly-report bedrock-model week-data)
+            report-content (bedrock/generate-weekly-report bedrock-model week-data)
 
           ;; Create report document
-          report-doc (md/create-weekly-report-document week-str
-                                                       report-content
-                                                       (count week-docs))
+            report-doc (md/create-weekly-report-document week-str
+                                                         report-content
+                                                         (count week-docs))
 
           ;; Upload report to S3
-          report-key (s3/put-agent-output s3-bucket
-                                         "reports/weekly"
-                                         (str week-str ".md")
-                                         report-doc)]
+            report-key (s3/put-agent-output s3-bucket
+                                           "reports/weekly"
+                                           (str week-str ".md")
+                                           report-doc)]
 
-      (println "Created weekly report:" report-key)
+       (println "Created weekly report:" report-key)
 
-      {:statusCode 200
-       :body (json/generate-string {:week week-str
-                              :report-key report-key
-                              :document-count (count week-docs)
-                              :daily-summaries-count (count daily-summaries)})}))
+       {:statusCode 200
+        :body (json/generate-string {:week week-str
+                                     :report-key report-key
+                                     :document-count (count week-docs)
+                                     :daily-summaries-count (count daily-summaries)})}))
 
     (catch Exception e
       (println "Error generating weekly report:" (.getMessage e))
@@ -171,4 +171,4 @@
 ;; For local testing
 (defn -main [& args]
   (println "Running test weekly report generation")
-  (println "Result:" (handler {} nil)))
+  (println "Result:" (handler {})))
