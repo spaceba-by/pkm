@@ -278,9 +278,10 @@ resource "aws_iam_openid_connect_provider" "github" {
   client_id_list = ["sts.amazonaws.com"]
 
   # AWS automatically validates GitHub's OIDC provider certificate chain,
-  # so the thumbprint value is not used for verification. Using a placeholder.
+  # so the thumbprint value is not used for verification, but we still set
+  # GitHub's documented thumbprint for clarity and to satisfy security tooling.
   # See: https://github.com/aws-actions/configure-aws-credentials/issues/357
-  thumbprint_list = ["ffffffffffffffffffffffffffffffffffffffff"]
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-github-oidc"
