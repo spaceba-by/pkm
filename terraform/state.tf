@@ -120,14 +120,14 @@ output "terraform_state_lock_table_name" {
 
 output "terraform_backend_config" {
   description = "Backend configuration snippet for main.tf"
-  value = var.enable_terraform_state_resources ? <<-EOT
-    # Add this to the terraform {} block in main.tf:
-    backend "s3" {
-      bucket         = "${aws_s3_bucket.terraform_state["enabled"].id}"
-      key            = "pkm-agent/terraform.tfstate"
-      region         = "${var.aws_region}"
-      encrypt        = true
-      dynamodb_table = "${aws_dynamodb_table.terraform_state_lock["enabled"].name}"
-    }
-  EOT : null
+  value = var.enable_terraform_state_resources ? join("\n", [
+    "# Add this to the terraform {} block in main.tf:",
+    "backend \"s3\" {",
+    "  bucket         = \"${aws_s3_bucket.terraform_state["enabled"].id}\"",
+    "  key            = \"pkm-agent/terraform.tfstate\"",
+    "  region         = \"${var.aws_region}\"",
+    "  encrypt        = true",
+    "  dynamodb_table = \"${aws_dynamodb_table.terraform_state_lock["enabled"].name}\"",
+    "}"
+  ]) : null
 }
