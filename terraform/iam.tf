@@ -355,8 +355,9 @@ resource "aws_iam_role_policy" "github_actions_s3" {
 }
 
 # Policy for GitHub Actions to access Terraform state
+# Only created when terraform_state_bucket_name is provided
 resource "aws_iam_role_policy" "github_actions_terraform_state" {
-  for_each = local.github_oidc
+  for_each = var.enable_github_oidc && var.terraform_state_bucket_name != "" ? { "enabled" = true } : {}
 
   name = "terraform-state-access"
   role = aws_iam_role.github_actions["enabled"].id

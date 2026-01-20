@@ -12,7 +12,7 @@
 variable "enable_terraform_state_resources" {
   description = "Enable creation of Terraform state S3 bucket and DynamoDB lock table"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "terraform_state_bucket_name" {
