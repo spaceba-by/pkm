@@ -12,13 +12,19 @@ terraform {
     }
   }
 
-  # Optional: Uncomment to use S3 backend for state storage
+  # S3 Backend for Remote State (REQUIRED for CI/CD)
+  #
+  # To enable remote state:
+  # 1. First, apply with enable_terraform_state_resources=true to create the bucket/table
+  # 2. Uncomment the backend block below and fill in your bucket name
+  # 3. Run: terraform init -migrate-state
+  #
   # backend "s3" {
-  #   bucket         = "your-terraform-state-bucket"
+  #   bucket         = "YOUR-STATE-BUCKET-NAME"
   #   key            = "pkm-agent/terraform.tfstate"
   #   region         = "us-east-1"
   #   encrypt        = true
-  #   dynamodb_table = "terraform-state-lock"
+  #   dynamodb_table = "pkm-agent-terraform-state-lock"
   # }
 }
 

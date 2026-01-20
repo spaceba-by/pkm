@@ -1,10 +1,11 @@
-name: Build and Archive
+name: Build and Deploy
 
 on:
   push:
     branches: [main]
     paths:
       - 'lambda/**'
+      - 'terraform/**'
 
 permissions:
   id-token: write
@@ -84,19 +85,58 @@ jobs:
           cat manifest.json
           aws s3 cp manifest.json "s3://${BUCKET}/builds/${BUILD_TAG}/manifest.json"
 
-      - name: Print deployment instructions
+    outputs:
+      build_tag: ${{ steps.tag.outputs.build_tag }}
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9.0"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform
         env:
-          BUILD_TAG: ${{ steps.tag.outputs.build_tag }}
+          BUILD_TAG: ${{ needs.build.outputs.build_tag }}
+        run: |
+          terraform plan \
+            -var="lambda_source_type=s3" \
+            -var="lambda_build_tag=${BUILD_TAG}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Print deployment summary
+        env:
+          BUILD_TAG: ${{ needs.build.outputs.build_tag }}
         run: |
           echo ""
           echo "======================================"
-          echo "Build complete! To deploy this build:"
+          echo "Deployment complete!"
           echo "======================================"
           echo ""
-          echo "cd terraform"
-          echo "terraform apply \\"
-          echo "  -var=\"lambda_source_type=s3\" \\"
-          echo "  -var=\"lambda_build_tag=${BUILD_TAG}\""
+          echo "Build tag: ${BUILD_TAG}"
+          echo "Commit: ${GITHUB_SHA}"
           echo ""
           echo "======================================"
           echo "Artifact retention:"

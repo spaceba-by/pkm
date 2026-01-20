@@ -353,3 +353,353 @@ resource "aws_iam_role_policy" "github_actions_s3" {
     ]
   })
 }
+
+# Policy for GitHub Actions to access Terraform state
+resource "aws_iam_role_policy" "github_actions_terraform_state" {
+  for_each = local.github_oidc
+
+  name = "terraform-state-access"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "S3StateAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.terraform_state_bucket_name}",
+          "arn:aws:s3:::${var.terraform_state_bucket_name}/*"
+        ]
+      },
+      {
+        Sid    = "DynamoDBStateLock"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.project_name}-terraform-state-lock"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage Lambda functions
+resource "aws_iam_role_policy" "github_actions_lambda" {
+  for_each = local.github_oidc
+
+  name = "lambda-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "LambdaManagement"
+        Effect = "Allow"
+        Action = [
+          "lambda:CreateFunction",
+          "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:DeleteFunction",
+          "lambda:GetFunction",
+          "lambda:GetFunctionConfiguration",
+          "lambda:ListFunctions",
+          "lambda:ListVersionsByFunction",
+          "lambda:PublishVersion",
+          "lambda:AddPermission",
+          "lambda:RemovePermission",
+          "lambda:GetPolicy",
+          "lambda:TagResource",
+          "lambda:UntagResource",
+          "lambda:ListTags",
+          "lambda:PutFunctionEventInvokeConfig",
+          "lambda:GetFunctionEventInvokeConfig",
+          "lambda:DeleteFunctionEventInvokeConfig"
+        ]
+        Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage IAM roles and policies
+resource "aws_iam_role_policy" "github_actions_iam" {
+  for_each = local.github_oidc
+
+  name = "iam-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "IAMRoleManagement"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:UpdateRole",
+          "iam:UpdateAssumeRolePolicy",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:ListRoleTags",
+          "iam:PassRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*"
+        ]
+      },
+      {
+        Sid    = "OIDCProviderManagement"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:GetOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider",
+          "iam:UntagOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviderTags"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage S3 buckets
+resource "aws_iam_role_policy" "github_actions_s3_management" {
+  for_each = local.github_oidc
+
+  name = "s3-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "S3BucketManagement"
+        Effect = "Allow"
+        Action = [
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
+          "s3:GetBucketLocation",
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy",
+          "s3:GetBucketVersioning",
+          "s3:PutBucketVersioning",
+          "s3:GetBucketEncryption",
+          "s3:PutBucketEncryption",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:PutBucketPublicAccessBlock",
+          "s3:GetBucketTagging",
+          "s3:PutBucketTagging",
+          "s3:GetLifecycleConfiguration",
+          "s3:PutLifecycleConfiguration",
+          "s3:GetBucketNotification",
+          "s3:PutBucketNotification",
+          "s3:GetBucketAcl",
+          "s3:PutBucketAcl",
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:GetObjectTagging",
+          "s3:PutObjectTagging"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.s3_bucket_name}",
+          "arn:aws:s3:::${var.s3_bucket_name}/*",
+          "arn:aws:s3:::${var.lambda_artifacts_bucket_name}",
+          "arn:aws:s3:::${var.lambda_artifacts_bucket_name}/*",
+          "arn:aws:s3:::${var.terraform_state_bucket_name}",
+          "arn:aws:s3:::${var.terraform_state_bucket_name}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage DynamoDB tables
+resource "aws_iam_role_policy" "github_actions_dynamodb" {
+  for_each = local.github_oidc
+
+  name = "dynamodb-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "DynamoDBManagement"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:UpdateTimeToLive",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups"
+        ]
+        Resource = [
+          "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodb_table_name}",
+          "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.project_name}-terraform-state-lock"
+        ]
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage EventBridge
+resource "aws_iam_role_policy" "github_actions_eventbridge" {
+  for_each = local.github_oidc
+
+  name = "eventbridge-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "EventBridgeRuleManagement"
+        Effect = "Allow"
+        Action = [
+          "events:PutRule",
+          "events:DeleteRule",
+          "events:DescribeRule",
+          "events:EnableRule",
+          "events:DisableRule",
+          "events:PutTargets",
+          "events:RemoveTargets",
+          "events:ListTargetsByRule",
+          "events:TagResource",
+          "events:UntagResource",
+          "events:ListTagsForResource"
+        ]
+        Resource = "arn:aws:events:${var.aws_region}:${data.aws_caller_identity.current.account_id}:rule/${var.project_name}-*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage Step Functions
+resource "aws_iam_role_policy" "github_actions_stepfunctions" {
+  for_each = local.github_oidc
+
+  name = "stepfunctions-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "StepFunctionsManagement"
+        Effect = "Allow"
+        Action = [
+          "states:CreateStateMachine",
+          "states:DeleteStateMachine",
+          "states:DescribeStateMachine",
+          "states:UpdateStateMachine",
+          "states:TagResource",
+          "states:UntagResource",
+          "states:ListTagsForResource"
+        ]
+        Resource = "arn:aws:states:${var.aws_region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.project_name}-*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage CloudWatch
+resource "aws_iam_role_policy" "github_actions_cloudwatch" {
+  for_each = local.github_oidc
+
+  name = "cloudwatch-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "CloudWatchLogsManagement"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:TagLogGroup",
+          "logs:UntagLogGroup",
+          "logs:ListTagsLogGroup",
+          "logs:TagResource",
+          "logs:UntagResource",
+          "logs:ListTagsForResource"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*"
+      },
+      {
+        Sid    = "CloudWatchDashboardManagement"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutDashboard",
+          "cloudwatch:DeleteDashboards",
+          "cloudwatch:GetDashboard",
+          "cloudwatch:ListDashboards"
+        ]
+        Resource = "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.project_name}-*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage SQS (Dead Letter Queues)
+resource "aws_iam_role_policy" "github_actions_sqs" {
+  for_each = local.github_oidc
+
+  name = "sqs-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SQSManagement"
+        Effect = "Allow"
+        Action = [
+          "sqs:CreateQueue",
+          "sqs:DeleteQueue",
+          "sqs:GetQueueAttributes",
+          "sqs:SetQueueAttributes",
+          "sqs:GetQueueUrl",
+          "sqs:TagQueue",
+          "sqs:UntagQueue",
+          "sqs:ListQueueTags"
+        ]
+        Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"
+      }
+    ]
+  })
+}
