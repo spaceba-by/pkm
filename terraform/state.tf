@@ -12,13 +12,13 @@
 variable "enable_terraform_state_resources" {
   description = "Enable creation of Terraform state S3 bucket and DynamoDB lock table"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "terraform_state_bucket_name" {
   description = "S3 bucket name for Terraform state. Required when enable_terraform_state_resources is true."
   type        = string
-  default     = ""
+  default     = "pkm-tfstate"
 
   validation {
     condition     = !var.enable_terraform_state_resources || var.terraform_state_bucket_name != ""

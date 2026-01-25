@@ -117,7 +117,7 @@ variable "lambda_source_type" {
 variable "github_repository" {
   description = "GitHub repository for OIDC authentication (e.g., 'owner/repo'). Required when enable_github_oidc is true."
   type        = string
-  default     = ""
+  default     = "spaceba-by/pkm"
 
   validation {
     condition     = !var.enable_github_oidc || var.github_repository != ""
