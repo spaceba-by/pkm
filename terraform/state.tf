@@ -123,11 +123,11 @@ output "terraform_backend_config" {
   value = var.enable_terraform_state_resources ? join("\n", [
     "# Add this to the terraform {} block in main.tf:",
     "backend \"s3\" {",
-    "  bucket         = ${aws_s3_bucket.terraform_state[\"enabled\"].id}",
+    "  bucket         = aws_s3_bucket.terraform_state[\"enabled\"].id",
     "  key            = \"pkm-agent/terraform.tfstate\"",
     "  region         = ${var.aws_region}",
     "  encrypt        = true",
-    "  dynamodb_table = ${aws_dynamodb_table.terraform_state_lock[\"enabled\"].name}",
+    "  dynamodb_table = aws_dynamodb_table.terraform_state_lock[\"enabled\"].name",
     "}"
   ]) : null
 }
