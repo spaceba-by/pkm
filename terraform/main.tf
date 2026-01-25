@@ -12,14 +12,13 @@ terraform {
     }
   }
 
-  # Optional: Uncomment to use S3 backend for state storage
-  # backend "s3" {
-  #   bucket         = "your-terraform-state-bucket"
-  #   key            = "pkm-agent/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   encrypt        = true
-  #   dynamodb_table = "terraform-state-lock"
-  # }
+  backend "s3" {
+    bucket         = "pkm-tfstate"
+    key            = "pkm-agent/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "pkm-agent-terraform-state-lock"
+  }
 }
 
 provider "aws" {

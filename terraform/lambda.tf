@@ -7,9 +7,9 @@ locals {
   use_s3_source    = var.lambda_source_type == "s3"
 
   # Feature flags as maps for for_each (avoids count index issues)
-  xray_tracing           = var.enable_xray_tracing ? { "enabled" = true } : {}
-  github_oidc            = var.enable_github_oidc ? { "enabled" = true } : {}
-  lambda_artifacts       = var.enable_lambda_artifacts_bucket ? { "enabled" = true } : {}
+  xray_tracing            = var.enable_xray_tracing ? { "enabled" = true } : {}
+  github_oidc             = var.enable_github_oidc ? { "enabled" = true } : {}
+  lambda_artifacts        = var.enable_lambda_artifacts_bucket ? { "enabled" = true } : {}
   github_artifacts_policy = var.enable_github_oidc && var.enable_lambda_artifacts_bucket ? { "enabled" = true } : {}
 }
 
