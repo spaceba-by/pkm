@@ -650,12 +650,19 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "CloudWatchLogsDescribe"
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:"
+      },
+      {
         Sid    = "CloudWatchLogsManagement"
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
           "logs:DeleteLogGroup",
-          "logs:DescribeLogGroups",
           "logs:PutRetentionPolicy",
           "logs:DeleteRetentionPolicy",
           "logs:TagLogGroup",
