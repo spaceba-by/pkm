@@ -316,7 +316,10 @@ resource "aws_iam_role" "github_actions" {
         Condition = {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:${var.github_repository}:ref:refs/heads/main",
+              "repo:${var.github_repository}:environment:production"
+            ]
           }
         }
       }
@@ -424,7 +427,8 @@ resource "aws_iam_role_policy" "github_actions_lambda" {
           "lambda:ListTags",
           "lambda:PutFunctionEventInvokeConfig",
           "lambda:GetFunctionEventInvokeConfig",
-          "lambda:DeleteFunctionEventInvokeConfig"
+          "lambda:DeleteFunctionEventInvokeConfig",
+          "lambda:GetFunctionCodeSigningConfig"
         ]
         Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-*"
       }
@@ -506,8 +510,8 @@ resource "aws_iam_role_policy" "github_actions_s3_management" {
           "s3:DeleteBucketPolicy",
           "s3:GetBucketVersioning",
           "s3:PutBucketVersioning",
-          "s3:GetBucketEncryption",
-          "s3:PutBucketEncryption",
+          "s3:GetEncryptionConfiguration",
+          "s3:PutEncryptionConfiguration",
           "s3:GetBucketPublicAccessBlock",
           "s3:PutBucketPublicAccessBlock",
           "s3:GetBucketTagging",
@@ -518,6 +522,15 @@ resource "aws_iam_role_policy" "github_actions_s3_management" {
           "s3:PutBucketNotification",
           "s3:GetBucketAcl",
           "s3:PutBucketAcl",
+          "s3:GetBucketCors",
+          "s3:PutBucketCors",
+          "s3:DeleteBucketCors",
+          "s3:GetBucketWebsite",
+          "s3:GetBucketLogging",
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetReplicationConfiguration",
+          "s3:GetAccelerateConfiguration",
+          "s3:GetBucketRequestPayment",
           "s3:ListBucket",
           "s3:GetObject",
           "s3:PutObject",
@@ -623,6 +636,7 @@ resource "aws_iam_role_policy" "github_actions_stepfunctions" {
           "states:DeleteStateMachine",
           "states:DescribeStateMachine",
           "states:UpdateStateMachine",
+          "states:ListStateMachineVersions",
           "states:TagResource",
           "states:UntagResource",
           "states:ListTagsForResource"
@@ -644,12 +658,19 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "CloudWatchLogsDescribe"
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:"
+      },
+      {
         Sid    = "CloudWatchLogsManagement"
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
           "logs:DeleteLogGroup",
-          "logs:DescribeLogGroups",
           "logs:PutRetentionPolicy",
           "logs:DeleteRetentionPolicy",
           "logs:TagLogGroup",
@@ -659,7 +680,20 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
           "logs:UntagResource",
           "logs:ListTagsForResource"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*"
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vendedlogs/states/${var.project_name}-*"
+        ]
+      },
+      {
+        Sid    = "CloudWatchLogResourcePolicy"
+        Effect = "Allow"
+        Action = [
+          "logs:PutResourcePolicy",
+          "logs:DeleteResourcePolicy",
+          "logs:DescribeResourcePolicies"
+        ]
+        Resource = "*"
       },
       {
         Sid    = "CloudWatchDashboardManagement"
@@ -671,6 +705,21 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
           "cloudwatch:ListDashboards"
         ]
         Resource = "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.project_name}-*"
+      },
+      {
+        Sid    = "CloudWatchAlarmManagement"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:EnableAlarmActions",
+          "cloudwatch:DisableAlarmActions",
+          "cloudwatch:TagResource",
+          "cloudwatch:UntagResource",
+          "cloudwatch:ListTagsForResource"
+        ]
+        Resource = "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:${var.project_name}-*"
       }
     ]
   })
