@@ -89,7 +89,7 @@ variable "enable_lambda_artifacts_bucket" {
 variable "lambda_artifacts_bucket_name" {
   description = "S3 bucket name for Lambda build artifacts. Required when enable_lambda_artifacts_bucket is true."
   type        = string
-  default     = ""
+  default     = "pkm-artifacts"
 
   validation {
     condition     = !var.enable_lambda_artifacts_bucket || var.lambda_artifacts_bucket_name != ""
