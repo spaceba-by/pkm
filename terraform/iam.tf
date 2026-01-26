@@ -427,7 +427,8 @@ resource "aws_iam_role_policy" "github_actions_lambda" {
           "lambda:ListTags",
           "lambda:PutFunctionEventInvokeConfig",
           "lambda:GetFunctionEventInvokeConfig",
-          "lambda:DeleteFunctionEventInvokeConfig"
+          "lambda:DeleteFunctionEventInvokeConfig",
+          "lambda:GetFunctionCodeSigningConfig"
         ]
         Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-*"
       }
