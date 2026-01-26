@@ -659,7 +659,20 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
           "logs:UntagResource",
           "logs:ListTagsForResource"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*"
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vendedlogs/states/${var.project_name}-*"
+        ]
+      },
+      {
+        Sid    = "CloudWatchLogResourcePolicy"
+        Effect = "Allow"
+        Action = [
+          "logs:PutResourcePolicy",
+          "logs:DeleteResourcePolicy",
+          "logs:DescribeResourcePolicies"
+        ]
+        Resource = "*"
       },
       {
         Sid    = "CloudWatchDashboardManagement"
@@ -671,6 +684,21 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
           "cloudwatch:ListDashboards"
         ]
         Resource = "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.project_name}-*"
+      },
+      {
+        Sid    = "CloudWatchAlarmManagement"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:EnableAlarmActions",
+          "cloudwatch:DisableAlarmActions",
+          "cloudwatch:TagResource",
+          "cloudwatch:UntagResource",
+          "cloudwatch:ListTagsForResource"
+        ]
+        Resource = "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:${var.project_name}-*"
       }
     ]
   })
