@@ -7,6 +7,11 @@ on:
       - 'lambda/**'
       - 'terraform/**'
 
+# Prevent concurrent deployments to avoid Terraform state lock conflicts
+concurrency:
+  group: terraform-deploy
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
@@ -120,11 +125,12 @@ jobs:
           terraform plan \
             -var="lambda_source_type=s3" \
             -var="lambda_build_tag=${BUILD_TAG}" \
+            -lock-timeout=60s \
             -out=tfplan
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve -lock-timeout=60s tfplan
 
       - name: Print deployment summary
         env:
