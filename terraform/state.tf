@@ -106,28 +106,3 @@ resource "aws_dynamodb_table" "terraform_state_lock" {
     Purpose = "Terraform state locking"
   })
 }
-
-# Outputs for backend configuration
-output "terraform_state_bucket_name" {
-  description = "S3 bucket name for Terraform state (use in backend config)"
-  value       = var.enable_terraform_state_resources ? aws_s3_bucket.terraform_state["enabled"].id : null
-}
-
-output "terraform_state_lock_table_name" {
-  description = "DynamoDB table name for state locking (use in backend config)"
-  value       = var.enable_terraform_state_resources ? aws_dynamodb_table.terraform_state_lock["enabled"].name : null
-}
-
-output "terraform_backend_config" {
-  description = "Backend configuration snippet for main.tf"
-  value = var.enable_terraform_state_resources ? join("\n", [
-    "# Add this to the terraform {} block in main.tf:",
-    "backend \"s3\" {",
-    "  bucket         = aws_s3_bucket.terraform_state[\"enabled\"].id",
-    "  key            = \"pkm-agent/terraform.tfstate\"",
-    "  region         = ${var.aws_region}",
-    "  encrypt        = true",
-    "  dynamodb_table = aws_dynamodb_table.terraform_state_lock[\"enabled\"].name",
-    "}"
-  ]) : null
-}
