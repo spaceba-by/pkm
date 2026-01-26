@@ -13,6 +13,7 @@ variable "project_name" {
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket for PKM vault (must be globally unique)"
   type        = string
+  default     = "notes.spaceba.by"
 }
 
 variable "dynamodb_table_name" {
