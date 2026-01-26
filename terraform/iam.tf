@@ -636,6 +636,7 @@ resource "aws_iam_role_policy" "github_actions_stepfunctions" {
           "states:DeleteStateMachine",
           "states:DescribeStateMachine",
           "states:UpdateStateMachine",
+          "states:ListStateMachineVersions",
           "states:TagResource",
           "states:UntagResource",
           "states:ListTagsForResource"
