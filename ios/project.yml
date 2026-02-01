@@ -94,11 +94,11 @@ targets:
         TEST_TARGET_NAME: PKMReader
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @loader_path/Frameworks"
       configs:
-        # Disable strict concurrency for UI tests - XCTest APIs aren't fully annotated yet
+        # Use Swift 5 language mode for UI tests - XCTest APIs aren't fully annotated for Swift 6 concurrency
         Debug:
-          SWIFT_STRICT_CONCURRENCY: minimal
+          SWIFT_VERSION: "5"
         Release:
-          SWIFT_STRICT_CONCURRENCY: minimal
+          SWIFT_VERSION: "5"
     dependencies:
       - target: PKMReader
 
