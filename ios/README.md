@@ -12,7 +12,7 @@ iOS mobile app for the PKM (Personal Knowledge Management) system. Reads markdow
 ## Quick Start
 
 ```bash
-# First-time setup (installs all dependencies)
+# First-time setup (installs all dependencies including mise, Ruby, Fastlane)
 ./Scripts/bootstrap.sh
 
 # Open in Xcode
@@ -21,62 +21,37 @@ open PKMReader.xcodeproj
 
 ## Development Commands
 
+All commands use [mise](https://mise.jdx.dev/) tasks for convenience. Run `mise tasks` to see all available tasks.
+
 ### Testing
 
 ```bash
-# Run all tests via Fastlane
-bundle exec fastlane test
-
-# Run unit tests only
-bundle exec fastlane unit_tests
-
-# Run UI tests only
-bundle exec fastlane ui_tests
-
-# Or use xcodebuild directly
-xcodebuild test \
-  -project PKMReader.xcodeproj \
-  -scheme PKMReader \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
-  CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO
+mise run test          # Run all tests (unit + UI)
+mise run test:unit     # Run unit tests only
+mise run test:ui       # Run UI tests only
+mise run coverage      # Run tests with coverage report
 ```
 
 ### Code Quality
 
 ```bash
-# Run SwiftLint
-bundle exec fastlane lint
-
-# Auto-fix SwiftLint issues
-bundle exec fastlane lint_fix
-
-# Format code with SwiftFormat
-bundle exec fastlane format
-
-# Check formatting (CI mode)
-bundle exec fastlane format_check
+mise run lint          # Run SwiftLint
+mise run lint:fix      # Auto-fix SwiftLint issues
+mise run format        # Format code with SwiftFormat
+mise run format:check  # Check formatting (CI mode)
 ```
 
 ### Building
 
 ```bash
-# Build for development (simulator)
-bundle exec fastlane build_dev
-
-# Build release archive
-bundle exec fastlane build_release
+mise run build         # Build for development (simulator)
 ```
 
 ### Project Management
 
 ```bash
-# Regenerate Xcode project from project.yml
-./Scripts/generate-project.sh
-# or
-bundle exec fastlane generate_project
-
-# Generate coverage report
-bundle exec fastlane coverage_report
+mise run generate      # Regenerate Xcode project from project.yml
+mise run setup         # Re-run first-time setup
 ```
 
 ## Project Structure
@@ -114,13 +89,14 @@ ios/
 ├── fastlane/                     # Fastlane configuration
 ├── Scripts/                      # Development scripts
 ├── project.yml                   # XcodeGen project definition
-├── .swiftlint.yml               # SwiftLint rules
-└── .swiftformat                 # SwiftFormat config
+├── .mise.toml                    # mise configuration (Ruby, tasks)
+├── .swiftlint.yml                # SwiftLint rules
+└── .swiftformat                  # SwiftFormat config
 ```
 
 ## Architecture
 
-The app follows MVVM-C (Model-View-ViewModel-Coordinator) architecture:
+The app follows MVVM (Model-View-ViewModel) architecture:
 
 - **Models**: Codable data structures matching API responses
 - **Views**: SwiftUI views for UI
@@ -138,15 +114,15 @@ All services have protocol interfaces for testability:
 
 ### Testing Strategy
 
-- **Unit Tests**: ViewModels, Services, Models (60%+ of tests)
+- **Unit Tests**: ViewModels, Services, Models (target 60%+ coverage)
 - **UI Tests**: Critical user flows with Page Object pattern
-- **Mocks**: All protocol implementations have mock versions
+- **Mocks**: All protocol implementations have mock versions in `PKMReaderTests/Mocks/`
 
 ## CI/CD
 
 ### Pull Request Checks
 
-On every PR to `main`:
+On every PR to `main` (via `.github/workflows/ios-test.yml`):
 1. SwiftLint check (strict mode)
 2. Build for testing
 3. Run unit tests
@@ -155,7 +131,7 @@ On every PR to `main`:
 
 ### Main Branch
 
-On merge to `main`:
+On merge to `main` (via `.github/workflows/ios-build.yml`):
 1. Build release archive
 2. Upload build artifacts
 
@@ -163,7 +139,10 @@ On merge to `main`:
 
 ### Environment Variables
 
-For local development, no environment variables are required.
+For local development, no environment variables are required. The project uses:
+- **mise** for Ruby version management (configured in `.mise.toml`)
+- **Bundler** for Ruby gem management (gems installed locally in `vendor/bundle`)
+- **XcodeGen** for project generation (configured in `project.yml`)
 
 For CI/CD (Phase 4+):
 - `MATCH_PASSWORD` - Match certificate encryption password
@@ -179,8 +158,7 @@ For CI/CD (Phase 4+):
 ### Xcode project out of sync
 
 ```bash
-# Regenerate project from project.yml
-xcodegen generate
+mise run generate
 ```
 
 ### Tests failing to run
@@ -190,15 +168,19 @@ xcodegen generate
 rm -rf ~/Library/Developer/Xcode/DerivedData/PKMReader-*
 
 # Regenerate project
-xcodegen generate
+mise run generate
 ```
 
 ### SwiftLint warnings
 
 ```bash
-# Auto-fix what can be fixed
-bundle exec fastlane lint_fix
+mise run lint:fix   # Auto-fix what can be fixed
+mise run format     # Format code
+```
 
-# Format code
-bundle exec fastlane format
+### Ruby/Bundler issues
+
+```bash
+# Re-run setup to reinstall Ruby and gems
+mise run setup
 ```
