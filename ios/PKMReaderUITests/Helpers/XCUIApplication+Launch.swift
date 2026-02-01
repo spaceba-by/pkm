@@ -1,6 +1,5 @@
 import XCTest
 
-@MainActor
 extension XCUIApplication {
     /// Launch the app configured for UI testing
     func launchForTesting() {

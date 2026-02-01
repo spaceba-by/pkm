@@ -1,7 +1,6 @@
 import XCTest
 
 /// Page object for the Document List screen
-@MainActor
 final class DocumentListPage {
     private let app: XCUIApplication
 
