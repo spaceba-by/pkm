@@ -104,8 +104,7 @@ ios/
 │   │
 │   ├── Core/
 │   │   ├── Configuration/
-│   │   │   ├── Environment.swift
-│   │   │   └── Secrets.swift              # gitignored
+│   │   │   └── Environment.swift         # Build configuration (checked in)
 │   │   │
 │   │   ├── Networking/
 │   │   │   ├── APIClient.swift
@@ -1367,28 +1366,12 @@ bundle install
 echo "📚 Resolving Swift packages..."
 xcodebuild -resolvePackageDependencies -project PKMReader.xcodeproj -scheme PKMReader
 
-# Create Secrets.swift if it doesn't exist
-if [ ! -f "PKMReader/Core/Configuration/Secrets.swift" ]; then
-    echo "🔐 Creating Secrets.swift template..."
-    cat > PKMReader/Core/Configuration/Secrets.swift << 'SWIFT'
-// This file is gitignored. Copy from Secrets.swift.template and fill in values.
-import Foundation
-
-enum Secrets {
-    static let cognitoUserPoolId = "YOUR_USER_POOL_ID"
-    static let cognitoClientId = "YOUR_CLIENT_ID"
-    static let apiBaseURL = "https://api.example.com"
-}
-SWIFT
-fi
-
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
-echo "  1. Copy PKMReader/Core/Configuration/Secrets.swift.template to Secrets.swift"
-echo "  2. Fill in your API credentials"
-echo "  3. Open PKMReader.xcodeproj in Xcode"
+echo "  1. Open PKMReader.xcodeproj in Xcode"
+echo "  2. Build and run on simulator"
 echo ""
 echo "Useful commands:"
 echo "  bundle exec fastlane test      # Run all tests"
@@ -1675,8 +1658,7 @@ ios/
 │   │
 │   ├── Core/
 │   │   ├── Configuration/
-│   │   │   ├── Environment.swift     # API URLs, Cognito config
-│   │   │   └── Secrets.swift         # Sensitive config (gitignored)
+│   │   │   └── Environment.swift     # Build configuration (checked in)
 │   │   │
 │   │   ├── Networking/
 │   │   │   ├── APIClient.swift       # HTTP client with auth
@@ -1755,7 +1737,47 @@ ios/
 └── README.md
 ```
 
-### 2.2 Key Models
+### 2.2 Build Configuration
+
+**Environment.swift** - Public configuration values (checked into source control):
+
+```swift
+// Core/Configuration/Environment.swift
+import Foundation
+
+enum Environment {
+    // These are PUBLIC identifiers, not secrets.
+    // Cognito client IDs are designed to be embedded in mobile apps.
+    // The security comes from user authentication, not hidden identifiers.
+
+    #if DEBUG
+    static let apiBaseURL = URL(string: "https://api-dev.example.com")!
+    static let cognitoUserPoolId = "us-east-1_DevPoolId"
+    static let cognitoClientId = "dev-client-id"
+    #else
+    static let apiBaseURL = URL(string: "https://api.example.com")!
+    static let cognitoUserPoolId = "us-east-1_ProdPoolId"
+    static let cognitoClientId = "prod-client-id"
+    #endif
+
+    static let cognitoRegion = "us-east-1"
+}
+```
+
+**Why no gitignored secrets file?**
+
+| Value | Secret? | Reason |
+|-------|---------|--------|
+| `cognitoUserPoolId` | No | Public identifier - designed to be embedded in apps |
+| `cognitoClientId` | No | Public identifier - that's why `generate_secret = false` in Terraform |
+| `apiBaseURL` | No | Just a URL endpoint |
+
+The actual secrets in this system are:
+- **User credentials**: Entered at runtime, never stored in code
+- **Auth tokens**: Stored in iOS Keychain by `KeychainService`, never in code
+- **App Store signing keys**: Managed by Fastlane Match, never in the app repo
+
+### 2.3 Key Models
 
 **Document.swift**:
 ```swift
@@ -1812,7 +1834,7 @@ struct DocumentEntities: Codable {
 }
 ```
 
-### 2.3 Core Services
+### 2.4 Core Services
 
 **APIClient.swift**:
 ```swift
@@ -1994,7 +2016,7 @@ struct CognitoUser {
 }
 ```
 
-### 2.4 Main Views
+### 2.5 Main Views
 
 **DocumentListView.swift**:
 ```swift
