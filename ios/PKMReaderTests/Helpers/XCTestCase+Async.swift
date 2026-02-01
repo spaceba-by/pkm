@@ -7,7 +7,7 @@ extension XCTestCase {
     ///   - operation: The async operation to perform
     func waitForAsync(
         timeout: TimeInterval = 5.0,
-        operation: @escaping () async throws -> Void
+        operation: @escaping @Sendable () async throws -> Void
     ) {
         let expectation = expectation(description: "Async operation")
 
