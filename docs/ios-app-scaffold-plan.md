@@ -230,7 +230,7 @@ concurrency:
 jobs:
   lint:
     name: Lint
-    runs-on: macos-16
+    runs-on: macos-26
 
     steps:
       - name: Checkout repository
@@ -245,13 +245,13 @@ jobs:
 
   build-and-test:
     name: Build & Test
-    runs-on: macos-16
+    runs-on: macos-26
     needs: lint
 
     env:
-      DEVELOPER_DIR: /Applications/Xcode_17.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
       SCHEME: PKMReader
-      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=19.2'
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=26.2'
 
     steps:
       - name: Checkout repository
@@ -329,13 +329,13 @@ jobs:
 
   code-coverage:
     name: Code Coverage
-    runs-on: macos-16
+    runs-on: macos-26
     needs: build-and-test
 
     env:
-      DEVELOPER_DIR: /Applications/Xcode_17.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
       SCHEME: PKMReader
-      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=19.2'
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=26.2'
 
     steps:
       - name: Checkout repository
@@ -403,10 +403,10 @@ concurrency:
 jobs:
   build:
     name: Build Release
-    runs-on: macos-16
+    runs-on: macos-26
 
     env:
-      DEVELOPER_DIR: /Applications/Xcode_17.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
       SCHEME: PKMReader
 
     steps:
@@ -456,7 +456,7 @@ jobs:
   deploy-testflight:
     name: Deploy to TestFlight
     needs: build
-    runs-on: macos-16
+    runs-on: macos-26
     environment: testflight
     if: github.ref == 'refs/heads/main'
 
@@ -2509,10 +2509,10 @@ bundle exec fastlane test      # All tests pass
 - Modern, declarative UI framework
 - Better async/await support
 - Less boilerplate than UIKit
-- Full access to iOS 19 features (no backwards compatibility constraints)
+- Full access to iOS 26 features (no backwards compatibility constraints)
 
 ### Why SwiftData for Caching?
-- Native Apple framework, fully mature in iOS 19
+- Native Apple framework, fully mature in iOS 26
 - Automatic CloudKit sync potential
 - Type-safe Swift integration
 - Simpler than Core Data with modern Swift concurrency support
@@ -2535,7 +2535,7 @@ import PackageDescription
 
 let package = Package(
     name: "PKMReader",
-    platforms: [.iOS(.v19)],
+    platforms: [.iOS(.v26)],
     products: [
         .library(name: "PKMReader", targets: ["PKMReader"])
     ],
