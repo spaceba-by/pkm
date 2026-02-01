@@ -1920,88 +1920,67 @@ enum APIError: Error {
 }
 ```
 
-**AuthService.swift**:
+**AuthService.swift** (pseudocode - actual implementation will use AWS Amplify Auth):
+
+> **Note**: The code below shows the intended interface and flow. The actual implementation
+> should use [AWS Amplify for Swift](https://docs.amplify.aws/swift/build-a-backend/auth/)
+> which provides `Amplify.Auth.signIn()`, `Amplify.Auth.signOut()`, and related methods.
+> Amplify handles token storage and refresh automatically.
+
 ```swift
 import Foundation
-import AWSCognitoIdentityProvider
+import Amplify
+import AWSCognitoAuthPlugin
 
 @MainActor
 class AuthService: ObservableObject {
     @Published var isAuthenticated = false
-    @Published var currentUser: CognitoUser?
-
-    private let userPool: AWSCognitoIdentityUserPool
-    private let keychainService: KeychainService
+    @Published var currentUser: AuthUser?
 
     init() {
-        // Configure Cognito
-        let config = AWSCognitoIdentityUserPoolConfiguration(
-            clientId: Environment.cognitoClientId,
-            clientSecret: nil,
-            poolId: Environment.cognitoUserPoolId
-        )
-        userPool = AWSCognitoIdentityUserPool(configuration: config)
-        keychainService = KeychainService()
-
-        // Check for existing session
+        // Amplify is configured in AppDelegate/App init
         Task {
             await checkExistingSession()
         }
     }
 
     func signIn(email: String, password: String) async throws {
-        let user = userPool.getUser(email)
-        let session = try await user.authenticatePassword(password)
+        let result = try await Amplify.Auth.signIn(
+            username: email,
+            password: password
+        )
 
-        // Store tokens securely
-        try keychainService.store(token: session.accessToken, forKey: .accessToken)
-        try keychainService.store(token: session.refreshToken, forKey: .refreshToken)
-
-        isAuthenticated = true
-        currentUser = CognitoUser(email: email)
+        if result.isSignedIn {
+            isAuthenticated = true
+            currentUser = try await Amplify.Auth.getCurrentUser()
+        }
     }
 
-    func signOut() async {
-        keychainService.deleteAll()
+    func signOut() async throws {
+        _ = try await Amplify.Auth.signOut()
         isAuthenticated = false
         currentUser = nil
     }
 
     func getAccessToken() async throws -> String {
-        guard let token = keychainService.retrieve(forKey: .accessToken) else {
+        let session = try await Amplify.Auth.fetchAuthSession()
+        guard let cognitoSession = session as? AuthCognitoTokensProvider,
+              let tokens = try? cognitoSession.getCognitoTokens().get() else {
             throw AuthError.notAuthenticated
         }
-
-        // Check if token is expired and refresh if needed
-        if isTokenExpired(token) {
-            return try await refreshToken()
-        }
-
-        return token
-    }
-
-    private func refreshToken() async throws -> String {
-        guard let refreshToken = keychainService.retrieve(forKey: .refreshToken) else {
-            throw AuthError.notAuthenticated
-        }
-
-        let session = try await userPool.refresh(refreshToken: refreshToken)
-        try keychainService.store(token: session.accessToken, forKey: .accessToken)
-
-        return session.accessToken
+        return tokens.accessToken
     }
 
     private func checkExistingSession() async {
-        if let token = keychainService.retrieve(forKey: .accessToken),
-           !isTokenExpired(token) {
-            isAuthenticated = true
+        do {
+            let session = try await Amplify.Auth.fetchAuthSession()
+            isAuthenticated = session.isSignedIn
+            if session.isSignedIn {
+                currentUser = try? await Amplify.Auth.getCurrentUser()
+            }
+        } catch {
+            isAuthenticated = false
         }
-    }
-
-    private func isTokenExpired(_ token: String) -> Bool {
-        // Decode JWT and check exp claim
-        // Implementation omitted for brevity
-        return false
     }
 }
 
@@ -2010,11 +1989,27 @@ enum AuthError: Error {
     case invalidCredentials
     case networkError
 }
+```
 
-struct CognitoUser {
-    let email: String
+**Amplify Configuration** (in App init or AppDelegate):
+
+```swift
+import Amplify
+import AWSCognitoAuthPlugin
+
+// In PKMReaderApp.swift init or AppDelegate
+func configureAmplify() {
+    do {
+        try Amplify.add(plugin: AWSCognitoAuthPlugin())
+        try Amplify.configure()
+    } catch {
+        print("Failed to configure Amplify: \(error)")
+    }
 }
 ```
+
+> **amplifyconfiguration.json** will be generated when setting up Amplify with the backend,
+> or can be manually created with the Cognito User Pool and Identity Pool IDs.
 
 ### 2.5 Main Views
 
@@ -2543,8 +2538,8 @@ let package = Package(
         // UI
         .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.0.0"),
 
-        // AWS
-        .package(url: "https://github.com/aws-amplify/aws-sdk-ios-spm", from: "2.33.0"),
+        // AWS Amplify (authentication)
+        .package(url: "https://github.com/aws-amplify/amplify-swift", from: "2.0.0"),
 
         // Testing (development only)
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.15.0"),
@@ -2554,7 +2549,8 @@ let package = Package(
             name: "PKMReader",
             dependencies: [
                 .product(name: "MarkdownUI", package: "swift-markdown-ui"),
-                .product(name: "AWSCognitoIdentityProvider", package: "aws-sdk-ios-spm"),
+                .product(name: "Amplify", package: "amplify-swift"),
+                .product(name: "AWSCognitoAuthPlugin", package: "amplify-swift"),
             ]
         ),
         .testTarget(
