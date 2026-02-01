@@ -7,7 +7,9 @@ final class PKMReaderUITests: XCTestCase {
     private var documentListPage: DocumentListPage!
     // swiftlint:enable implicitly_unwrapped_optional
 
-    override func setUpWithError() throws {
+    @MainActor
+    override func setUp() async throws {
+        try await super.setUp()
         continueAfterFailure = false
 
         app = XCUIApplication()
@@ -16,31 +18,33 @@ final class PKMReaderUITests: XCTestCase {
         documentListPage = DocumentListPage(app: app)
     }
 
-    override func tearDownWithError() throws {
+    @MainActor
+    override func tearDown() async throws {
         app = nil
         documentListPage = nil
+        try await super.tearDown()
     }
 
     // MARK: - App Launch Tests
 
-    func testAppLaunches() throws {
+    func testAppLaunches() {
         // Verify the app launches and shows the main screen
         documentListPage.assertIsDisplayed()
     }
 
-    func testAppShowsMainTitle() throws {
+    func testAppShowsMainTitle() {
         // Verify the main title is displayed
         XCTAssertTrue(app.staticTexts["PKM Reader"].exists)
     }
 
-    func testAppShowsDocumentsNavigationTitle() throws {
+    func testAppShowsDocumentsNavigationTitle() {
         // Verify the navigation bar title
         XCTAssertTrue(app.navigationBars["Documents"].waitForExistence(timeout: 5))
     }
 
     // MARK: - Accessibility Tests
 
-    func testMainScreenHasAccessibilityIdentifiers() throws {
+    func testMainScreenHasAccessibilityIdentifiers() {
         // Verify key elements have accessibility identifiers
         XCTAssertTrue(app.staticTexts["PKM Reader"].exists)
     }
