@@ -1,0 +1,174 @@
+default_platform(:ios)
+
+platform :ios do
+  # ================================
+  # Setup & Configuration
+  # ================================
+
+  before_all do
+    setup_ci if ENV['CI']
+  end
+
+  # ================================
+  # Testing Lanes
+  # ================================
+
+  desc "Run all tests (unit + UI)"
+  lane :test do
+    run_tests(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      devices: ["iPhone 16"],
+      code_coverage: true,
+      result_bundle: true,
+      output_directory: "TestResults",
+      xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
+    )
+  end
+
+  desc "Run unit tests only"
+  lane :unit_tests do
+    run_tests(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      devices: ["iPhone 16"],
+      only_testing: ["PKMReaderTests"],
+      code_coverage: true,
+      result_bundle: true,
+      output_directory: "TestResults/unit",
+      xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
+    )
+  end
+
+  desc "Run UI tests only"
+  lane :ui_tests do
+    run_tests(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      devices: ["iPhone 16"],
+      only_testing: ["PKMReaderUITests"],
+      result_bundle: true,
+      output_directory: "TestResults/ui",
+      xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
+    )
+  end
+
+  # ================================
+  # Code Quality Lanes
+  # ================================
+
+  desc "Run SwiftLint"
+  lane :lint do
+    swiftlint(
+      mode: :lint,
+      config_file: ".swiftlint.yml",
+      strict: true,
+      raise_if_swiftlint_error: true
+    )
+  end
+
+  desc "Auto-fix SwiftLint issues"
+  lane :lint_fix do
+    swiftlint(
+      mode: :fix,
+      config_file: ".swiftlint.yml"
+    )
+  end
+
+  desc "Run SwiftFormat"
+  lane :format do
+    sh("cd .. && swiftformat . --config .swiftformat")
+  end
+
+  desc "Check code formatting"
+  lane :format_check do
+    sh("cd .. && swiftformat . --config .swiftformat --lint")
+  end
+
+  # ================================
+  # Build Lanes
+  # ================================
+
+  desc "Build for development"
+  lane :build_dev do
+    build_app(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      configuration: "Debug",
+      skip_codesigning: true,
+      skip_archive: true,
+      destination: "generic/platform=iOS Simulator"
+    )
+  end
+
+  desc "Build release archive"
+  lane :build_release do
+    # Increment build number
+    increment_build_number(
+      build_number: ENV['BUILD_NUMBER'] || Time.now.strftime("%Y%m%d%H%M")
+    )
+
+    # Sync signing certificates (only when not skipping)
+    unless ENV['SKIP_CODESIGNING']
+      sync_code_signing(
+        type: "appstore",
+        readonly: is_ci
+      )
+    end
+
+    # Build the app
+    build_app(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "build",
+      output_name: "PKMReader.ipa",
+      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true'
+    )
+  end
+
+  # ================================
+  # Deployment Lanes
+  # ================================
+
+  desc "Upload to TestFlight"
+  lane :upload_testflight do
+    api_key = app_store_connect_api_key(
+      key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
+      issuer_id: ENV['APP_STORE_CONNECT_API_ISSUER_ID'],
+      key_content: ENV['APP_STORE_CONNECT_API_KEY']
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: "build/PKMReader.ipa",
+      skip_waiting_for_build_processing: true,
+      changelog: last_git_commit[:message]
+    )
+  end
+
+  # ================================
+  # Utility Lanes
+  # ================================
+
+  desc "Generate code coverage report"
+  lane :coverage_report do
+    xcov(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      output_directory: "coverage",
+      minimum_coverage_percentage: 60.0
+    )
+  end
+
+  desc "Generate Xcode project from project.yml"
+  lane :generate_project do
+    sh("cd .. && xcodegen generate")
+  end
+
+  desc "Setup project for new developer"
+  lane :setup do
+    sh("cd .. && ./Scripts/bootstrap.sh")
+  end
+end

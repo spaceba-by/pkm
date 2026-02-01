@@ -1,0 +1,9 @@
+app_identifier("by.spaceba.pkm.reader")
+apple_id(ENV['FASTLANE_USER'])
+team_id(ENV['APPLE_TEAM_ID'])
+
+for_platform :ios do
+  for_lane :upload_testflight do
+    app_identifier("by.spaceba.pkm.reader")
+  end
+end

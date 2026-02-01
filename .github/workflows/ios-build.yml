@@ -1,0 +1,123 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-*.yml'
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Release
+    runs-on: macos-14
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
+      SCHEME: PKMReader
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/.build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+
+      - name: Setup Ruby (for Fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install Fastlane
+        working-directory: ios
+        run: |
+          gem install bundler
+          bundle install
+
+      - name: Build archive (simulator only for Phase 0)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify || xcodebuild build \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Create build info
+        run: |
+          mkdir -p ios/build
+          echo "{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > ios/build/build-info.json
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PKMReader-${{ github.sha }}
+          path: |
+            ios/build/
+          retention-days: 30
+
+    outputs:
+      build_number: ${{ github.run_number }}
+
+  # TestFlight deployment (commented out until Phase 4)
+  # Uncomment and configure secrets when ready for App Store deployment
+  #
+  # deploy-testflight:
+  #   name: Deploy to TestFlight
+  #   needs: build
+  #   runs-on: macos-14
+  #   environment: testflight
+  #   if: github.ref == 'refs/heads/main'
+  #
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Download build artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: PKMReader-${{ github.sha }}
+  #         path: ios/build/
+  #
+  #     - name: Setup Ruby
+  #       uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: '3.2'
+  #         bundler-cache: true
+  #         working-directory: ios
+  #
+  #     - name: Upload to TestFlight
+  #       working-directory: ios
+  #       env:
+  #         APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+  #         APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+  #         APP_STORE_CONNECT_API_KEY: ${{ secrets.ASC_KEY }}
+  #       run: bundle exec fastlane upload_testflight

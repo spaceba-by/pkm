@@ -1,0 +1,197 @@
+name: iOS Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-*.yml'
+
+concurrency:
+  group: ios-test-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        working-directory: ios
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-14
+    needs: lint
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
+      SCHEME: PKMReader
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=18.0'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/.build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Install dependencies
+        working-directory: ios
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME
+
+      - name: Build for testing
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify || xcodebuild build-for-testing \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run unit tests
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -only-testing:PKMReaderTests \
+            -resultBundlePath TestResults/unit-tests.xcresult \
+            | xcbeautify || xcodebuild test-without-building \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -only-testing:PKMReaderTests \
+            -resultBundlePath TestResults/unit-tests.xcresult
+
+      - name: Run UI tests
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -only-testing:PKMReaderUITests \
+            -resultBundlePath TestResults/ui-tests.xcresult \
+            | xcbeautify || xcodebuild test-without-building \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -only-testing:PKMReaderUITests \
+            -resultBundlePath TestResults/ui-tests.xcresult
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: ios/TestResults/
+          retention-days: 14
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: macos-14
+    needs: build-and-test
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
+      SCHEME: PKMReader
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=18.0'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/.build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+
+      - name: Run tests with coverage
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults/coverage.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify || xcodebuild test \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults/coverage.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Generate coverage report
+        working-directory: ios
+        run: |
+          xcrun xccov view --report --json TestResults/coverage.xcresult > coverage.json
+          # Extract coverage percentage
+          COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100 | floor')
+          echo "## Code Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check coverage threshold
+        working-directory: ios
+        run: |
+          COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100')
+          THRESHOLD=60
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "::error::Code coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
+          echo "Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
