@@ -1,4 +1,4 @@
-@preconcurrency import XCTest
+import XCTest
 
 extension XCUIApplication {
     /// Launch the app configured for UI testing

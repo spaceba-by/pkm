@@ -1,4 +1,4 @@
-@preconcurrency import XCTest
+import XCTest
 
 final class PKMReaderUITests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional

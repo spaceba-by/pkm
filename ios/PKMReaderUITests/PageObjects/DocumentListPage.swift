@@ -1,4 +1,4 @@
-@preconcurrency import XCTest
+import XCTest
 
 /// Page object for the Document List screen
 final class DocumentListPage {
