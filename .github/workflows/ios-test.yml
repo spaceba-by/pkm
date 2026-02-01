@@ -163,10 +163,22 @@ jobs:
             ~/Library/Developer/Xcode/DerivedData
           key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
 
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Boot simulator
+        run: |
+          # Find and boot an iPhone 17 simulator
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 17" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          if [ -n "$DEVICE_ID" ]; then
+            xcrun simctl boot "$DEVICE_ID" || true
+          fi
+
       - name: Run tests with coverage
         working-directory: ios
         run: |
           set -o pipefail
+          rm -rf TestResults/coverage.xcresult
           xcodebuild test \
             -project PKMReader.xcodeproj \
             -scheme $SCHEME \
