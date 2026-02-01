@@ -230,7 +230,7 @@ concurrency:
 jobs:
   lint:
     name: Lint
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Checkout repository
@@ -245,13 +245,13 @@ jobs:
 
   build-and-test:
     name: Build & Test
-    runs-on: macos-14
+    runs-on: macos-15
     needs: lint
 
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_16.2.app/Contents/Developer
       SCHEME: PKMReader
-      DESTINATION: 'platform=iOS Simulator,name=iPhone 15,OS=17.2'
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=18.2'
 
     steps:
       - name: Checkout repository
@@ -329,13 +329,13 @@ jobs:
 
   code-coverage:
     name: Code Coverage
-    runs-on: macos-14
+    runs-on: macos-15
     needs: build-and-test
 
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_16.2.app/Contents/Developer
       SCHEME: PKMReader
-      DESTINATION: 'platform=iOS Simulator,name=iPhone 15,OS=17.2'
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 16,OS=18.2'
 
     steps:
       - name: Checkout repository
@@ -403,10 +403,10 @@ concurrency:
 jobs:
   build:
     name: Build Release
-    runs-on: macos-14
+    runs-on: macos-15
 
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_16.2.app/Contents/Developer
       SCHEME: PKMReader
 
     steps:
@@ -456,7 +456,7 @@ jobs:
   deploy-testflight:
     name: Deploy to TestFlight
     needs: build
-    runs-on: macos-14
+    runs-on: macos-15
     environment: testflight
     if: github.ref == 'refs/heads/main'
 
@@ -511,7 +511,7 @@ platform :ios do
     run_tests(
       project: "PKMReader.xcodeproj",
       scheme: "PKMReader",
-      devices: ["iPhone 15"],
+      devices: ["iPhone 16"],
       code_coverage: true,
       result_bundle: true,
       output_directory: "TestResults",
@@ -524,7 +524,7 @@ platform :ios do
     run_tests(
       project: "PKMReader.xcodeproj",
       scheme: "PKMReader",
-      devices: ["iPhone 15"],
+      devices: ["iPhone 16"],
       only_testing: ["PKMReaderTests"],
       code_coverage: true,
       result_bundle: true,
@@ -538,7 +538,7 @@ platform :ios do
     run_tests(
       project: "PKMReader.xcodeproj",
       scheme: "PKMReader",
-      devices: ["iPhone 15"],
+      devices: ["iPhone 16"],
       only_testing: ["PKMReaderUITests"],
       result_bundle: true,
       output_directory: "TestResults/ui",
@@ -551,7 +551,7 @@ platform :ios do
     run_tests(
       project: "PKMReader.xcodeproj",
       scheme: "PKMReader",
-      devices: ["iPhone 15", "iPhone SE (3rd generation)", "iPad Pro (12.9-inch)"],
+      devices: ["iPhone 16", "iPhone 16 Pro Max", "iPad Pro 13-inch (M4)"],
       only_testing: ["PKMReaderSnapshotTests"],
       result_bundle: true,
       output_directory: "TestResults/snapshots"
@@ -822,7 +822,7 @@ reporter: "xcode"
 ```
 # SwiftFormat Configuration
 
---swiftversion 5.9
+--swiftversion 6.0
 
 # File options
 --exclude Pods,.build,DerivedData
@@ -2461,7 +2461,7 @@ bundle exec fastlane coverage_report
 xcodebuild test \
   -project PKMReader.xcodeproj \
   -scheme PKMReader \
-  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
   CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO
 ```
 
@@ -2509,13 +2509,13 @@ bundle exec fastlane test      # All tests pass
 - Modern, declarative UI framework
 - Better async/await support
 - Less boilerplate than UIKit
-- iOS 16+ is acceptable minimum deployment target
+- Full access to iOS 18 features (no backwards compatibility constraints)
 
 ### Why SwiftData for Caching?
-- Native Apple framework (iOS 17+)
+- Native Apple framework, fully mature in iOS 18
 - Automatic CloudKit sync potential
 - Type-safe Swift integration
-- Alternative: Core Data for iOS 16 support
+- Simpler than Core Data with modern Swift concurrency support
 
 ### Markdown Rendering
 - Use `MarkdownUI` package (swift-markdown-ui)
@@ -2530,12 +2530,12 @@ bundle exec fastlane test      # All tests pass
 ### iOS App
 ```swift
 // Package.swift
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "PKMReader",
-    platforms: [.iOS(.v17)],
+    platforms: [.iOS(.v18)],
     products: [
         .library(name: "PKMReader", targets: ["PKMReader"])
     ],
