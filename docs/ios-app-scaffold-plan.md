@@ -1856,7 +1856,13 @@ actor APIClient {
         limit: Int = 50,
         cursor: String? = nil
     ) async throws -> DocumentListResponse {
-        var components = URLComponents(url: baseURL.appendingPathComponent("documents"), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(
+            url: baseURL.appendingPathComponent("documents"),
+            resolvingAgainstBaseURL: false
+        ) else {
+            throw APIError.invalidURL
+        }
+
         var queryItems: [URLQueryItem] = [.init(name: "limit", value: String(limit))]
 
         if let classification {
@@ -1867,21 +1873,37 @@ actor APIClient {
         }
         components.queryItems = queryItems
 
-        return try await request(url: components.url!)
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+        return try await request(url: url)
     }
 
     func getDocument(key: String) async throws -> Document {
-        let url = baseURL.appendingPathComponent("documents/\(key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)")
+        guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
+        let url = baseURL.appendingPathComponent("documents/\(encodedKey)")
         return try await request(url: url)
     }
 
     func search(query: String, limit: Int = 20) async throws -> [Document] {
-        var components = URLComponents(url: baseURL.appendingPathComponent("search"), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(
+            url: baseURL.appendingPathComponent("search"),
+            resolvingAgainstBaseURL: false
+        ) else {
+            throw APIError.invalidURL
+        }
+
         components.queryItems = [
             .init(name: "q", value: query),
             .init(name: "limit", value: String(limit))
         ]
-        return try await request(url: components.url!)
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+        return try await request(url: url)
     }
 
     private func request<T: Decodable>(url: URL) async throws -> T {
@@ -1913,6 +1935,7 @@ struct DocumentListResponse: Codable {
 }
 
 enum APIError: Error {
+    case invalidURL
     case invalidResponse
     case httpError(statusCode: Int)
     case decodingError(Error)
