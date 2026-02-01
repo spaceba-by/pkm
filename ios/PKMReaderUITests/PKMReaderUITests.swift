@@ -10,15 +10,18 @@ final class PKMReaderUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
 
-        app = XCUIApplication()
-        app.launchForTesting()
-
-        documentListPage = DocumentListPage(app: app)
+        MainActor.assumeIsolated {
+            app = XCUIApplication()
+            app.launchForTesting()
+            documentListPage = DocumentListPage(app: app)
+        }
     }
 
     override func tearDownWithError() throws {
-        app = nil
-        documentListPage = nil
+        MainActor.assumeIsolated {
+            app = nil
+            documentListPage = nil
+        }
     }
 
     // MARK: - App Launch Tests
