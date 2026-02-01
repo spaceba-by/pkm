@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class PKMReaderUITests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional
     private var app: XCUIApplication!
