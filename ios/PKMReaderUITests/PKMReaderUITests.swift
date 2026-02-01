@@ -3,8 +3,8 @@ import XCTest
 @MainActor
 final class PKMReaderUITests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional
-    private nonisolated(unsafe) var app: XCUIApplication!
-    private nonisolated(unsafe) var documentListPage: DocumentListPage!
+    nonisolated(unsafe) private var app: XCUIApplication!
+    nonisolated(unsafe) private var documentListPage: DocumentListPage!
     // swiftlint:enable implicitly_unwrapped_optional
 
     override func setUpWithError() throws {
