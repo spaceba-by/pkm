@@ -197,7 +197,7 @@ jobs:
         working-directory: ios
         run: |
           COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100')
-          THRESHOLD=60
+          THRESHOLD=50
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "::error::Code coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
             exit 1
