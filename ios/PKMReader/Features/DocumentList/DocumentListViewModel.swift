@@ -14,11 +14,11 @@ final class DocumentListViewModel: ObservableObject {
             switch (lhs, rhs) {
             case (.loading, .loading):
                 true
-            case (.loaded(let lhsDocs), .loaded(let rhsDocs)):
+            case let (.loaded(lhsDocs), .loaded(rhsDocs)):
                 lhsDocs == rhsDocs
             case (.empty, .empty):
                 true
-            case (.error(let lhsMsg), .error(let rhsMsg)):
+            case let (.error(lhsMsg), .error(rhsMsg)):
                 lhsMsg == rhsMsg
             default:
                 false

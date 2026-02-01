@@ -3,8 +3,10 @@ import XCTest
 
 @MainActor
 final class DocumentListViewModelTests: XCTestCase {
+    // swiftlint:disable implicitly_unwrapped_optional
     private var sut: DocumentListViewModel!
     private var mockAPIClient: MockAPIClient!
+    // swiftlint:enable implicitly_unwrapped_optional
 
     override func setUp() async throws {
         try await super.setUp()

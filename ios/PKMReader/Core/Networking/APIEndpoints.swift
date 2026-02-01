@@ -18,7 +18,8 @@ enum APIEndpoints {
         }
 
         if let cursor {
-            queryItems.append("cursor=\(cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cursor)")
+            let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cursor
+            queryItems.append("cursor=\(encoded)")
         }
 
         if !queryItems.isEmpty {

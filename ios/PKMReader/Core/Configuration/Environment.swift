@@ -6,10 +6,12 @@ import Foundation
 /// The security comes from user authentication, not hidden identifiers.
 enum Environment {
     #if DEBUG
+    // swiftlint:disable:next force_unwrapping
     static let apiBaseURL = URL(string: "https://api-dev.pkm.spaceba.by")!
     static let cognitoUserPoolId = "us-east-1_DevPoolId"
     static let cognitoClientId = "dev-client-id"
     #else
+    // swiftlint:disable:next force_unwrapping
     static let apiBaseURL = URL(string: "https://api.pkm.spaceba.by")!
     static let cognitoUserPoolId = "us-east-1_ProdPoolId"
     static let cognitoClientId = "prod-client-id"

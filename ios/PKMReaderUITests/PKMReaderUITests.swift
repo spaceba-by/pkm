@@ -1,8 +1,10 @@
 import XCTest
 
 final class PKMReaderUITests: XCTestCase {
+    // swiftlint:disable implicitly_unwrapped_optional
     private var app: XCUIApplication!
     private var documentListPage: DocumentListPage!
+    // swiftlint:enable implicitly_unwrapped_optional
 
     override func setUpWithError() throws {
         continueAfterFailure = false
