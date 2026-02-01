@@ -2259,7 +2259,7 @@ struct DocumentDetailView: View {
 
 ## Phase 3: Implementation Roadmap
 
-### Sprint 0: CI/CD Foundation (Week 1) ← **Critical: Complete First**
+### Sprint 0: CI/CD Foundation ← **Critical: Complete First**
 
 | Task | Priority | Effort | CI Verification |
 |------|----------|--------|-----------------|
@@ -2286,7 +2286,7 @@ struct DocumentDetailView: View {
 - [ ] Code coverage reporting works
 - [ ] At least one unit test and one UI test exist
 
-### Sprint 1: Backend Foundation (Week 2-3)
+### Sprint 1: Backend Foundation
 
 | Task | Priority | Effort | Tests Required |
 |------|----------|--------|----------------|
@@ -2303,7 +2303,7 @@ struct DocumentDetailView: View {
 - API documentation
 - Integration tests for API endpoints
 
-### Sprint 2: Core iOS App (Week 4-5)
+### Sprint 2: Core iOS App
 
 | Task | Priority | Effort | Tests Required |
 |------|----------|--------|----------------|
@@ -2330,7 +2330,7 @@ struct DocumentDetailView: View {
 | Models | 90% |
 | Views | 60% (UI tests) |
 
-### Sprint 3: Enhanced Features (Week 6-7)
+### Sprint 3: Enhanced Features
 
 | Task | Priority | Effort | Tests Required |
 |------|----------|--------|----------------|
@@ -2351,7 +2351,7 @@ struct DocumentDetailView: View {
 - Browse by tags and classifications (tested)
 - Minimum 75% code coverage
 
-### Sprint 4: Polish & Release (Week 8-9)
+### Sprint 4: Polish & Release
 
 | Task | Priority | Effort | Tests Required |
 |------|----------|--------|----------------|
@@ -2371,14 +2371,14 @@ struct DocumentDetailView: View {
 - Minimum 80% code coverage
 - All UI flows covered by UI tests
 
-### Sprint Timeline Summary
+### Sprint Sequence
 
 ```
-Week 1:     [Sprint 0: CI/CD Foundation        ]
-Week 2-3:   [Sprint 1: Backend API             ]
-Week 4-5:   [Sprint 2: Core iOS App            ]
-Week 6-7:   [Sprint 3: Enhanced Features       ]
-Week 8-9:   [Sprint 4: Polish & Release        ]
+Sprint 0: CI/CD Foundation      ← Must complete before feature work
+Sprint 1: Backend API
+Sprint 2: Core iOS App
+Sprint 3: Enhanced Features
+Sprint 4: Polish & Release
 ```
 
 ### Continuous Integration Gates
