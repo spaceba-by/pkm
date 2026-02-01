@@ -1,0 +1,5 @@
+[settings]
+experimental = true
+
+[tools]
+ruby = "3.4.1"

@@ -20,14 +20,19 @@ brew "swiftlint"
 brew "swiftformat"
 brew "xcbeautify"
 brew "xcodegen"
+brew "mise"
 EOF
 
-# Install Ruby dependencies for Fastlane
+# Setup mise for project-local Ruby (using precompiled binaries for speed)
+echo "Setting up mise for Ruby..."
+mise trust
+mise settings experimental=true
+mise use ruby@3.4.1
+
+# Install Ruby dependencies for Fastlane using mise's Ruby
 echo "Installing Fastlane..."
-if ! command -v bundle &> /dev/null; then
-    gem install bundler
-fi
-bundle install
+mise exec -- bundle config set --local path 'vendor/bundle'
+mise exec -- bundle install
 
 # Generate Xcode project
 echo "Generating Xcode project..."

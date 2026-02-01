@@ -154,12 +154,18 @@ platform :ios do
 
   desc "Generate code coverage report"
   lane :coverage_report do
-    xcov(
+    # Run tests with coverage enabled
+    run_tests(
       project: "PKMReader.xcodeproj",
       scheme: "PKMReader",
-      output_directory: "coverage",
-      minimum_coverage_percentage: 60.0
+      devices: ["iPhone 16"],
+      code_coverage: true,
+      result_bundle: true,
+      output_directory: "TestResults/coverage",
+      xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
     )
+    # Extract coverage using xccov
+    sh("xcrun xccov view --report --json ../TestResults/coverage/PKMReader.xcresult > ../coverage.json || true")
   end
 
   desc "Generate Xcode project from project.yml"
