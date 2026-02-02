@@ -1,0 +1,55 @@
+[settings]
+experimental = true
+
+[tools]
+ruby = "3.4.1"
+swiftlint = "latest"
+xcbeautify = "latest"
+
+# =============================================================================
+# Tasks - run with `mise run <task>` or `mise r <task>`
+# =============================================================================
+
+[tasks.test]
+description = "Run all tests (unit + UI)"
+run = "bundle exec fastlane test"
+
+[tasks."test:unit"]
+description = "Run unit tests only"
+run = "bundle exec fastlane unit_tests"
+
+[tasks."test:ui"]
+description = "Run UI tests only"
+run = "bundle exec fastlane ui_tests"
+
+[tasks.lint]
+description = "Run SwiftLint"
+run = "bundle exec fastlane lint"
+
+[tasks."lint:fix"]
+description = "Auto-fix SwiftLint issues"
+run = "bundle exec fastlane lint_fix"
+
+[tasks.format]
+description = "Format code with SwiftFormat"
+run = "bundle exec fastlane format"
+
+[tasks."format:check"]
+description = "Check code formatting (CI mode)"
+run = "bundle exec fastlane format_check"
+
+[tasks.build]
+description = "Build for development (simulator)"
+run = "bundle exec fastlane build_dev"
+
+[tasks.coverage]
+description = "Run tests and generate coverage report"
+run = "bundle exec fastlane coverage_report"
+
+[tasks.generate]
+description = "Regenerate Xcode project from project.yml"
+run = "xcodegen generate"
+
+[tasks.setup]
+description = "First-time setup for new developers"
+run = "./Scripts/bootstrap.sh"

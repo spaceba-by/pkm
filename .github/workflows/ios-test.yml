@@ -1,0 +1,130 @@
+name: iOS Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-*.yml'
+
+concurrency:
+  group: ios-test-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        working-directory: ios
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-26
+    needs: lint
+
+    env:
+      SCHEME: PKMReader
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 17,OS=26.0.1'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.0'
+
+      - name: Install tools
+        run: brew install xcodegen xcbeautify
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/.build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Boot simulator
+        run: |
+          # Pre-boot the simulator to avoid boot time during tests
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 17" | grep "26.0" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          if [ -n "$DEVICE_ID" ]; then
+            echo "Booting simulator $DEVICE_ID"
+            xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+            # Wait for boot to complete
+            xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
+          fi
+
+      - name: Build and test
+        working-directory: ios
+        run: |
+          set -o pipefail
+          # Run all tests in a single xcodebuild invocation for faster execution
+          xcodebuild test \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults/all-tests.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: ios/TestResults/
+          retention-days: 14
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: macos-26
+    needs: build-and-test
+
+    steps:
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.0'
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+
+      - name: Generate coverage report
+        run: |
+          xcrun xccov view --report --json TestResults/all-tests.xcresult > coverage.json
+          COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100 | floor')
+          echo "## Code Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100')
+          THRESHOLD=50
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "::error::Code coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
+          echo "Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"

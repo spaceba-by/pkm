@@ -1,0 +1,133 @@
+import Foundation
+@testable import PKMReader
+
+/// Provides sample test data for unit tests
+enum TestFixtures {
+    // MARK: - JSON Loading
+
+    /// Load a JSON fixture file and decode it
+    /// - Parameter filename: The name of the JSON file (without extension)
+    /// - Returns: The decoded object
+    static func loadJSON<T: Decodable>(_ filename: String) -> T {
+        let bundle = Bundle(for: BundleToken.self)
+        guard let url = bundle.url(forResource: filename, withExtension: "json") else {
+            fatalError("Missing fixture file: \(filename).json")
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            fatalError("Failed to decode \(filename).json: \(error)")
+        }
+    }
+
+    // MARK: - Sample Documents
+
+    /// A sample document for testing
+    static var sampleDocument: Document {
+        Document(
+            id: "test/sample.md",
+            title: "Sample Document",
+            content: "# Sample\n\nThis is a test document.",
+            metadata: DocumentMetadata(
+                classification: .reference,
+                tags: ["test", "sample"],
+                linksTo: [],
+                entities: nil,
+                created: Date(timeIntervalSince1970: 1_704_067_200), // 2024-01-01
+                modified: Date(timeIntervalSince1970: 1_704_067_200),
+                hasFrontmatter: true
+            )
+        )
+    }
+
+    /// A sample meeting document
+    static var sampleMeetingDocument: Document {
+        Document(
+            id: "meetings/weekly.md",
+            title: "Weekly Meeting",
+            content: "# Weekly Meeting\n\nAttendees: John Doe, Jane Smith",
+            metadata: DocumentMetadata(
+                classification: .meeting,
+                tags: ["meeting", "weekly"],
+                linksTo: [],
+                entities: DocumentEntities(
+                    people: ["John Doe", "Jane Smith"],
+                    organizations: nil,
+                    concepts: nil,
+                    locations: nil
+                ),
+                created: Date(timeIntervalSince1970: 1_704_153_600), // 2024-01-02
+                modified: Date(timeIntervalSince1970: 1_704_153_600),
+                hasFrontmatter: true
+            )
+        )
+    }
+
+    /// A sample idea document
+    static var sampleIdeaDocument: Document {
+        Document(
+            id: "ideas/new-feature.md",
+            title: "New Feature Idea",
+            content: "# New Feature Idea\n\nThis is an idea for a new feature.",
+            metadata: DocumentMetadata(
+                classification: .idea,
+                tags: ["idea", "feature"],
+                linksTo: [],
+                entities: nil,
+                created: Date(timeIntervalSince1970: 1_704_240_000), // 2024-01-03
+                modified: Date(timeIntervalSince1970: 1_704_240_000),
+                hasFrontmatter: false
+            )
+        )
+    }
+
+    /// An array of sample documents for list testing
+    static var sampleDocuments: [Document] {
+        [sampleDocument, sampleMeetingDocument, sampleIdeaDocument]
+    }
+
+    /// A sample document list response
+    static var sampleDocumentListResponse: DocumentListResponse {
+        DocumentListResponse(
+            documents: sampleDocuments,
+            nextCursor: nil
+        )
+    }
+
+    /// A paginated document list response
+    static var paginatedDocumentListResponse: DocumentListResponse {
+        DocumentListResponse(
+            documents: [sampleDocument],
+            nextCursor: "next-page-token"
+        )
+    }
+
+    /// An empty document list response
+    static var emptyDocumentListResponse: DocumentListResponse {
+        DocumentListResponse(documents: [], nextCursor: nil)
+    }
+
+    // MARK: - Sample Tags
+
+    /// A sample tag
+    static var sampleTag: Tag {
+        Tag(id: "test", name: "test", documentCount: 5)
+    }
+
+    /// An array of sample tags
+    static var sampleTags: [Tag] {
+        [
+            Tag(id: "test", name: "test", documentCount: 5),
+            Tag(id: "meeting", name: "meeting", documentCount: 10),
+            Tag(id: "idea", name: "idea", documentCount: 3),
+            Tag(id: "project", name: "project", documentCount: 7)
+        ]
+    }
+}
+
+// Helper class to find the test bundle
+private class BundleToken {}

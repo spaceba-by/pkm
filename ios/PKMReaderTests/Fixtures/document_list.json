@@ -1,0 +1,52 @@
+{
+  "documents": [
+    {
+      "id": "test/sample.md",
+      "title": "Sample Document",
+      "content": null,
+      "metadata": {
+        "classification": "reference",
+        "tags": ["test", "sample"],
+        "linksTo": [],
+        "entities": null,
+        "created": "2024-01-01T00:00:00Z",
+        "modified": "2024-01-01T00:00:00Z",
+        "hasFrontmatter": true
+      }
+    },
+    {
+      "id": "meetings/weekly.md",
+      "title": "Weekly Meeting",
+      "content": null,
+      "metadata": {
+        "classification": "meeting",
+        "tags": ["meeting", "weekly"],
+        "linksTo": [],
+        "entities": {
+          "people": ["John Doe", "Jane Smith"],
+          "organizations": null,
+          "concepts": null,
+          "locations": null
+        },
+        "created": "2024-01-02T00:00:00Z",
+        "modified": "2024-01-02T00:00:00Z",
+        "hasFrontmatter": true
+      }
+    },
+    {
+      "id": "ideas/new-feature.md",
+      "title": "New Feature Idea",
+      "content": null,
+      "metadata": {
+        "classification": "idea",
+        "tags": ["idea", "feature"],
+        "linksTo": [],
+        "entities": null,
+        "created": "2024-01-03T00:00:00Z",
+        "modified": "2024-01-03T00:00:00Z",
+        "hasFrontmatter": false
+      }
+    }
+  ],
+  "nextCursor": null
+}

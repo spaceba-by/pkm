@@ -1,0 +1,14 @@
+{
+  "id": "test/sample.md",
+  "title": "Sample Document",
+  "content": "# Sample\n\nThis is a test document.",
+  "metadata": {
+    "classification": "reference",
+    "tags": ["test", "sample"],
+    "linksTo": [],
+    "entities": null,
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-01T00:00:00Z",
+    "hasFrontmatter": true
+  }
+}
