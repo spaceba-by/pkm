@@ -4,6 +4,7 @@ experimental = true
 [tools]
 ruby = "3.4.1"
 swiftlint = "latest"
+xcbeautify = "latest"
 
 # =============================================================================
 # Tasks - run with `mise run <task>` or `mise r <task>`
