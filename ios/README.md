@@ -1,6 +1,12 @@
 # PKMReader iOS App
 
-iOS mobile app for the PKM (Personal Knowledge Management) system. Reads markdown documents from the S3 vault.
+iOS mobile app for the PKM (Personal Knowledge Management) system. Reads markdown documents from the S3 vault via the PKM API.
+
+## Current Status
+
+- **Phase 0** ✅ - Build & Test Automation Foundation
+- **Phase 1** ✅ - Backend API Infrastructure (Cognito + API Gateway + Lambda)
+- **Phase 2** 🚧 - iOS App Core (Auth, APIClient, Views) ← Next
 
 ## Requirements
 

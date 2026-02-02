@@ -89,6 +89,8 @@ This document outlines the plan to create an iOS mobile app that interfaces with
 
 ## Phase 0: Build & Test Automation Foundation
 
+**Status: ✅ COMPLETE** (Merged in PR #17)
+
 **This phase must be completed BEFORE any feature development begins.**
 
 The goal is to establish a solid CI/CD foundation so that every feature added can be immediately tested in the pipeline. This follows the "test infrastructure first" principle.
@@ -1501,6 +1503,10 @@ Create an Xcode Test Plan for consistent test execution:
 ---
 
 ## Phase 1: Backend API Infrastructure
+
+**Status: ✅ COMPLETE** (Merged in PR #18)
+
+See [ios-phase-1-backend-api-plan.md](./ios-phase-1-backend-api-plan.md) for the detailed implementation plan.
 
 ### 1.1 Cognito User Authentication
 

@@ -130,11 +130,13 @@ The script will:
 This creates:
 - S3 bucket for vault storage
 - DynamoDB table for metadata
-- 6 Lambda functions for processing
+- 14 Lambda functions (6 processing + 8 API)
 - EventBridge rules for scheduling
 - Step Functions for workflows
 - CloudWatch dashboards and alarms
 - IAM roles and policies
+- Cognito User Pool for mobile authentication (if enabled)
+- API Gateway for mobile API (if enabled)
 
 **Deployment time:** ~5-10 minutes
 
@@ -335,6 +337,59 @@ Expected monthly costs (for 50-100 docs/month):
 3. **Explore Entities:** Browse `_agent/entities/` for extracted entities
 4. **Read Summaries:** Daily summaries in `_agent/summaries/`
 5. **Weekly Reviews:** Weekly reports in `_agent/reports/weekly/`
+
+## Mobile API Setup (Optional)
+
+The system includes a REST API for mobile app access. To enable it:
+
+### 1. Enable Mobile API
+
+In `terraform/variables.tf`, ensure mobile API is enabled:
+
+```hcl
+variable "enable_mobile_api" {
+  default = true
+}
+```
+
+### 2. Deploy and Create User
+
+```bash
+cd terraform
+terraform apply
+
+# Create an API user
+cd ../scripts
+./create-cognito-user.sh user@example.com "TempPassword123!"
+```
+
+### 3. Test the API
+
+```bash
+# Set environment variables
+export TEST_USER_EMAIL="user@example.com"
+export TEST_USER_PASSWORD="your-permanent-password"
+
+# Run integration tests
+./test-api.sh
+```
+
+### API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /documents` | List documents (optional `classification` filter) |
+| `GET /documents/{key+}` | Get document with content |
+| `GET /search?q=...` | Search by title, path, tags |
+| `GET /tags` | List all tags with counts |
+| `GET /tags/{tag}/documents` | Documents by tag |
+| `GET /classifications` | Classification types with counts |
+| `GET /summaries` | Daily AI summaries |
+| `GET /reports` | Weekly AI reports |
+
+All endpoints require JWT authentication via Cognito.
+
+For detailed API documentation, see [ios-phase-1-backend-api-plan.md](ios-phase-1-backend-api-plan.md).
 
 ## Updating the System
 
