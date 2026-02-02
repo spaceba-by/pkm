@@ -1,5 +1,15 @@
 (ns api.handlers-test
-  "Tests for API handler formatting and utility functions"
+  "Tests for API handler formatting and utility functions.
+
+   Note: Functions like format-document, matches-query?, etc. are duplicated
+   here rather than imported from the handler namespaces. This is intentional:
+   all API handlers use the same 'handler' namespace name (required by the
+   Lambda runtime), which prevents importing them together in tests.
+
+   These duplicated functions serve as contract tests - they verify the
+   expected formatting logic that the handlers must implement. If a handler's
+   formatting changes, these tests will catch any breaking changes to the
+   API response structure."
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]))
 

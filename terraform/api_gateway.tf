@@ -3,19 +3,14 @@
 # =============================================================================
 
 resource "aws_apigatewayv2_api" "pkm_api" {
+  for_each = local.mobile_api
+
   name          = "${var.project_name}-mobile-api"
   protocol_type = "HTTP"
   description   = "PKM Mobile API for iOS app"
 
-  # CORS configuration
-  cors_configuration {
-    allow_origins     = ["*"]
-    allow_methods     = ["GET", "OPTIONS"]
-    allow_headers     = ["Authorization", "Content-Type", "X-Request-ID"]
-    expose_headers    = ["X-Request-ID"]
-    max_age           = 300
-    allow_credentials = false
-  }
+  # Note: CORS configuration removed - not needed for native iOS apps.
+  # CORS is a browser security mechanism and doesn't apply to mobile apps.
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-mobile-api"
@@ -27,14 +22,16 @@ resource "aws_apigatewayv2_api" "pkm_api" {
 # =============================================================================
 
 resource "aws_apigatewayv2_authorizer" "cognito" {
-  api_id           = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id           = aws_apigatewayv2_api.pkm_api["enabled"].id
   authorizer_type  = "JWT"
   identity_sources = ["$request.header.Authorization"]
   name             = "cognito-jwt-authorizer"
 
   jwt_configuration {
-    audience = [aws_cognito_user_pool_client.ios_client.id]
-    issuer   = "https://${aws_cognito_user_pool.pkm_users.endpoint}"
+    audience = [aws_cognito_user_pool_client.ios_client["enabled"].id]
+    issuer   = "https://${aws_cognito_user_pool.pkm_users["enabled"].endpoint}"
   }
 }
 
@@ -43,12 +40,14 @@ resource "aws_apigatewayv2_authorizer" "cognito" {
 # =============================================================================
 
 resource "aws_apigatewayv2_stage" "api_default" {
-  api_id      = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id      = aws_apigatewayv2_api.pkm_api["enabled"].id
   name        = "$default"
   auto_deploy = true
 
   access_log_settings {
-    destination_arn = aws_cloudwatch_log_group.api_gateway.arn
+    destination_arn = aws_cloudwatch_log_group.api_gateway["enabled"].arn
     format = jsonencode({
       requestId        = "$context.requestId"
       ip               = "$context.identity.sourceIp"
@@ -78,6 +77,8 @@ resource "aws_apigatewayv2_stage" "api_default" {
 # =============================================================================
 
 resource "aws_cloudwatch_log_group" "api_gateway" {
+  for_each = local.mobile_api
+
   name              = "/aws/apigateway/${var.project_name}-mobile-api"
   retention_in_days = var.lambda_log_retention_days
 
@@ -92,36 +93,44 @@ resource "aws_cloudwatch_log_group" "api_gateway" {
 
 # GET /documents - List all documents
 resource "aws_apigatewayv2_integration" "list_documents" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_list_documents.arn
+  integration_uri        = aws_lambda_function.api_list_documents["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "list_documents" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /documents"
-  target             = "integrations/${aws_apigatewayv2_integration.list_documents.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.list_documents["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 # GET /documents/{key+} - Get single document (greedy path for nested keys)
 resource "aws_apigatewayv2_integration" "get_document" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_get_document.arn
+  integration_uri        = aws_lambda_function.api_get_document["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "get_document" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /documents/{key+}"
-  target             = "integrations/${aws_apigatewayv2_integration.get_document.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.get_document["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 # =============================================================================
@@ -129,19 +138,23 @@ resource "aws_apigatewayv2_route" "get_document" {
 # =============================================================================
 
 resource "aws_apigatewayv2_integration" "search" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_search.arn
+  integration_uri        = aws_lambda_function.api_search["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "search" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /search"
-  target             = "integrations/${aws_apigatewayv2_integration.search.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.search["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 # =============================================================================
@@ -149,35 +162,43 @@ resource "aws_apigatewayv2_route" "search" {
 # =============================================================================
 
 resource "aws_apigatewayv2_integration" "list_tags" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_list_tags.arn
+  integration_uri        = aws_lambda_function.api_list_tags["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "list_tags" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /tags"
-  target             = "integrations/${aws_apigatewayv2_integration.list_tags.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.list_tags["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 resource "aws_apigatewayv2_integration" "documents_by_tag" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_documents_by_tag.arn
+  integration_uri        = aws_lambda_function.api_documents_by_tag["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "documents_by_tag" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /tags/{tag}/documents"
-  target             = "integrations/${aws_apigatewayv2_integration.documents_by_tag.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.documents_by_tag["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 # =============================================================================
@@ -185,19 +206,23 @@ resource "aws_apigatewayv2_route" "documents_by_tag" {
 # =============================================================================
 
 resource "aws_apigatewayv2_integration" "list_classifications" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_list_classifications.arn
+  integration_uri        = aws_lambda_function.api_list_classifications["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "list_classifications" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /classifications"
-  target             = "integrations/${aws_apigatewayv2_integration.list_classifications.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.list_classifications["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 # =============================================================================
@@ -205,35 +230,43 @@ resource "aws_apigatewayv2_route" "list_classifications" {
 # =============================================================================
 
 resource "aws_apigatewayv2_integration" "list_summaries" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_list_summaries.arn
+  integration_uri        = aws_lambda_function.api_list_summaries["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "list_summaries" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /summaries"
-  target             = "integrations/${aws_apigatewayv2_integration.list_summaries.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.list_summaries["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 resource "aws_apigatewayv2_integration" "list_reports" {
-  api_id                 = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.api_list_reports.arn
+  integration_uri        = aws_lambda_function.api_list_reports["enabled"].arn
   integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "list_reports" {
-  api_id             = aws_apigatewayv2_api.pkm_api.id
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
   route_key          = "GET /reports"
-  target             = "integrations/${aws_apigatewayv2_integration.list_reports.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.list_reports["enabled"].id}"
   authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
 }
 
 # =============================================================================
@@ -241,65 +274,81 @@ resource "aws_apigatewayv2_route" "list_reports" {
 # =============================================================================
 
 resource "aws_lambda_permission" "api_list_documents" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_list_documents.function_name
+  function_name = aws_lambda_function.api_list_documents["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_get_document" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_get_document.function_name
+  function_name = aws_lambda_function.api_get_document["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_search" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_search.function_name
+  function_name = aws_lambda_function.api_search["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_list_tags" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_list_tags.function_name
+  function_name = aws_lambda_function.api_list_tags["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_documents_by_tag" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_documents_by_tag.function_name
+  function_name = aws_lambda_function.api_documents_by_tag["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_list_classifications" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_list_classifications.function_name
+  function_name = aws_lambda_function.api_list_classifications["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_list_summaries" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_list_summaries.function_name
+  function_name = aws_lambda_function.api_list_summaries["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "api_list_reports" {
+  for_each = local.mobile_api
+
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_list_reports.function_name
+  function_name = aws_lambda_function.api_list_reports["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }

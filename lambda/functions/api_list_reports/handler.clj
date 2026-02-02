@@ -11,7 +11,10 @@
 (def max-limit 52)
 
 (defn list-report-files
-  "List weekly report files from S3"
+  "List weekly report files from S3.
+   Note: S3 list-objects has a 1000 object limit per request. This is acceptable
+   for weekly reports as it would take 19+ years to exceed this limit.
+   If pagination is needed in the future, implement continuation tokens."
   []
   (try
     (s3/list-objects s3-bucket reports-prefix)

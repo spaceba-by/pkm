@@ -153,3 +153,9 @@ variable "api_throttle_rate_limit" {
   type        = number
   default     = 50
 }
+
+variable "enable_password_auth_for_testing" {
+  description = "Enable USER_PASSWORD_AUTH flow for Cognito (less secure, for testing only). In production, use SRP auth."
+  type        = bool
+  default     = false
+}

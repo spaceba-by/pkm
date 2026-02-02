@@ -106,19 +106,31 @@
       (check-error "DeleteItem")))
 
 (defn query
-  "Queries DynamoDB table with key condition"
-  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit]
+  "Queries DynamoDB table with key condition.
+   Options:
+     :index-name - Name of GSI to query
+     :key-condition-expr - Key condition expression
+     :expr-attr-values - Expression attribute values map
+     :limit - Maximum items to return (default 100)
+     :select - Select mode: nil (default), \"COUNT\", \"ALL_ATTRIBUTES\", etc.
+               When \"COUNT\", returns just the count (integer) instead of items."
+  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit select]
                  :or {limit 100}}]
   (let [request (cond-> {:TableName table-name
                          :KeyConditionExpression key-condition-expr
-                         :ExpressionAttributeValues (marshall-item expr-attr-values)
-                         :Limit limit}
-                  index-name (assoc :IndexName index-name))
+                         :ExpressionAttributeValues (marshall-item expr-attr-values)}
+                  ;; Don't include Limit when using COUNT - we want total count
+                  (and limit (not= select "COUNT")) (assoc :Limit limit)
+                  index-name (assoc :IndexName index-name)
+                  select (assoc :Select select))
         response (-> (aws/invoke @ddb-client
                                  {:op :Query
                                   :request request})
                      (check-error "Query"))]
-    (mapv unmarshall-item (:Items response))))
+    ;; When SELECT COUNT is used, return just the count
+    (if (= select "COUNT")
+      (:Count response)
+      (mapv unmarshall-item (:Items response)))))
 
 (defn scan
   "Scans DynamoDB table with optional filter"

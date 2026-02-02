@@ -2,7 +2,13 @@
 # Cognito User Pool - User Authentication for PKM Mobile API
 # =============================================================================
 
+locals {
+  mobile_api = var.enable_mobile_api ? { "enabled" = true } : {}
+}
+
 resource "aws_cognito_user_pool" "pkm_users" {
+  for_each = local.mobile_api
+
   name = "${var.project_name}-users"
 
   # Username configuration - use email as username
@@ -64,18 +70,24 @@ resource "aws_cognito_user_pool" "pkm_users" {
 # =============================================================================
 
 resource "aws_cognito_user_pool_client" "ios_client" {
+  for_each = local.mobile_api
+
   name         = "${var.project_name}-ios-client"
-  user_pool_id = aws_cognito_user_pool.pkm_users.id
+  user_pool_id = aws_cognito_user_pool.pkm_users["enabled"].id
 
   # IMPORTANT: No client secret for mobile apps (SRP auth)
   generate_secret = false
 
   # Supported auth flows
-  explicit_auth_flows = [
-    "ALLOW_USER_SRP_AUTH",      # Secure Remote Password - recommended for mobile
-    "ALLOW_REFRESH_TOKEN_AUTH", # Allow token refresh
-    "ALLOW_USER_PASSWORD_AUTH"  # Allow direct password auth for testing
-  ]
+  # ALLOW_USER_SRP_AUTH is the secure, recommended flow for mobile apps
+  # ALLOW_USER_PASSWORD_AUTH is less secure but useful for testing
+  explicit_auth_flows = concat(
+    [
+      "ALLOW_USER_SRP_AUTH",      # Secure Remote Password - recommended for mobile
+      "ALLOW_REFRESH_TOKEN_AUTH", # Allow token refresh
+    ],
+    var.enable_password_auth_for_testing ? ["ALLOW_USER_PASSWORD_AUTH"] : []
+  )
 
   # Token validity periods
   access_token_validity  = 1  # hours
@@ -109,13 +121,15 @@ resource "aws_cognito_user_pool_client" "ios_client" {
 # =============================================================================
 
 resource "aws_cognito_identity_pool" "pkm_identity" {
+  for_each = local.mobile_api
+
   identity_pool_name               = "${var.project_name}-identity"
   allow_unauthenticated_identities = false
   allow_classic_flow               = false
 
   cognito_identity_providers {
-    client_id               = aws_cognito_user_pool_client.ios_client.id
-    provider_name           = aws_cognito_user_pool.pkm_users.endpoint
+    client_id               = aws_cognito_user_pool_client.ios_client["enabled"].id
+    provider_name           = aws_cognito_user_pool.pkm_users["enabled"].endpoint
     server_side_token_check = true
   }
 
@@ -129,6 +143,8 @@ resource "aws_cognito_identity_pool" "pkm_identity" {
 # =============================================================================
 
 resource "aws_iam_role" "cognito_authenticated" {
+  for_each = local.mobile_api
+
   name = "${var.project_name}-cognito-authenticated"
 
   assume_role_policy = jsonencode({
@@ -142,7 +158,7 @@ resource "aws_iam_role" "cognito_authenticated" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.pkm_identity.id
+            "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.pkm_identity["enabled"].id
           }
           "ForAnyValue:StringLike" = {
             "cognito-identity.amazonaws.com:amr" = "authenticated"
@@ -158,9 +174,13 @@ resource "aws_iam_role" "cognito_authenticated" {
 }
 
 # Minimal permissions for authenticated users (API access only)
+# NOTE: Future admin routes (write operations, user management) will need
+# separate authorization beyond JWT validation (e.g., group-based access control)
 resource "aws_iam_role_policy" "cognito_authenticated_policy" {
+  for_each = local.mobile_api
+
   name = "api-access"
-  role = aws_iam_role.cognito_authenticated.id
+  role = aws_iam_role.cognito_authenticated["enabled"].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -170,7 +190,7 @@ resource "aws_iam_role_policy" "cognito_authenticated_policy" {
         Action = [
           "execute-api:Invoke"
         ]
-        Resource = "${aws_apigatewayv2_api.pkm_api.execution_arn}/*"
+        Resource = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*"
       }
     ]
   })
@@ -178,9 +198,11 @@ resource "aws_iam_role_policy" "cognito_authenticated_policy" {
 
 # Attach roles to identity pool
 resource "aws_cognito_identity_pool_roles_attachment" "main" {
-  identity_pool_id = aws_cognito_identity_pool.pkm_identity.id
+  for_each = local.mobile_api
+
+  identity_pool_id = aws_cognito_identity_pool.pkm_identity["enabled"].id
 
   roles = {
-    "authenticated" = aws_iam_role.cognito_authenticated.arn
+    "authenticated" = aws_iam_role.cognito_authenticated["enabled"].arn
   }
 }

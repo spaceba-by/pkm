@@ -7,7 +7,10 @@
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 
 (defn get-all-tags
-  "Get all unique tags with document counts from document metadata"
+  "Get all unique tags with document counts from document metadata.
+   Note: This scans up to 1000 documents which is sufficient for most PKM vaults.
+   For very large vaults (1000+ documents), consider implementing pagination
+   or a separate tag aggregation table updated via DynamoDB Streams."
   []
   ;; Scan all metadata items and extract tags
   (let [all-docs (ddb/scan ddb-table

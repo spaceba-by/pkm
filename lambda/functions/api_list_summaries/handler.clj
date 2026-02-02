@@ -11,7 +11,10 @@
 (def max-limit 100)
 
 (defn list-summary-files
-  "List daily summary files from S3"
+  "List daily summary files from S3.
+   Note: S3 list-objects has a 1000 object limit per request. This is acceptable
+   for daily summaries as it would take 2.7+ years to exceed this limit.
+   If pagination is needed in the future, implement continuation tokens."
   []
   (try
     (s3/list-objects s3-bucket summaries-prefix)

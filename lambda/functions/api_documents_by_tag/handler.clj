@@ -17,7 +17,10 @@
              :limit (min limit max-limit)))
 
 (defn get-document-metadata
-  "Get full metadata for a document"
+  "Get full metadata for a document.
+   TODO: This creates an N+1 query pattern - one query per document.
+   For better performance with large result sets, consider using
+   DynamoDB BatchGetItem to fetch multiple documents in a single request."
   [doc-path]
   (ddb/get-item ddb-table {:PK doc-path :SK "METADATA"}))
 

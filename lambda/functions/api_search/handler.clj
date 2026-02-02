@@ -28,7 +28,12 @@
         (some #(str/includes? (str/lower-case %) query-lower) tags))))
 
 (defn search-documents
-  "Search documents by title, path, and tags (basic implementation)"
+  "Search documents by title, path, and tags.
+   Note: This is a temporary client-side filtering implementation that fetches
+   up to 500 documents and filters in memory. This approach is acceptable for
+   small-to-medium PKM vaults but has O(n) performance.
+   TODO: For production-scale search, implement OpenSearch/Elasticsearch
+   integration for full-text search with relevance scoring."
   [query limit]
   (let [query-lower (str/lower-case query)
         all-docs (get-all-documents)]

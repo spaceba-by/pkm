@@ -3,7 +3,7 @@
 # =============================================================================
 
 locals {
-  api_lambda_functions = [
+  api_lambda_functions = var.enable_mobile_api ? [
     "api-list-documents",
     "api-get-document",
     "api-search",
@@ -12,7 +12,7 @@ locals {
     "api-list-classifications",
     "api-list-summaries",
     "api-list-reports"
-  ]
+  ] : []
 
   api_lambda_environment = {
     S3_BUCKET_NAME      = aws_s3_bucket.vault.id
@@ -37,6 +37,8 @@ resource "aws_cloudwatch_log_group" "api_lambda_logs" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_list_documents" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-list-documents"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -78,6 +80,8 @@ resource "aws_lambda_function" "api_list_documents" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_get_document" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-get-document"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -119,6 +123,8 @@ resource "aws_lambda_function" "api_get_document" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_search" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-search"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -160,6 +166,8 @@ resource "aws_lambda_function" "api_search" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_list_tags" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-list-tags"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -201,6 +209,8 @@ resource "aws_lambda_function" "api_list_tags" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_documents_by_tag" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-documents-by-tag"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -242,6 +252,8 @@ resource "aws_lambda_function" "api_documents_by_tag" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_list_classifications" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-list-classifications"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -283,6 +295,8 @@ resource "aws_lambda_function" "api_list_classifications" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_list_summaries" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-list-summaries"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"
@@ -324,6 +338,8 @@ resource "aws_lambda_function" "api_list_summaries" {
 # =============================================================================
 
 resource "aws_lambda_function" "api_list_reports" {
+  for_each = local.mobile_api
+
   function_name = "${var.project_name}-api-list-reports"
   role          = aws_iam_role.lambda_execution.arn
   handler       = "handler/handler"

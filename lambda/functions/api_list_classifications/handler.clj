@@ -14,14 +14,14 @@
    {:name "project"   :displayName "Project"   :icon "folder"}])
 
 (defn count-by-classification
-  "Count documents for a specific classification"
+  "Count documents for a specific classification using SELECT COUNT.
+   This is more efficient than fetching all items and counting client-side."
   [classification]
-  (let [docs (ddb/query ddb-table
-                        :index-name "classification-index"
-                        :key-condition-expr "classification = :class"
-                        :expr-attr-values {":class" classification}
-                        :limit 1000)]
-    (count docs)))
+  (ddb/query ddb-table
+             :index-name "classification-index"
+             :key-condition-expr "classification = :class"
+             :expr-attr-values {":class" classification}
+             :select "COUNT"))
 
 (defn get-classification-counts
   "Get document counts for all classifications"
