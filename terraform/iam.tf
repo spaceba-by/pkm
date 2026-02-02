@@ -682,7 +682,8 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
         ]
         Resource = [
           "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*",
-          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vendedlogs/states/${var.project_name}-*"
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vendedlogs/states/${var.project_name}-*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/${var.project_name}-*"
         ]
       },
       {
@@ -765,10 +766,17 @@ resource "aws_iam_role_policy" "github_actions_cognito" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "CognitoUserPoolCreate"
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:CreateUserPool"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "CognitoUserPoolManagement"
         Effect = "Allow"
         Action = [
-          "cognito-idp:CreateUserPool",
           "cognito-idp:DeleteUserPool",
           "cognito-idp:DescribeUserPool",
           "cognito-idp:UpdateUserPool",
@@ -835,7 +843,8 @@ resource "aws_iam_role_policy" "github_actions_apigateway" {
         ]
         Resource = [
           "arn:aws:apigateway:${var.aws_region}::/apis",
-          "arn:aws:apigateway:${var.aws_region}::/apis/*"
+          "arn:aws:apigateway:${var.aws_region}::/apis/*",
+          "arn:aws:apigateway:${var.aws_region}::/tags/*"
         ]
       }
     ]
