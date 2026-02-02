@@ -107,7 +107,7 @@ variable "lambda_build_tag" {
 variable "lambda_source_type" {
   description = "Source type for Lambda code: 'local' (from ../lambda/target/) or 's3' (from artifacts bucket)"
   type        = string
-  default     = "local"
+  default     = "s3"
 
   validation {
     condition     = contains(["local", "s3"], var.lambda_source_type)
