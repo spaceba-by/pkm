@@ -34,10 +34,10 @@ resource "aws_cognito_user_pool" "pkm_users" {
 
   # User attribute schema
   schema {
-    name                     = "email"
-    attribute_data_type      = "String"
-    required                 = true
-    mutable                  = true
+    name                = "email"
+    attribute_data_type = "String"
+    required            = true
+    mutable             = true
     string_attribute_constraints {
       min_length = 5
       max_length = 256
@@ -72,15 +72,15 @@ resource "aws_cognito_user_pool_client" "ios_client" {
 
   # Supported auth flows
   explicit_auth_flows = [
-    "ALLOW_USER_SRP_AUTH",        # Secure Remote Password - recommended for mobile
-    "ALLOW_REFRESH_TOKEN_AUTH",   # Allow token refresh
-    "ALLOW_USER_PASSWORD_AUTH"    # Allow direct password auth for testing
+    "ALLOW_USER_SRP_AUTH",      # Secure Remote Password - recommended for mobile
+    "ALLOW_REFRESH_TOKEN_AUTH", # Allow token refresh
+    "ALLOW_USER_PASSWORD_AUTH"  # Allow direct password auth for testing
   ]
 
   # Token validity periods
-  access_token_validity  = 1    # hours
-  id_token_validity      = 1    # hours
-  refresh_token_validity = 30   # days
+  access_token_validity  = 1  # hours
+  id_token_validity      = 1  # hours
+  refresh_token_validity = 30 # days
 
   token_validity_units {
     access_token  = "hours"

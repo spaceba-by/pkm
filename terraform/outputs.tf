@@ -122,10 +122,10 @@ output "api_gateway_id" {
 output "mobile_api_config" {
   description = "Configuration for iOS app (safe to embed)"
   value = var.enable_mobile_api ? {
-    api_url           = aws_apigatewayv2_stage.api_default.invoke_url
-    cognito_region    = var.aws_region
-    user_pool_id      = aws_cognito_user_pool.pkm_users.id
-    client_id         = aws_cognito_user_pool_client.ios_client.id
-    identity_pool_id  = aws_cognito_identity_pool.pkm_identity.id
+    api_url          = aws_apigatewayv2_stage.api_default.invoke_url
+    cognito_region   = var.aws_region
+    user_pool_id     = aws_cognito_user_pool.pkm_users.id
+    client_id        = aws_cognito_user_pool_client.ios_client.id
+    identity_pool_id = aws_cognito_identity_pool.pkm_identity.id
   } : null
 }
