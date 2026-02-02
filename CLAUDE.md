@@ -46,13 +46,25 @@ Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock
                               _agent/ outputs ← rclone ←─┘
 ```
 
-**6 Lambda Functions** (all Babashka/Clojure):
+**14 Lambda Functions** (all Babashka/Clojure):
+
+Processing (6):
 - `extract_metadata` - Parse frontmatter, tags, links
 - `classify_document` - AI classification (meeting/idea/reference/journal/project)
 - `extract_entities` - Named entity extraction (people, orgs, concepts, locations)
 - `generate_daily_summary` - Daily activity summaries (6 AM UTC)
 - `generate_weekly_report` - Weekly analysis (8 PM UTC Sunday)
 - `update_classification_index` - Maintain classification index
+
+Mobile API (8):
+- `api_list_documents` - List documents with optional classification filter
+- `api_get_document` - Get document with content
+- `api_search` - Search by title, path, tags
+- `api_list_tags` - List all tags with counts
+- `api_documents_by_tag` - Get documents by specific tag
+- `api_list_classifications` - List classification types with counts
+- `api_list_summaries` - List daily AI summaries
+- `api_list_reports` - List weekly AI reports
 
 **Bedrock Models** (defined in `terraform/variables.tf`):
 - Haiku 4.5: Fast classification and extraction
@@ -63,12 +75,22 @@ Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock
 ```
 lambda/
 ├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj)
+├── shared/api/           # API response utilities (response.clj)
 ├── shared/markdown/      # Markdown parsing utilities
-├── functions/            # 6 Lambda function implementations
-└── tests/                # Unit tests
+├── functions/            # 14 Lambda function implementations
+└── tests/                # Unit tests (27 tests, 158 assertions)
 
-terraform/                # All AWS infrastructure (S3, DynamoDB, Lambda, EventBridge, Step Functions)
-scripts/                  # deploy.sh, setup-sync.sh, test-workflow.sh
+terraform/                # All AWS infrastructure
+├── lambda.tf             # Processing Lambda functions
+├── api_lambda.tf         # API Lambda functions
+├── api_gateway.tf        # HTTP API Gateway with JWT auth
+├── cognito.tf            # User Pool and Identity Pool
+└── ...                   # S3, DynamoDB, EventBridge, Step Functions
+
+scripts/                  # Deployment and testing
+├── deploy.sh, setup-sync.sh, test-workflow.sh
+├── test-api.sh           # API integration tests
+└── create-cognito-user.sh # Create test users
 ```
 
 ## Key Patterns
@@ -86,3 +108,8 @@ scripts/                  # deploy.sh, setup-sync.sh, test-workflow.sh
 - Creates Lambda ZIPs with embedded Babashka binary and uberjar
 - Uses `bblf` (Babashka Lambda Framework) for runtime
 - Bootstrap script invokes `bb -jar lambda.jar -m bblf.runtime handler/handler`
+
+**API Handler Pattern** (see `lambda/functions/api_list_documents/handler.clj`):
+- Receives API Gateway events with JWT claims
+- Uses `api.response` utilities for consistent responses
+- Returns JSON with appropriate HTTP status codes
