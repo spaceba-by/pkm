@@ -165,7 +165,7 @@ platform :ios do
       xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
     )
     # Extract coverage using xccov
-    sh("xcrun xccov view --report --json ../TestResults/coverage/PKMReader.xcresult > ../coverage.json || true")
+    sh("cd .. && xcrun xccov view --report --json TestResults/coverage/PKMReader.xcresult > coverage.json")
   end
 
   desc "Generate Xcode project from project.yml"
@@ -175,6 +175,6 @@ platform :ios do
 
   desc "Setup project for new developer"
   lane :setup do
-    sh("cd .. && ./Scripts/bootstrap.sh")
+    sh("../Scripts/bootstrap.sh")
   end
 end

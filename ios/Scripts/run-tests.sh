@@ -58,6 +58,10 @@ case $TEST_TYPE in
 esac
 
 set -o pipefail
-xcodebuild test "${XCODEBUILD_ARGS[@]}" 2>&1 | xcbeautify || xcodebuild test "${XCODEBUILD_ARGS[@]}"
+if command -v xcbeautify &> /dev/null; then
+    xcodebuild test "${XCODEBUILD_ARGS[@]}" 2>&1 | xcbeautify
+else
+    xcodebuild test "${XCODEBUILD_ARGS[@]}"
+fi
 
 echo "Tests completed successfully!"
