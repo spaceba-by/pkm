@@ -125,3 +125,31 @@ variable "github_repository" {
     error_message = "github_repository is required when enable_github_oidc is true."
   }
 }
+
+# =============================================================================
+# Mobile API Variables
+# =============================================================================
+
+variable "enable_mobile_api" {
+  description = "Enable the mobile API infrastructure (Cognito, API Gateway, API Lambdas)"
+  type        = bool
+  default     = true
+}
+
+variable "cognito_deletion_protection" {
+  description = "Enable deletion protection for Cognito User Pool (recommended for production)"
+  type        = bool
+  default     = false
+}
+
+variable "api_throttle_burst_limit" {
+  description = "API Gateway burst limit (requests per second)"
+  type        = number
+  default     = 100
+}
+
+variable "api_throttle_rate_limit" {
+  description = "API Gateway sustained rate limit (requests per second)"
+  type        = number
+  default     = 50
+}

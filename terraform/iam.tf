@@ -753,3 +753,91 @@ resource "aws_iam_role_policy" "github_actions_sqs" {
     ]
   })
 }
+
+# Policy for GitHub Actions to manage Cognito User Pools
+resource "aws_iam_role_policy" "github_actions_cognito" {
+  for_each = local.github_oidc
+
+  name = "cognito-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "CognitoUserPoolManagement"
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:CreateUserPool",
+          "cognito-idp:DeleteUserPool",
+          "cognito-idp:DescribeUserPool",
+          "cognito-idp:UpdateUserPool",
+          "cognito-idp:ListUserPools",
+          "cognito-idp:GetUserPoolMfaConfig",
+          "cognito-idp:SetUserPoolMfaConfig",
+          "cognito-idp:CreateUserPoolClient",
+          "cognito-idp:DeleteUserPoolClient",
+          "cognito-idp:DescribeUserPoolClient",
+          "cognito-idp:UpdateUserPoolClient",
+          "cognito-idp:ListUserPoolClients",
+          "cognito-idp:TagResource",
+          "cognito-idp:UntagResource",
+          "cognito-idp:ListTagsForResource"
+        ]
+        Resource = [
+          "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/*"
+        ]
+      },
+      {
+        Sid    = "CognitoIdentityPoolManagement"
+        Effect = "Allow"
+        Action = [
+          "cognito-identity:CreateIdentityPool",
+          "cognito-identity:DeleteIdentityPool",
+          "cognito-identity:DescribeIdentityPool",
+          "cognito-identity:UpdateIdentityPool",
+          "cognito-identity:ListIdentityPools",
+          "cognito-identity:SetIdentityPoolRoles",
+          "cognito-identity:GetIdentityPoolRoles",
+          "cognito-identity:TagResource",
+          "cognito-identity:UntagResource",
+          "cognito-identity:ListTagsForResource"
+        ]
+        Resource = [
+          "arn:aws:cognito-identity:${var.aws_region}:${data.aws_caller_identity.current.account_id}:identitypool/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage API Gateway
+resource "aws_iam_role_policy" "github_actions_apigateway" {
+  for_each = local.github_oidc
+
+  name = "apigateway-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "APIGatewayV2Management"
+        Effect = "Allow"
+        Action = [
+          "apigateway:GET",
+          "apigateway:POST",
+          "apigateway:PUT",
+          "apigateway:DELETE",
+          "apigateway:PATCH",
+          "apigateway:TagResource",
+          "apigateway:UntagResource"
+        ]
+        Resource = [
+          "arn:aws:apigateway:${var.aws_region}::/apis",
+          "arn:aws:apigateway:${var.aws_region}::/apis/*"
+        ]
+      }
+    ]
+  })
+}

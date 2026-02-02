@@ -84,3 +84,48 @@ output "github_actions_role_arn" {
   description = "ARN of the IAM role for GitHub Actions"
   value       = var.enable_github_oidc ? aws_iam_role.github_actions["enabled"].arn : null
 }
+
+# =============================================================================
+# Mobile API Outputs
+# =============================================================================
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = var.enable_mobile_api ? aws_cognito_user_pool.pkm_users.id : null
+}
+
+output "cognito_user_pool_endpoint" {
+  description = "Cognito User Pool endpoint (issuer URL)"
+  value       = var.enable_mobile_api ? "https://${aws_cognito_user_pool.pkm_users.endpoint}" : null
+}
+
+output "cognito_client_id" {
+  description = "Cognito User Pool Client ID (safe to embed in iOS app)"
+  value       = var.enable_mobile_api ? aws_cognito_user_pool_client.ios_client.id : null
+}
+
+output "cognito_identity_pool_id" {
+  description = "Cognito Identity Pool ID"
+  value       = var.enable_mobile_api ? aws_cognito_identity_pool.pkm_identity.id : null
+}
+
+output "api_gateway_url" {
+  description = "API Gateway invocation URL"
+  value       = var.enable_mobile_api ? aws_apigatewayv2_stage.api_default.invoke_url : null
+}
+
+output "api_gateway_id" {
+  description = "API Gateway ID"
+  value       = var.enable_mobile_api ? aws_apigatewayv2_api.pkm_api.id : null
+}
+
+output "mobile_api_config" {
+  description = "Configuration for iOS app (safe to embed)"
+  value = var.enable_mobile_api ? {
+    api_url           = aws_apigatewayv2_stage.api_default.invoke_url
+    cognito_region    = var.aws_region
+    user_pool_id      = aws_cognito_user_pool.pkm_users.id
+    client_id         = aws_cognito_user_pool_client.ios_client.id
+    identity_pool_id  = aws_cognito_identity_pool.pkm_identity.id
+  } : null
+}
