@@ -3,7 +3,15 @@
          "functions/classify_document"
          "functions/extract_entities"
          "functions/generate_daily_summary"
-         "functions/generate_weekly_report"]
+         "functions/generate_weekly_report"
+         "functions/api_list_documents"
+         "functions/api_get_document"
+         "functions/api_search"
+         "functions/api_list_tags"
+         "functions/api_documents_by_tag"
+         "functions/api_list_classifications"
+         "functions/api_list_summaries"
+         "functions/api_list_reports"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}
