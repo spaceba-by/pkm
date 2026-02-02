@@ -13,6 +13,14 @@ options:
   indentWidth: 4
   tabWidth: 4
 
+packages:
+  Textual:
+    url: https://github.com/gonzalezreal/textual
+    from: "0.1.0"
+  Amplify:
+    url: https://github.com/aws-amplify/amplify-swift
+    from: "2.40.0"
+
 settings:
   base:
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
@@ -55,7 +63,12 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
         ENABLE_PREVIEWS: YES
-    dependencies: []
+    dependencies:
+      - package: Textual
+      - package: Amplify
+        product: Amplify
+      - package: Amplify
+        product: AWSCognitoAuthPlugin
 
   PKMReaderTests:
     type: bundle.unit-test

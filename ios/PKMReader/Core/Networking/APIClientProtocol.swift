@@ -29,4 +29,18 @@ protocol APIClientProtocol: Sendable {
     /// List all tags in the vault
     /// - Returns: List of tags with document counts
     func listTags() async throws -> [Tag]
+
+    /// List all classifications with counts
+    /// - Returns: List of classifications with document counts
+    func listClassifications() async throws -> [ClassificationCount]
+
+    /// List daily summaries
+    /// - Parameter limit: Maximum number of summaries to return
+    /// - Returns: List of daily summaries
+    func listSummaries(limit: Int) async throws -> [Summary]
+
+    /// List weekly reports
+    /// - Parameter limit: Maximum number of reports to return
+    /// - Returns: List of weekly reports
+    func listReports(limit: Int) async throws -> [Report]
 }
