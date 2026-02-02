@@ -91,7 +91,16 @@
    "extract_entities"            "handler/handler"
    "generate_daily_summary"      "handler/handler"
    "generate_weekly_report"      "handler/handler"
-   "update_classification_index" "handler/handler"})
+   "update_classification_index" "handler/handler"
+   ;; API Lambda functions for mobile app
+   "api_list_documents"          "handler/handler"
+   "api_get_document"            "handler/handler"
+   "api_search"                  "handler/handler"
+   "api_list_tags"               "handler/handler"
+   "api_documents_by_tag"        "handler/handler"
+   "api_list_classifications"    "handler/handler"
+   "api_list_summaries"          "handler/handler"
+   "api_list_reports"            "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

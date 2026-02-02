@@ -1,0 +1,73 @@
+(ns handler
+  "API Lambda: Get single document with content"
+  (:require [aws.dynamodb :as ddb]
+            [aws.s3 :as s3]
+            [api.response :as r]
+            [cheshire.core :as json]))
+
+(def s3-bucket (System/getenv "S3_BUCKET_NAME"))
+(def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
+
+(defn get-document-metadata
+  "Get document metadata from DynamoDB"
+  [document-key]
+  (ddb/get-item ddb-table {:PK document-key :SK "METADATA"}))
+
+(defn get-document-content
+  "Get document content from S3"
+  [document-key]
+  (try
+    (s3/get-object s3-bucket document-key)
+    (catch Exception e
+      (println "Error fetching content for" document-key ":" (.getMessage e))
+      nil)))
+
+(defn format-document-detail
+  "Format full document with content for API response"
+  [metadata content]
+  {:id (:PK metadata)
+   :title (or (:title metadata) "Untitled")
+   :content content
+   :classification (:classification metadata)
+   :tags (or (:tags metadata) [])
+   :linksTo (or (:links_to metadata) [])
+   :entities (:entities metadata)
+   :created (:created metadata)
+   :modified (:modified metadata)
+   :hasFrontmatter (:has_frontmatter metadata)})
+
+(defn handler
+  "Lambda handler for GET /documents/{key+}"
+  [request]
+  (try
+    (let [event (json/parse-string (:body request) true)
+          path-params (r/parse-path-params event)
+          document-key (or (get path-params :key)
+                           (get path-params "key"))
+          user-sub (r/get-user-sub event)]
+
+      (when-not document-key
+        (throw (ex-info "Missing document key" {:type :bad-request})))
+
+      (println "User" user-sub "fetching document:" document-key)
+
+      (let [metadata (get-document-metadata document-key)]
+        (if-not metadata
+          (r/not-found (str "Document not found: " document-key))
+
+          (let [content (get-document-content document-key)
+                document (format-document-detail metadata content)]
+            (r/ok document)))))
+
+    (catch clojure.lang.ExceptionInfo e
+      (let [data (ex-data e)]
+        (case (:type data)
+          :bad-request (r/bad-request (.getMessage e))
+          (do
+            (println "Error:" (.getMessage e))
+            (r/internal-error "Failed to get document")))))
+
+    (catch Exception e
+      (println "Error getting document:" (.getMessage e))
+      (.printStackTrace e)
+      (r/internal-error "Failed to get document"))))

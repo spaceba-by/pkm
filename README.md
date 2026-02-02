@@ -20,16 +20,22 @@ Local Vault ↔ rclone ↔ S3 → EventBridge → Lambda → Bedrock
                         └────────────────────┴──→ DynamoDB
                                                   │
 Agent Outputs ← rclone ←────────────────────────┘
+
+iOS App → API Gateway (JWT) → Lambda → DynamoDB/S3
+              ↑
+         Cognito Auth
 ```
 
 **AWS Services Used:**
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
-- **Lambda:** 6 serverless functions for processing
+- **Lambda:** 14 serverless functions (6 processing + 8 API)
 - **Bedrock:** Claude 3 models for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
 - **CloudWatch:** Monitoring and logging
+- **Cognito:** User authentication for mobile API
+- **API Gateway:** REST API for iOS app
 
 ## Quick Start
 
@@ -101,6 +107,23 @@ Today I worked on...
 3. **Results stored** in DynamoDB and S3
 4. **Agent outputs** sync back to local `_agent/` directory
 
+### Mobile API
+
+The system includes a REST API for iOS app access:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /documents` | List documents with optional classification filter |
+| `GET /documents/{key+}` | Get document with content |
+| `GET /search?q=...` | Search documents by title, path, tags |
+| `GET /tags` | List all tags with counts |
+| `GET /tags/{tag}/documents` | Get documents by tag |
+| `GET /classifications` | List classification types with counts |
+| `GET /summaries` | List daily AI summaries |
+| `GET /reports` | List weekly AI reports |
+
+**Authentication:** Cognito User Pool with JWT tokens
+
 ### Generated Outputs
 
 Check the `_agent/` directory for:
@@ -128,17 +151,21 @@ _agent/
 ```
 pkm-agent-system/
 ├── README.md              # This file
-├── pkm-agent-system-prd.md  # Product requirements
 ├── docs/                  # Documentation
 │   ├── setup.md
 │   ├── architecture.md
 │   ├── sync-guide.md
-│   └── prompts.md
+│   ├── prompts.md
+│   ├── ios-app-scaffold-plan.md
+│   └── ios-phase-1-backend-api-plan.md
 ├── terraform/             # Infrastructure as Code
 │   ├── main.tf
 │   ├── s3.tf
 │   ├── dynamodb.tf
-│   ├── lambda.tf
+│   ├── lambda.tf          # Processing Lambda functions
+│   ├── api_lambda.tf      # API Lambda functions
+│   ├── api_gateway.tf     # HTTP API Gateway
+│   ├── cognito.tf         # User authentication
 │   ├── eventbridge.tf
 │   ├── stepfunctions.tf
 │   ├── iam.tf
@@ -147,32 +174,35 @@ pkm-agent-system/
 │   └── outputs.tf
 ├── lambda/                # Lambda functions (Babashka/Clojure)
 │   ├── bb.edn             # Babashka configuration
-│   ├── deps.edn           # Clojure dependencies
+│   ├── build.clj          # Build script
 │   ├── shared/            # Shared utilities
-│   │   ├── aws/
-│   │   │   ├── bedrock.clj
-│   │   │   ├── dynamodb.clj
-│   │   │   ├── s3.clj
-│   │   │   └── lambda.clj
-│   │   └── markdown/
-│   │       └── utils.clj
-│   ├── functions/         # Individual lambda functions
+│   │   ├── aws/           # AWS SDK wrappers
+│   │   ├── api/           # API response utilities
+│   │   └── markdown/      # Markdown parsing
+│   ├── functions/         # Lambda function implementations
 │   │   ├── classify_document/
 │   │   ├── extract_entities/
 │   │   ├── extract_metadata/
 │   │   ├── generate_daily_summary/
 │   │   ├── generate_weekly_report/
-│   │   └── update_classification_index/
-│   └── tests/             # Babashka tests
-├── stepfunctions/         # Step Functions workflows
-│   └── weekly_report_workflow.json
+│   │   ├── update_classification_index/
+│   │   ├── api_list_documents/
+│   │   ├── api_get_document/
+│   │   ├── api_search/
+│   │   ├── api_list_tags/
+│   │   ├── api_documents_by_tag/
+│   │   ├── api_list_classifications/
+│   │   ├── api_list_summaries/
+│   │   └── api_list_reports/
+│   └── tests/             # Unit tests
+├── ios/                   # iOS app (SwiftUI)
 ├── scripts/               # Deployment and setup scripts
 │   ├── deploy.sh
 │   ├── setup-sync.sh
-│   └── test-workflow.sh
+│   ├── test-workflow.sh
+│   ├── test-api.sh        # API integration tests
+│   └── create-cognito-user.sh
 └── sync/                  # Sync configuration
-    ├── rclone.conf.template
-    ├── com.pkm.sync.plist.template
     └── README.md
 ```
 
@@ -335,12 +365,14 @@ terraform apply
 - [x] Weekly reports
 - [x] Entity extraction
 - [x] Classification index
+- [x] Mobile API (Cognito + API Gateway)
+- [x] iOS app foundation (Phase 0-1)
+- [ ] iOS app UI implementation (Phase 2-3)
 - [ ] Semantic search with OpenSearch
 - [ ] Interactive chat interface
 - [ ] Task extraction and tracking
 - [ ] Knowledge graph visualization
 - [ ] Email/calendar integration
-- [ ] Mobile app for capture
 
 ## Contributing
 

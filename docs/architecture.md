@@ -7,69 +7,57 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 ## Architecture Diagram
 
 ```
-┌─────────────────┐
-│  Local Vault    │
-│   (macOS/iOS)   │
-└────────┬────────┘
-         │ rclone bisync (every 5 min)
-         ▼
-┌─────────────────────────────────────────────────────────────┐
-│                         AWS Cloud                            │
-│                                                              │
-│  ┌──────────────┐                                           │
-│  │  S3 Bucket   │                                           │
-│  │  (Source of  │                                           │
-│  │   Truth)     │                                           │
-│  └──────┬───────┘                                           │
-│         │ S3 Events → EventBridge                           │
-│         ▼                                                    │
-│  ┌──────────────────────────────────────────────────┐      │
-│  │           EventBridge Rules                       │      │
-│  │  • s3-markdown-events (PUT *.md)                 │      │
-│  │  • daily-summary-schedule (6 AM UTC)             │      │
-│  │  • weekly-report-schedule (Sun 8 PM UTC)         │      │
-│  └───┬──────────┬──────────────┬───────────────┬────┘      │
-│      │          │              │               │            │
-│      ▼          ▼              ▼               ▼            │
-│  ┌────────┐ ┌────────┐ ┌──────────┐  ┌────────────────┐   │
-│  │classify│ │extract │ │extract   │  │daily-summary   │   │
-│  │-doc    │ │-entity │ │-metadata │  │                │   │
-│  └───┬────┘ └───┬────┘ └────┬─────┘  └────┬───────────┘   │
-│      │          │           │              │                │
-│      │          │           │              │                │
-│      ▼          ▼           ▼              ▼                │
-│  ┌──────────────────────────────────────────────┐          │
-│  │            DynamoDB Table                     │          │
-│  │  PK: doc#path | tag#name | entity#type#name  │          │
-│  │  SK: metadata | doc#path | mention#doc       │          │
-│  │                                               │          │
-│  │  GSI: tag-index, classification-index,       │          │
-│  │       entity-index                            │          │
-│  └──────────────────────────────────────────────┘          │
-│                                                              │
-│  ┌──────────────────────────────────────────────┐          │
-│  │         Amazon Bedrock                        │          │
-│  │  • Claude 3 Haiku (classify, extract)        │          │
-│  │  • Claude 3.5 Sonnet (summaries, reports)    │          │
-│  └──────────────────────────────────────────────┘          │
-│                        ▲                                     │
-│                        │                                     │
-│               All Lambda functions                           │
-│                                                              │
-│  ┌──────────────────────────────────────────────┐          │
-│  │         Step Functions                        │          │
-│  │  weekly-report-workflow                       │          │
-│  │   └─> generate-weekly-report Lambda           │          │
-│  └──────────────────────────────────────────────┘          │
-│                                                              │
-│  ┌──────────────────────────────────────────────┐          │
-│  │         CloudWatch                            │          │
-│  │  • Logs (all Lambda functions)               │          │
-│  │  • Metrics Dashboard                          │          │
-│  │  • Alarms (errors, throttles, DLQ)           │          │
-│  └──────────────────────────────────────────────┘          │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────┐                    ┌─────────────────┐
+│  Local Vault    │                    │    iOS App      │
+│   (macOS)       │                    │   (SwiftUI)     │
+└────────┬────────┘                    └────────┬────────┘
+         │ rclone bisync (every 5 min)          │ HTTPS
+         ▼                                       ▼
+┌──────────────────────────────────────────────────────────────┐
+│                         AWS Cloud                             │
+│                                                               │
+│  ┌──────────────┐              ┌──────────────────────────┐  │
+│  │  S3 Bucket   │              │     Amazon Cognito       │  │
+│  │  (Source of  │              │  • User Pool (email)     │  │
+│  │   Truth)     │              │  • iOS App Client        │  │
+│  └──────┬───────┘              │  • Identity Pool         │  │
+│         │ S3 Events            └────────────┬─────────────┘  │
+│         ▼                                    │ JWT Auth       │
+│  ┌─────────────────────┐                    ▼                │
+│  │   EventBridge       │       ┌──────────────────────────┐  │
+│  │  • markdown-events  │       │    API Gateway (HTTP)    │  │
+│  │  • daily-schedule   │       │  • JWT Authorizer        │  │
+│  │  • weekly-schedule  │       │  • CORS enabled          │  │
+│  └───┬─────────────────┘       │  • 8 REST endpoints      │  │
+│      │                          └────────────┬─────────────┘  │
+│      ▼                                       │                │
+│  ┌────────────────────┐       ┌──────────────▼─────────────┐ │
+│  │ Processing Lambdas │       │      API Lambdas           │ │
+│  │ • classify-doc     │       │ • api-list-documents       │ │
+│  │ • extract-entity   │       │ • api-get-document         │ │
+│  │ • extract-metadata │       │ • api-search               │ │
+│  │ • daily-summary    │       │ • api-list-tags            │ │
+│  │ • weekly-report    │       │ • api-documents-by-tag     │ │
+│  │ • update-index     │       │ • api-list-classifications │ │
+│  └─────────┬──────────┘       │ • api-list-summaries       │ │
+│            │                   │ • api-list-reports         │ │
+│            │                   └──────────────┬─────────────┘ │
+│            │                                  │                │
+│            ▼                                  ▼                │
+│  ┌──────────────────────────────────────────────────────────┐│
+│  │                    DynamoDB Table                         ││
+│  │  PK: doc#path | tag#name | entity#type#name               ││
+│  │  SK: metadata | doc#path | mention#doc                    ││
+│  │  GSI: tag-index, classification-index, entity-index       ││
+│  └──────────────────────────────────────────────────────────┘│
+│                                                               │
+│  ┌──────────────────────────────────────────────────────────┐│
+│  │         Amazon Bedrock                                    ││
+│  │  • Claude 3 Haiku (classify, extract)                    ││
+│  │  • Claude 3.5 Sonnet (summaries, reports)                ││
+│  └──────────────────────────────────────────────────────────┘│
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
          │
          │ rclone bisync
          ▼
@@ -118,6 +106,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 #### Lambda Functions
 
+**Processing Functions (6):**
+
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
 | `classify-document` | Babashka | 512 MB | 30s | S3 PUT | Classify doc type using Bedrock |
@@ -127,8 +117,22 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `generate-weekly-report` | Babashka | 2048 MB | 120s | Step Function | Generate weekly report |
 | `update-classification-index` | Babashka | 256 MB | 30s | Direct invoke | Update classification index |
 
+**API Functions (8):**
+
+| Function | Runtime | Memory | Timeout | Endpoint | Purpose |
+|----------|---------|--------|---------|----------|---------|
+| `api-list-documents` | Babashka | 256 MB | 10s | GET /documents | List documents with filters |
+| `api-get-document` | Babashka | 256 MB | 10s | GET /documents/{key+} | Get document with content |
+| `api-search` | Babashka | 256 MB | 10s | GET /search | Search by title/path/tags |
+| `api-list-tags` | Babashka | 256 MB | 10s | GET /tags | List all tags with counts |
+| `api-documents-by-tag` | Babashka | 256 MB | 10s | GET /tags/{tag}/documents | Get docs by tag |
+| `api-list-classifications` | Babashka | 256 MB | 10s | GET /classifications | List classification counts |
+| `api-list-summaries` | Babashka | 256 MB | 10s | GET /summaries | List daily summaries |
+| `api-list-reports` | Babashka | 256 MB | 10s | GET /reports | List weekly reports |
+
 **Shared Code:**
 - Common utilities in `lambda/shared/`: `aws/bedrock.clj`, `aws/dynamodb.clj`, `aws/s3.clj`, `markdown/utils.clj`
+- API utilities in `lambda/shared/api/`: `response.clj`
 - Bundled into each Lambda's uberjar via `build.clj`
 - Uses `bblf` (Babashka Lambda Framework) for runtime
 
@@ -138,7 +142,35 @@ The PKM Agent System is a serverless AWS architecture that automatically process
   2. Checks for success
   3. Handles errors with retry logic
 
-### 3. Event-Driven Processing
+### 3. Mobile API Layer
+
+#### Amazon Cognito
+- **User Pool:** Email-based authentication with MFA optional
+- **App Client:** iOS client (no secret, SRP auth flow)
+- **Identity Pool:** Federated identities for AWS resource access
+- **Features:**
+  - Email verification required
+  - Strong password policy (8+ chars, mixed case, numbers, symbols)
+  - Account recovery via email
+
+#### API Gateway (HTTP API)
+- **Type:** HTTP API (v2) - lower latency, lower cost than REST API
+- **Authentication:** JWT Authorizer with Cognito User Pool
+- **CORS:** Enabled for iOS app
+- **Throttling:** 100 burst, 50 requests/second
+- **Endpoints:**
+  ```
+  GET /documents              - List with optional classification filter
+  GET /documents/{key+}       - Get document with content
+  GET /search?q=...           - Search documents
+  GET /tags                   - List all tags
+  GET /tags/{tag}/documents   - Get documents by tag
+  GET /classifications        - List classification types
+  GET /summaries              - List daily summaries
+  GET /reports                - List weekly reports
+  ```
+
+### 4. Event-Driven Processing
 
 #### EventBridge Rules
 
@@ -158,7 +190,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
    - Target: `generate-weekly-report-workflow` Step Function
    - Purpose: Generate comprehensive weekly review
 
-### 4. AI/ML Layer
+### 5. AI/ML Layer
 
 #### Amazon Bedrock
 
@@ -178,7 +210,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 - Error handling and retry logic built-in
 - Prompts defined inline in each function's `handler.clj`
 
-### 5. Sync Layer
+### 6. Sync Layer
 
 #### rclone Bidirectional Sync
 - **Mode:** `bisync` (two-way sync)
@@ -190,7 +222,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
   - Linux: systemd timer
   - iOS: Obsidian + "Remotely Save" plugin
 
-### 6. Observability
+### 7. Observability
 
 #### CloudWatch Logs
 - Separate log group per Lambda function
