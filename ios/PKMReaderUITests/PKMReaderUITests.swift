@@ -28,7 +28,7 @@ final class PKMReaderUITests: XCTestCase {
 
     func testAppShowsMainTitle() throws {
         // Verify the main title is displayed on the login screen
-        XCTAssertTrue(app.staticTexts["PKM Reader"].exists)
+        XCTAssertTrue(app.staticTexts["PKM Reader"].waitForExistence(timeout: 5))
     }
 
     func testAppShowsLoginScreen() throws {
@@ -40,7 +40,8 @@ final class PKMReaderUITests: XCTestCase {
 
     func testMainScreenHasAccessibilityIdentifiers() throws {
         // Verify key elements have accessibility identifiers
-        XCTAssertTrue(app.staticTexts["PKM Reader"].exists)
+        // Wait for the first element to ensure the screen is loaded
+        XCTAssertTrue(app.staticTexts["PKM Reader"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["EmailField"].exists)
         XCTAssertTrue(app.secureTextFields["PasswordField"].exists)
         XCTAssertTrue(app.buttons["SignInButton"].exists)
