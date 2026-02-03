@@ -121,9 +121,9 @@ options:
   tabWidth: 4
 
 packages:
-  MarkdownUI:
-    url: https://github.com/gonzalezreal/swift-markdown-ui
-    from: "2.4.0"
+  Textual:
+    url: https://github.com/AparokshaUI/Textual
+    from: "0.1.0"
   Amplify:
     url: https://github.com/aws-amplify/amplify-swift
     from: "2.40.0"
@@ -171,7 +171,7 @@ targets:
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
         ENABLE_PREVIEWS: YES
     dependencies:
-      - package: MarkdownUI
+      - package: Textual
       - package: Amplify
         product: Amplify
       - package: Amplify
@@ -227,16 +227,16 @@ targets:
 > - `COGNITO_CLIENT_ID` → `terraform output cognito_client_id`
 > - `COGNITO_IDENTITY_POOL_ID` → `terraform output cognito_identity_pool_id`
 
-### 2.1.3 Update Environment Configuration
+### 2.1.3 Update AppConfig Configuration
 
-**Update**: `ios/PKMReader/Core/Configuration/Environment.swift`
+**Update**: `ios/PKMReader/Core/Configuration/AppConfig.swift`
 
 ```swift
 import Foundation
 
-/// Environment configuration for the PKMReader app.
+/// App configuration for the PKMReader app.
 /// These are PUBLIC identifiers, not secrets.
-enum Environment {
+enum AppConfig {
     #if DEBUG
     // Development environment
     // swiftlint:disable:next force_unwrapping
@@ -464,7 +464,7 @@ actor APIClient: APIClientProtocol {
     private let decoder: JSONDecoder
 
     init(
-        baseURL: URL = Environment.apiBaseURL,
+        baseURL: URL = AppConfig.apiBaseURL,
         authService: any AuthServiceProtocol,
         session: URLSession = .shared
     ) {
@@ -1717,8 +1717,8 @@ struct FilterSheet: View {
 **File**: `ios/PKMReader/Features/DocumentDetail/DocumentDetailView.swift`
 
 ```swift
-import MarkdownUI
 import SwiftUI
+import Textual
 
 /// View for displaying a single document with its content
 struct DocumentDetailView: View {
@@ -1804,8 +1804,7 @@ struct DocumentDetailView: View {
                 .frame(minHeight: 200)
 
         case .loaded(let content):
-            Markdown(content)
-                .markdownTheme(.gitHub)
+            StructuredText(markdown: content)
                 .textSelection(.enabled)
                 .accessibilityIdentifier("DocumentContent")
 
@@ -2137,7 +2136,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("\(Environment.appVersion) (\(Environment.buildNumber))")
+                        Text("\(AppConfig.appVersion) (\(AppConfig.buildNumber))")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -2590,7 +2589,7 @@ func test_filterButton_opensFilterSheet() {
 |------|------|--------|
 | project.yml with dependencies | `project.yml` | ⬜ |
 | amplifyconfiguration.json | `Resources/amplifyconfiguration.json` | ⬜ |
-| Environment.swift updates | `Core/Configuration/Environment.swift` | ⬜ |
+| AppConfig.swift updates | `Core/Configuration/AppConfig.swift` | ⬜ |
 
 ### Testing
 

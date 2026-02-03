@@ -3,7 +3,7 @@ import SwiftData
 
 /// Service for caching documents locally using SwiftData
 @MainActor
-final class CacheService: @unchecked Sendable {
+final class DocumentCacheService: @unchecked Sendable {
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
 
