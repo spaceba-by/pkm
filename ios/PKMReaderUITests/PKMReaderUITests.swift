@@ -10,7 +10,7 @@ final class PKMReaderUITests: XCTestCase {
         continueAfterFailure = false
 
         app = XCUIApplication()
-        app.launchForTesting()
+        app.launchLoggedOut()
         loginPage = LoginPage(app: app)
     }
 
