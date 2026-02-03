@@ -18,7 +18,7 @@ final class DocumentListScreenTests: XCTestCase {
         continueAfterFailure = false
 
         app = XCUIApplication()
-        app.launchForTesting()
+        app.launchLoggedOut()
         documentListPage = DocumentListPage(app: app)
     }
 
