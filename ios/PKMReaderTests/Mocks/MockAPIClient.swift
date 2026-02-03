@@ -19,6 +19,15 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Result to return from listTags
     var listTagsResult: Result<[Tag], Error> = .success([])
 
+    /// Result to return from listClassifications
+    var listClassificationsResult: Result<[ClassificationCount], Error> = .success([])
+
+    /// Result to return from listSummaries
+    var listSummariesResult: Result<[Summary], Error> = .success([])
+
+    /// Result to return from listReports
+    var listReportsResult: Result<[Report], Error> = .success([])
+
     // MARK: - Call Tracking
 
     /// Number of times listDocuments was called
@@ -85,6 +94,18 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     func listTags() async throws -> [Tag] {
         listTagsCallCount += 1
         return try listTagsResult.get()
+    }
+
+    func listClassifications() async throws -> [ClassificationCount] {
+        try listClassificationsResult.get()
+    }
+
+    func listSummaries(limit: Int) async throws -> [Summary] {
+        try listSummariesResult.get()
+    }
+
+    func listReports(limit: Int) async throws -> [Report] {
+        try listReportsResult.get()
     }
 
     // MARK: - Test Helpers

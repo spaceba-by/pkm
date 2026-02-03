@@ -12,14 +12,16 @@ struct PKMReaderApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 
     #if DEBUG
     private func configureForUITesting() {
-        // Configure app for UI testing with mock data
-        // This will be expanded when we implement the full auth flow
+        // Clear any cached state for clean UI tests
+        UserDefaults.standard.removePersistentDomain(
+            forName: Bundle.main.bundleIdentifier ?? ""
+        )
     }
     #endif
 }

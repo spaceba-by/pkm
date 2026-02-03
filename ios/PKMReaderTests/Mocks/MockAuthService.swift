@@ -20,6 +20,9 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     /// Whether to throw from getAccessToken when not authenticated
     var throwWhenNotAuthenticated = true
 
+    /// Delay before completing signIn (for testing loading states)
+    var signInDelay: TimeInterval = 0
+
     // MARK: - Call Tracking
 
     /// Number of times signIn was called
@@ -47,6 +50,9 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
         signInCallCount += 1
         lastSignInEmail = email
         lastSignInPassword = password
+        if signInDelay > 0 {
+            try await Task.sleep(nanoseconds: UInt64(signInDelay * 1_000_000_000))
+        }
         try signInResult.get()
         isAuthenticatedValue = true
     }

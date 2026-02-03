@@ -4,11 +4,11 @@
       "id" : "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
       "name" : "Default",
       "options" : {
-        "language" : "en",
-        "region" : "US",
-        "testTimeoutsEnabled" : true,
         "defaultTestExecutionTimeAllowance" : 60,
-        "maximumTestExecutionTimeAllowance" : 180
+        "language" : "en",
+        "maximumTestExecutionTimeAllowance" : 180,
+        "region" : "US",
+        "testTimeoutsEnabled" : true
       }
     }
   ],
@@ -33,15 +33,14 @@
       "parallelizable" : true,
       "target" : {
         "containerPath" : "container:PKMReader.xcodeproj",
-        "identifier" : "PKMReaderTests",
+        "identifier" : "84BB781E881768B223F990D6",
         "name" : "PKMReaderTests"
       }
     },
     {
-      "parallelizable" : false,
       "target" : {
         "containerPath" : "container:PKMReader.xcodeproj",
-        "identifier" : "PKMReaderUITests",
+        "identifier" : "C06D69E3B6D6EBF758F7B768",
         "name" : "PKMReaderUITests"
       }
     }
