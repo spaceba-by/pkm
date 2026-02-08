@@ -11,15 +11,15 @@
                 },
                 "CognitoUserPool": {
                     "Default": {
-                        "PoolId": "COGNITO_USER_POOL_ID",
-                        "AppClientId": "COGNITO_CLIENT_ID",
+                        "PoolId": "us-east-1_hL1TtgZHP",
+                        "AppClientId": "3itfc5t9qf390q2k236r5cba5b",
                         "Region": "us-east-1"
                     }
                 },
                 "CredentialsProvider": {
                     "CognitoIdentity": {
                         "Default": {
-                            "PoolId": "COGNITO_IDENTITY_POOL_ID",
+                            "PoolId": "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f",
                             "Region": "us-east-1"
                         }
                     }

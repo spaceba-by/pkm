@@ -50,7 +50,7 @@ targets:
           - "**/.DS_Store"
     settings:
       base:
-        DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
+        DEVELOPMENT_TEAM: "TPXD65QGEQ"
         CODE_SIGN_IDENTITY: "Apple Development"
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
