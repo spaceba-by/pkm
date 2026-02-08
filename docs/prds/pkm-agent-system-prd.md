@@ -366,8 +366,8 @@ s3://pkm-vault/
 ### Bedrock Configuration
 
 **Models:**
-- Classification & Extraction: `anthropic.claude-3-haiku-20240307-v1:0`
-- Summaries & Reports: `anthropic.claude-3-5-sonnet-20241022-v2:0`
+- Classification & Extraction: `global.anthropic.claude-haiku-4-5-20251001-v1:0`
+- Summaries & Reports: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
 **Prompt Templates:**
 
@@ -433,14 +433,20 @@ Format your response in markdown suitable for a weekly review.
 ```
 terraform/
 ├── main.tf (provider, backend config)
+├── state.tf (S3 remote state backend)
+├── variables.tf (bucket name, region, model IDs, etc.)
+├── outputs.tf
 ├── s3.tf (vault bucket, versioning, lifecycle)
+├── s3_artifacts.tf (Lambda artifact bucket)
 ├── dynamodb.tf (metadata table, GSIs)
-├── lambda.tf (function definitions, layers)
+├── lambda.tf (processing Lambda functions)
+├── api_lambda.tf (API Lambda functions)
+├── api_gateway.tf (HTTP API Gateway with JWT auth)
+├── cognito.tf (User Pool and Identity Pool)
 ├── eventbridge.tf (rules, targets)
 ├── stepfunctions.tf (state machine definition)
 ├── iam.tf (roles, policies)
-├── cloudwatch.tf (log groups, alarms, dashboards)
-└── variables.tf (bucket name, region, etc.)
+└── cloudwatch.tf (log groups, alarms, dashboards)
 ```
 
 ### Key Terraform Outputs
@@ -609,7 +615,7 @@ pkm-agent-system/
 - Interactive chat interface to query PKM
 - Automated task extraction and tracking
 - Integration with calendar/email for context
-- Mobile app for on-the-go capture
+- ~~Mobile app for on-the-go capture~~ (iOS app now implemented — see `ios/`)
 - Real-time collaboration features
 - Advanced knowledge graph visualization
 - Custom agent workflows (user-defined)

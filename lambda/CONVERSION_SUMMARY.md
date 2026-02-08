@@ -165,21 +165,20 @@ See [MIGRATION.md](MIGRATION.md) for detailed deployment guide.
 
 ### Immediate
 - [x] Complete all conversions
-- [ ] Build all lambdas (`./build.clj` in each function)
-- [ ] Test locally with sample data
-- [ ] Create Terraform configuration
+- [x] Build all lambdas
+- [x] Test locally with sample data
+- [x] Create Terraform configuration
 
 ### Short-term
-- [ ] Deploy to staging environment
-- [ ] Run parallel testing
-- [ ] Monitor CloudWatch metrics
-- [ ] Validate outputs match Python
+- [x] Deploy to production
+- [x] Add 8 Mobile API functions
+- [x] Set up CI/CD pipeline (GitHub Actions)
+- [x] Monitor CloudWatch metrics
 
 ### Long-term
-- [ ] Gradual production cutover
+- [x] Production cutover complete (Python lambdas removed)
 - [ ] Performance tuning if needed
-- [ ] Remove Python lambdas
-- [ ] Update documentation
+- [ ] iOS app integration testing
 
 ## Benefits Realized
 
