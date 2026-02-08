@@ -42,14 +42,26 @@
          (take limit)
          (vec))))
 
+(def default-timestamp "1970-01-01T00:00:00Z")
+
 (defn format-search-result
-  "Format document for search results"
+  "Format document for search results.
+   Returns nested metadata structure matching iOS Document model.
+   Defaults non-optional fields to prevent iOS decoding failures."
   [doc]
-  {:id (:PK doc)
-   :title (or (:title doc) "Untitled")
-   :classification (:classification doc)
-   :tags (or (:tags doc) [])
-   :modified (:modified doc)})
+  (let [modified (or (:modified doc) default-timestamp)
+        created (or (:created doc) modified)]
+    {:id (:PK doc)
+     :title (or (:title doc) "Untitled")
+     :metadata {:classification (or (:classification doc) "reference")
+                :tags (or (:tags doc) [])
+                :linksTo (or (:links_to doc) [])
+                :entities (:entities doc)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter doc))
+                                  (:has_frontmatter doc)
+                                  false)}}))
 
 (defn handler
   "Lambda handler for GET /search?q=..."

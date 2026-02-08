@@ -24,14 +24,26 @@
   [doc-path]
   (ddb/get-item ddb-table {:PK doc-path :SK "METADATA"}))
 
+(def default-timestamp "1970-01-01T00:00:00Z")
+
 (defn format-document
-  "Format document for response"
+  "Format document for response.
+   Returns nested metadata structure matching iOS Document model.
+   Defaults non-optional fields to prevent iOS decoding failures."
   [metadata]
-  {:id (:PK metadata)
-   :title (or (:title metadata) "Untitled")
-   :classification (:classification metadata)
-   :tags (or (:tags metadata) [])
-   :modified (:modified metadata)})
+  (let [modified (or (:modified metadata) default-timestamp)
+        created (or (:created metadata) modified)]
+    {:id (:PK metadata)
+     :title (or (:title metadata) "Untitled")
+     :metadata {:classification (or (:classification metadata) "reference")
+                :tags (or (:tags metadata) [])
+                :linksTo (or (:links_to metadata) [])
+                :entities (:entities metadata)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter metadata))
+                                  (:has_frontmatter metadata)
+                                  false)}}))
 
 (defn handler
   "Lambda handler for GET /tags/{tag}/documents"

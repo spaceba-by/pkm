@@ -22,19 +22,27 @@
       (println "Error fetching content for" document-key ":" (.getMessage e))
       nil)))
 
+(def default-timestamp "1970-01-01T00:00:00Z")
+
 (defn format-document-detail
-  "Format full document with content for API response"
+  "Format full document with content for API response.
+   Returns nested metadata structure matching iOS Document model.
+   Defaults non-optional fields to prevent iOS decoding failures."
   [metadata content]
-  {:id (:PK metadata)
-   :title (or (:title metadata) "Untitled")
-   :content content
-   :classification (:classification metadata)
-   :tags (or (:tags metadata) [])
-   :linksTo (or (:links_to metadata) [])
-   :entities (:entities metadata)
-   :created (:created metadata)
-   :modified (:modified metadata)
-   :hasFrontmatter (:has_frontmatter metadata)})
+  (let [modified (or (:modified metadata) default-timestamp)
+        created (or (:created metadata) modified)]
+    {:id (:PK metadata)
+     :title (or (:title metadata) "Untitled")
+     :content content
+     :metadata {:classification (or (:classification metadata) "reference")
+                :tags (or (:tags metadata) [])
+                :linksTo (or (:links_to metadata) [])
+                :entities (:entities metadata)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter metadata))
+                                  (:has_frontmatter metadata)
+                                  false)}}))
 
 (defn handler
   "Lambda handler for GET /documents/{key+}"
