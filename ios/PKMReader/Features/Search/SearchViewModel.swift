@@ -62,12 +62,18 @@ final class SearchViewModel: ObservableObject {
 
         do {
             let results = try await apiClient.search(query: query, limit: 20)
+            guard !Task.isCancelled else { return }
             if results.isEmpty {
                 state = .empty
             } else {
                 state = .loaded(results)
             }
+        } catch is CancellationError {
+            return
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            return
         } catch {
+            guard !Task.isCancelled else { return }
             state = .error(error.localizedDescription)
         }
     }

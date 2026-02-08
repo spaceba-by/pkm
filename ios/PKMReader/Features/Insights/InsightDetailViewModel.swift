@@ -38,7 +38,9 @@ final class InsightDetailViewModel: ObservableObject {
 
     /// Load the insight content from the API
     func loadContent() async {
-        guard case .loading = contentState else { return }
+        if case .loaded = contentState { return }
+
+        contentState = .loading
 
         do {
             let document = try await apiClient.getDocument(key: key)

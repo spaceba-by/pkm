@@ -130,12 +130,13 @@ actor APIClient: APIClientProtocol {
     }
 
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] {
-        guard let encodedTag = tag.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
+        let tagDocumentsURL = baseURL
+            .appendingPathComponent("tags")
+            .appendingPathComponent(tag)
+            .appendingPathComponent("documents")
 
         var components = URLComponents(
-            url: baseURL.appendingPathComponent("tags/\(encodedTag)/documents"),
+            url: tagDocumentsURL,
             resolvingAgainstBaseURL: false
         )
 

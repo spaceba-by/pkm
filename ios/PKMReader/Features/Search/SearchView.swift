@@ -43,6 +43,9 @@ struct SearchView: View {
                 text: $viewModel.searchText,
                 prompt: "Search documents..."
             )
+            .refreshable {
+                await viewModel.search()
+            }
         }
         .accessibilityIdentifier("SearchView")
     }
