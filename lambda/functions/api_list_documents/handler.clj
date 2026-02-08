@@ -26,17 +26,18 @@
              :limit (min limit max-limit)))
 
 (defn format-document
-  "Format document metadata for API response"
+  "Format document metadata for API response.
+   Returns nested metadata structure matching iOS Document model."
   [doc]
   {:id (:PK doc)
    :title (or (:title doc) "Untitled")
-   :classification (:classification doc)
-   :tags (or (:tags doc) [])
-   :linksTo (or (:links_to doc) [])
-   :entities (:entities doc)
-   :created (:created doc)
-   :modified (:modified doc)
-   :hasFrontmatter (:has_frontmatter doc)})
+   :metadata {:classification (:classification doc)
+              :tags (or (:tags doc) [])
+              :linksTo (or (:links_to doc) [])
+              :entities (:entities doc)
+              :created (:created doc)
+              :modified (:modified doc)
+              :hasFrontmatter (:has_frontmatter doc)}})
 
 (defn handler
   "Lambda handler for GET /documents"

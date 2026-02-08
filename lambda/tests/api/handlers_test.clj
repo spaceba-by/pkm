@@ -22,16 +22,16 @@
   [doc]
   {:id (:PK doc)
    :title (or (:title doc) "Untitled")
-   :classification (:classification doc)
-   :tags (or (:tags doc) [])
-   :linksTo (or (:links_to doc) [])
-   :entities (:entities doc)
-   :created (:created doc)
-   :modified (:modified doc)
-   :hasFrontmatter (:has_frontmatter doc)})
+   :metadata {:classification (:classification doc)
+              :tags (or (:tags doc) [])
+              :linksTo (or (:links_to doc) [])
+              :entities (:entities doc)
+              :created (:created doc)
+              :modified (:modified doc)
+              :hasFrontmatter (:has_frontmatter doc)}})
 
 (deftest format-document-test
-  (testing "Formats complete document metadata"
+  (testing "Formats complete document metadata with nested metadata"
     (let [doc {:PK "notes/test.md"
                :title "Test Document"
                :classification "meeting"
@@ -41,25 +41,28 @@
                :created "2025-01-01"
                :modified "2025-01-15"
                :has_frontmatter true}
-          result (format-document doc)]
+          result (format-document doc)
+          metadata (:metadata result)]
       (is (= "notes/test.md" (:id result)))
       (is (= "Test Document" (:title result)))
-      (is (= "meeting" (:classification result)))
-      (is (= ["tag1" "tag2"] (:tags result)))
-      (is (= ["other.md"] (:linksTo result)))
-      (is (= {:people ["John"]} (:entities result)))
-      (is (= "2025-01-01" (:created result)))
-      (is (= "2025-01-15" (:modified result)))
-      (is (true? (:hasFrontmatter result)))))
+      (is (some? metadata) "should have nested metadata")
+      (is (= "meeting" (:classification metadata)))
+      (is (= ["tag1" "tag2"] (:tags metadata)))
+      (is (= ["other.md"] (:linksTo metadata)))
+      (is (= {:people ["John"]} (:entities metadata)))
+      (is (= "2025-01-01" (:created metadata)))
+      (is (= "2025-01-15" (:modified metadata)))
+      (is (true? (:hasFrontmatter metadata)))))
 
   (testing "Provides defaults for missing fields"
     (let [doc {:PK "notes/minimal.md"}
-          result (format-document doc)]
+          result (format-document doc)
+          metadata (:metadata result)]
       (is (= "notes/minimal.md" (:id result)))
       (is (= "Untitled" (:title result)))
-      (is (= [] (:tags result)))
-      (is (= [] (:linksTo result)))
-      (is (nil? (:classification result))))))
+      (is (= [] (:tags metadata)))
+      (is (= [] (:linksTo metadata)))
+      (is (nil? (:classification metadata))))))
 
 ;; =============================================================================
 ;; api_get_document format-document-detail tests
@@ -71,16 +74,16 @@
   {:id (:PK metadata)
    :title (or (:title metadata) "Untitled")
    :content content
-   :classification (:classification metadata)
-   :tags (or (:tags metadata) [])
-   :linksTo (or (:links_to metadata) [])
-   :entities (:entities metadata)
-   :created (:created metadata)
-   :modified (:modified metadata)
-   :hasFrontmatter (:has_frontmatter metadata)})
+   :metadata {:classification (:classification metadata)
+              :tags (or (:tags metadata) [])
+              :linksTo (or (:links_to metadata) [])
+              :entities (:entities metadata)
+              :created (:created metadata)
+              :modified (:modified metadata)
+              :hasFrontmatter (:has_frontmatter metadata)}})
 
 (deftest format-document-detail-test
-  (testing "Formats document with content"
+  (testing "Formats document with content and nested metadata"
     (let [metadata {:PK "notes/full.md"
                     :title "Full Document"
                     :classification "idea"
@@ -88,12 +91,13 @@
                     :links_to []
                     :has_frontmatter true}
           content "# Full Document\n\nThis is the content."
-          result (format-document-detail metadata content)]
+          result (format-document-detail metadata content)
+          result-meta (:metadata result)]
       (is (= "notes/full.md" (:id result)))
       (is (= "Full Document" (:title result)))
       (is (= content (:content result)))
-      (is (= "idea" (:classification result)))
-      (is (= ["important"] (:tags result)))))
+      (is (= "idea" (:classification result-meta)))
+      (is (= ["important"] (:tags result-meta)))))
 
   (testing "Handles nil content"
     (let [metadata {:PK "notes/no-content.md" :title "No Content"}
@@ -120,9 +124,13 @@
   [doc]
   {:id (:PK doc)
    :title (or (:title doc) "Untitled")
-   :classification (:classification doc)
-   :tags (or (:tags doc) [])
-   :modified (:modified doc)})
+   :metadata {:classification (:classification doc)
+              :tags (or (:tags doc) [])
+              :linksTo (or (:links_to doc) [])
+              :entities (:entities doc)
+              :created (:created doc)
+              :modified (:modified doc)
+              :hasFrontmatter (:has_frontmatter doc)}})
 
 (deftest matches-query-test
   ;; Note: matches-query? expects query-lower to already be lowercase
@@ -151,24 +159,26 @@
       (is (not (matches-query? doc "missing")) "should not match 'missing'"))))
 
 (deftest format-search-result-test
-  (testing "Formats search result with all fields"
+  (testing "Formats search result with nested metadata"
     (let [doc {:PK "notes/result.md"
                :title "Search Result"
                :classification "reference"
                :tags ["search"]
                :modified "2025-01-20"}
-          result (format-search-result doc)]
+          result (format-search-result doc)
+          metadata (:metadata result)]
       (is (= "notes/result.md" (:id result)))
       (is (= "Search Result" (:title result)))
-      (is (= "reference" (:classification result)))
-      (is (= ["search"] (:tags result)))
-      (is (= "2025-01-20" (:modified result)))))
+      (is (= "reference" (:classification metadata)))
+      (is (= ["search"] (:tags metadata)))
+      (is (= "2025-01-20" (:modified metadata)))))
 
   (testing "Provides defaults for missing fields"
     (let [doc {:PK "minimal.md"}
-          result (format-search-result doc)]
+          result (format-search-result doc)
+          metadata (:metadata result)]
       (is (= "Untitled" (:title result)))
-      (is (= [] (:tags result))))))
+      (is (= [] (:tags metadata))))))
 
 ;; =============================================================================
 ;; api_documents_by_tag format-document tests
@@ -179,23 +189,28 @@
   [metadata]
   {:id (:PK metadata)
    :title (or (:title metadata) "Untitled")
-   :classification (:classification metadata)
-   :tags (or (:tags metadata) [])
-   :modified (:modified metadata)})
+   :metadata {:classification (:classification metadata)
+              :tags (or (:tags metadata) [])
+              :linksTo (or (:links_to metadata) [])
+              :entities (:entities metadata)
+              :created (:created metadata)
+              :modified (:modified metadata)
+              :hasFrontmatter (:has_frontmatter metadata)}})
 
 (deftest format-tag-document-test
-  (testing "Formats document for tag results"
+  (testing "Formats document for tag results with nested metadata"
     (let [doc {:PK "notes/tagged.md"
                :title "Tagged Doc"
                :classification "idea"
                :tags ["clojure" "testing"]
                :modified "2025-01-25"}
-          result (format-tag-document doc)]
+          result (format-tag-document doc)
+          metadata (:metadata result)]
       (is (= "notes/tagged.md" (:id result)))
       (is (= "Tagged Doc" (:title result)))
-      (is (= "idea" (:classification result)))
-      (is (= ["clojure" "testing"] (:tags result)))
-      (is (= "2025-01-25" (:modified result))))))
+      (is (= "idea" (:classification metadata)))
+      (is (= ["clojure" "testing"] (:tags metadata)))
+      (is (= "2025-01-25" (:modified metadata))))))
 
 ;; =============================================================================
 ;; api_list_classifications tests

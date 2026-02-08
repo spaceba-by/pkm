@@ -23,18 +23,19 @@
       nil)))
 
 (defn format-document-detail
-  "Format full document with content for API response"
+  "Format full document with content for API response.
+   Returns nested metadata structure matching iOS Document model."
   [metadata content]
   {:id (:PK metadata)
    :title (or (:title metadata) "Untitled")
    :content content
-   :classification (:classification metadata)
-   :tags (or (:tags metadata) [])
-   :linksTo (or (:links_to metadata) [])
-   :entities (:entities metadata)
-   :created (:created metadata)
-   :modified (:modified metadata)
-   :hasFrontmatter (:has_frontmatter metadata)})
+   :metadata {:classification (:classification metadata)
+              :tags (or (:tags metadata) [])
+              :linksTo (or (:links_to metadata) [])
+              :entities (:entities metadata)
+              :created (:created metadata)
+              :modified (:modified metadata)
+              :hasFrontmatter (:has_frontmatter metadata)}})
 
 (defn handler
   "Lambda handler for GET /documents/{key+}"

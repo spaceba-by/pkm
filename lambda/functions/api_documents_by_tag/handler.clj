@@ -25,13 +25,18 @@
   (ddb/get-item ddb-table {:PK doc-path :SK "METADATA"}))
 
 (defn format-document
-  "Format document for response"
+  "Format document for response.
+   Returns nested metadata structure matching iOS Document model."
   [metadata]
   {:id (:PK metadata)
    :title (or (:title metadata) "Untitled")
-   :classification (:classification metadata)
-   :tags (or (:tags metadata) [])
-   :modified (:modified metadata)})
+   :metadata {:classification (:classification metadata)
+              :tags (or (:tags metadata) [])
+              :linksTo (or (:links_to metadata) [])
+              :entities (:entities metadata)
+              :created (:created metadata)
+              :modified (:modified metadata)
+              :hasFrontmatter (:has_frontmatter metadata)}})
 
 (defn handler
   "Lambda handler for GET /tags/{tag}/documents"
