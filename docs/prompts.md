@@ -18,8 +18,8 @@ All prompts are designed to be:
 
 **Used by:** `classify-document` Lambda
 **Model:** Claude Haiku 4.5
-**Temperature:** 0.0 (deterministic)
-**Max Tokens:** 10
+**Temperature:** 0.3
+**Max Tokens:** 50
 
 ```
 Classify this markdown document into exactly one of these categories:
