@@ -36,7 +36,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
               let data = try? Data(contentsOf: configURL),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw AuthError.unknown(
-                "Missing amplifyconfiguration.json. Run scripts/configure-ios.sh from the terraform/ directory."
+                "Missing amplifyconfiguration.json. Run scripts/configure-ios.sh to populate real values."
             )
         }
 
@@ -49,7 +49,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
               let poolId = defaultPool["PoolId"] as? String else {
             throw AuthError.unknown(
                 "Invalid amplifyconfiguration.json structure. "
-                + "Run scripts/configure-ios.sh from the terraform/ directory."
+                + "Run scripts/configure-ios.sh to populate real values."
             )
         }
 
@@ -57,7 +57,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         guard poolId.contains("_") else {
             throw AuthError.unknown(
                 "Cognito User Pool ID is not configured (found \"\(poolId)\"). "
-                + "Run scripts/configure-ios.sh from the terraform/ directory to populate real values."
+                + "Run scripts/configure-ios.sh to populate real values."
             )
         }
     }

@@ -135,7 +135,13 @@ SWIFT_DYNAMIC
 cat >> "$APP_CONFIG" <<'SWIFT_EOF'
     #endif
 
-    static let cognitoRegion = "us-east-1"
+SWIFT_EOF
+
+cat >> "$APP_CONFIG" <<SWIFT_DYNAMIC2
+    static let cognitoRegion = "$REGION"
+SWIFT_DYNAMIC2
+
+cat >> "$APP_CONFIG" <<'SWIFT_EOF'
 
     /// App version from bundle
     static var appVersion: String {

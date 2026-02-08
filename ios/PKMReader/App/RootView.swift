@@ -21,7 +21,7 @@ struct RootView: View {
                 // UI testing mode: show login screen directly
                 LoginView(authService: authService)
             } else if let error = configurationError {
-                ErrorView(error: error)
+                ErrorView(error: error, retryAction: nil)
             } else if !isInitialized {
                 LoadingView(message: "Initializing...")
             } else {
