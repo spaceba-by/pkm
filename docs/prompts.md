@@ -353,8 +353,8 @@ the Azure integration project in Seattle.")
 
 (def summary
   (bedrock/generate-summary
-    documents
-    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"))
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    documents))
 
 (println "Summary:" summary)
 ```
