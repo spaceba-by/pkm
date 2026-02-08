@@ -38,6 +38,12 @@ aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 
 ## Architecture
 
+** Development Context **
+
+- See @docs/ROADMAP.md for current status and next steps.
+- Task based development workflow with numbered tasks in `docs/tasks` directory
+- ** Current Status **: In progress functional implementation. 
+
 ```
 Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock (Claude)
                                                          ↓
