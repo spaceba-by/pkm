@@ -1,6 +1,6 @@
 # Task 0007: iOS Enhanced Features
 
-**Status**: Planned
+**Status**: In Progress
 
 ## Specifications
 
@@ -78,14 +78,14 @@ iOS Phase 3: Add search, tags browsing, AI summaries, weekly reports, and enhanc
 
 ## Implementation Steps
 
-- [ ] Step 1: Add `documentsByTag` to API layer
+- [x] Step 1: Add `documentsByTag` to API layer
   - Add `documentsByTag(tag: String, limit: Int) async throws -> [Document]` to `APIClientProtocol`
   - Implement in `APIClient` calling `GET /tags/{tag}/documents`
   - Add endpoint path to `APIEndpoints`
   - Update `MockAPIClient` with configurable result and call tracking
   - Add Summary/Report fixtures to `TestFixtures`
 
-- [ ] Step 2: Implement search feature
+- [x] Step 2: Implement search feature
   - Create `SearchViewModel` with `State` enum (idle/loading/loaded/empty/error)
   - Add 300ms debounce using `Task` + `Task.sleep` on search text changes
   - Minimum 2-character query (matching backend requirement)
@@ -93,14 +93,14 @@ iOS Phase 3: Add search, tags browsing, AI summaries, weekly reports, and enhanc
   - Display results as `DocumentRowView` items with navigation to `DocumentDetailView`
   - Write `SearchViewModelTests` covering: debounce, empty query, results, error
 
-- [ ] Step 3: Implement tags browsing feature
+- [x] Step 3: Implement tags browsing feature
   - Create `TagsViewModel` with `State` enum (loading/loaded/empty/error)
   - Create `TagsView` with alphabetical tag list, each row showing name + count
   - Create `TagDocumentsViewModel` loading documents for a specific tag
   - Create `TagDocumentsView` listing documents, navigating to `DocumentDetailView`
   - Write `TagsViewModelTests` and `TagDocumentsViewModelTests`
 
-- [ ] Step 4: Implement insights feature (summaries + reports)
+- [x] Step 4: Implement insights feature (summaries + reports)
   - Create `SummariesViewModel` with `State` enum, loads via `listSummaries(limit:)`
   - Create `ReportsViewModel` with `State` enum, loads via `listReports(limit:)`
   - Create `InsightDetailViewModel` to load markdown content via `getDocument(key:)`
@@ -110,26 +110,26 @@ iOS Phase 3: Add search, tags browsing, AI summaries, weekly reports, and enhanc
   - Create `SummaryDetailView` and `ReportDetailView` rendering markdown
   - Write `SummariesViewModelTests` and `ReportsViewModelTests`
 
-- [ ] Step 5: Expand MainTabView and enhance Settings
+- [x] Step 5: Expand MainTabView and enhance Settings
   - Update `MainTabView` to 5 tabs: Documents, Search, Tags, Insights, Settings
   - Tab icons: doc.text, magnifyingglass, tag, lightbulb.max, gear
   - Enhance `SettingsView` with cache clear button (calls `CacheService`)
   - Add display preference toggles (e.g., compact list mode) using `@AppStorage`
   - Pass `apiClient` to all new tab views
 
-- [ ] Step 6: Add pull-to-refresh and polish
+- [x] Step 6: Add pull-to-refresh and polish
   - Add `.refreshable` to SearchView, TagsView, InsightsView list views
   - Ensure all views use shared components (LoadingView, ErrorView, EmptyStateView)
   - Verify navigation from all new views to DocumentDetailView works
   - Confirm accessibility identifiers on all new interactive elements
 
-- [ ] Step 7: Write UI tests
+- [x] Step 7: Write UI tests
   - Test search flow: type query -> see results -> tap result -> see detail
   - Test tags flow: see tag list -> tap tag -> see documents -> tap document
   - Test insights flow: see summaries -> switch to reports -> tap item -> see detail
   - Test settings: tap clear cache button
 
-- [ ] Step 8: Final verification
+- [x] Step 8: Final verification
   - Run all unit tests (`bb test` from lambda/ still passes)
   - Run iOS unit tests and UI tests
   - Verify no SwiftLint errors

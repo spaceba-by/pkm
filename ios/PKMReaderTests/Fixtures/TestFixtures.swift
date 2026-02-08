@@ -127,6 +127,69 @@ enum TestFixtures {
             Tag(id: "project", name: "project", documentCount: 7)
         ]
     }
+    // MARK: - Sample Summaries
+
+    /// A sample summary
+    static var sampleSummary: Summary {
+        Summary(
+            id: "_agent/summaries/2024-01-01.md",
+            date: "2024-01-01",
+            modified: Date(timeIntervalSince1970: 1_704_067_200)
+        )
+    }
+
+    /// An array of sample summaries
+    static var sampleSummaries: [Summary] {
+        [
+            Summary(
+                id: "_agent/summaries/2024-01-03.md",
+                date: "2024-01-03",
+                modified: Date(timeIntervalSince1970: 1_704_240_000)
+            ),
+            Summary(
+                id: "_agent/summaries/2024-01-02.md",
+                date: "2024-01-02",
+                modified: Date(timeIntervalSince1970: 1_704_153_600)
+            ),
+            Summary(
+                id: "_agent/summaries/2024-01-01.md",
+                date: "2024-01-01",
+                modified: Date(timeIntervalSince1970: 1_704_067_200)
+            )
+        ]
+    }
+
+    // MARK: - Sample Reports
+
+    /// A sample report
+    static var sampleReport: Report {
+        Report(
+            id: "_agent/reports/2024-01-01.md",
+            weekOf: "2024-01-01",
+            modified: Date(timeIntervalSince1970: 1_704_067_200)
+        )
+    }
+
+    /// An array of sample reports
+    static var sampleReports: [Report] {
+        [
+            Report(
+                id: "_agent/reports/2024-01-15.md",
+                weekOf: "2024-01-15",
+                modified: Date(timeIntervalSince1970: 1_705_276_800)
+            ),
+            Report(
+                id: "_agent/reports/2024-01-08.md",
+                weekOf: "2024-01-08",
+                modified: Date(timeIntervalSince1970: 1_704_672_000)
+            ),
+            Report(
+                id: "_agent/reports/2024-01-01.md",
+                weekOf: "2024-01-01",
+                modified: Date(timeIntervalSince1970: 1_704_067_200)
+            )
+        ]
+    }
 }
 
 // Helper class to find the test bundle

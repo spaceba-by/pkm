@@ -43,4 +43,11 @@ protocol APIClientProtocol: Sendable {
     /// - Parameter limit: Maximum number of reports to return
     /// - Returns: List of weekly reports
     func listReports(limit: Int) async throws -> [Report]
+
+    /// List documents with a specific tag
+    /// - Parameters:
+    ///   - tag: The tag to filter by
+    ///   - limit: Maximum number of documents to return
+    /// - Returns: List of documents with the specified tag
+    func documentsByTag(tag: String, limit: Int) async throws -> [Document]
 }
