@@ -90,7 +90,22 @@ terraform/                # All AWS infrastructure
 scripts/                  # Deployment and testing
 ├── deploy.sh, setup-sync.sh, test-workflow.sh
 ├── test-api.sh           # API integration tests
-└── create-cognito-user.sh # Create test users
+├── create-cognito-user.sh # Create test users
+├── configure-ios.sh      # iOS app configuration
+└── cleanup-old-builds.sh # Remove old Lambda build artifacts
+
+ios/                      # iOS app (PKMReader)
+├── PKMReader/            # SwiftUI app source
+├── PKMReaderTests/       # Unit tests
+├── PKMReaderUITests/     # UI tests
+├── fastlane/             # Build automation
+└── project.yml           # XcodeGen project definition
+
+.github/workflows/        # CI/CD pipelines
+├── build.yml             # Lambda build pipeline
+├── test.yml              # Lambda test pipeline
+├── ios-build.yml         # iOS build pipeline
+└── ios-test.yml          # iOS test pipeline
 ```
 
 ## Key Patterns

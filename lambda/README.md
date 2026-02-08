@@ -9,6 +9,8 @@ lambda/
 ├── deps.edn              # Clojure dependencies
 ├── bb.edn                # Babashka configuration and tasks
 ├── shared/               # Shared utilities (used by all lambdas)
+│   ├── api/
+│   │   └── response.clj  # API response utilities
 │   ├── aws/
 │   │   ├── bedrock.clj   # AWS Bedrock client wrapper
 │   │   ├── dynamodb.clj  # DynamoDB operations
@@ -18,11 +20,19 @@ lambda/
 │       └── utils.clj     # Markdown parsing & generation
 ├── functions/            # Individual lambda functions
 │   ├── extract_metadata/
-│   ├── update_classification_index/
 │   ├── classify_document/
 │   ├── extract_entities/
+│   ├── update_classification_index/
 │   ├── generate_daily_summary/
-│   └── generate_weekly_report/
+│   ├── generate_weekly_report/
+│   ├── api_list_documents/
+│   ├── api_get_document/
+│   ├── api_search/
+│   ├── api_list_tags/
+│   ├── api_documents_by_tag/
+│   ├── api_list_classifications/
+│   ├── api_list_summaries/
+│   └── api_list_reports/
 └── tests/                # Unit tests
 
 ```
@@ -58,23 +68,40 @@ bb test
 
 ### Building Lambda Functions
 
-Each lambda function can be built using bblf:
+Lambda functions are built using the top-level build script:
 
 ```bash
-cd functions/extract_metadata
-bb build.clj  # Creates bootstrap binary and deployment.zip
+bb build.clj                      # Build all functions
+bb build.clj extract_metadata     # Build a single function
 ```
+
+Output ZIPs are placed in `lambda/target/`.
 
 ## Lambda Functions
 
-| Function | Status | Description |
-|----------|--------|-------------|
-| extract-metadata | ✓ Converted | Parses markdown metadata, tags, and links |
-| update-classification-index | 🔄 In Progress | Maintains classification index |
-| classify-document | ⏳ Pending | AI-powered document classification |
-| extract-entities | ⏳ Pending | Named entity extraction |
-| generate-daily-summary | ⏳ Pending | Daily activity summaries |
-| generate-weekly-report | ⏳ Pending | Weekly analysis reports |
+### Processing (6)
+
+| Function | Description |
+|----------|-------------|
+| extract-metadata | Parses markdown metadata, tags, and links |
+| classify-document | AI-powered document classification |
+| extract-entities | Named entity extraction |
+| update-classification-index | Maintains classification index |
+| generate-daily-summary | Daily activity summaries |
+| generate-weekly-report | Weekly analysis reports |
+
+### Mobile API (8)
+
+| Function | Description |
+|----------|-------------|
+| api-list-documents | List documents with optional classification filter |
+| api-get-document | Get document with content |
+| api-search | Search by title, path, tags |
+| api-list-tags | List all tags with counts |
+| api-documents-by-tag | Get documents by specific tag |
+| api-list-classifications | List classification types with counts |
+| api-list-summaries | List daily AI summaries |
+| api-list-reports | List weekly AI reports |
 
 ## Advantages over Python
 
