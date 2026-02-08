@@ -1,6 +1,6 @@
 # iOS App Phase 2: iOS App Scaffold - Detailed Implementation Plan
 
-**Status: 🚧 IN PROGRESS**
+**Status: ✅ COMPLETE**
 
 ## Overview
 
@@ -2547,60 +2547,60 @@ func test_filterButton_opensFilterSheet() {
 
 | Item | File | Status |
 |------|------|--------|
-| AuthService implementation | `Core/Auth/AuthService.swift` | ⬜ |
-| AuthState enum | `Core/Auth/AuthState.swift` | ⬜ |
-| APIClient implementation | `Core/Networking/APIClient.swift` | ⬜ |
-| KeychainService implementation | `Core/Auth/KeychainService.swift` | ⬜ |
-| CacheService with SwiftData | `Core/Cache/CacheService.swift` | ⬜ |
-| CachedDocument model | `Core/Cache/CachedDocument.swift` | ⬜ |
+| AuthService implementation | `Core/Auth/AuthService.swift` | ✅ |
+| AuthState enum | `Core/Auth/AuthState.swift` | ✅ |
+| APIClient implementation | `Core/Networking/APIClient.swift` | ✅ |
+| KeychainService implementation | `Core/Auth/KeychainService.swift` | ✅ |
+| CacheService with SwiftData | `Core/Cache/CacheService.swift` | ✅ |
+| CachedDocument model | `Core/Cache/CachedDocument.swift` | ✅ |
 
 ### Views & Components
 
 | Item | File | Status |
 |------|------|--------|
-| LoadingView | `Shared/Components/LoadingView.swift` | ⬜ |
-| ErrorView | `Shared/Components/ErrorView.swift` | ⬜ |
-| EmptyStateView | `Shared/Components/EmptyStateView.swift` | ⬜ |
-| TagChip | `Shared/Components/TagChip.swift` | ⬜ |
-| ClassificationBadge | `Shared/Components/ClassificationBadge.swift` | ⬜ |
-| FlowLayout | `Shared/Components/FlowLayout.swift` | ⬜ |
-| LoginView | `Features/Auth/LoginView.swift` | ⬜ |
-| LoginViewModel | `Features/Auth/LoginViewModel.swift` | ⬜ |
-| DocumentListView | `Features/DocumentList/DocumentListView.swift` | ⬜ |
-| DocumentRowView | `Features/DocumentList/DocumentRowView.swift` | ⬜ |
-| FilterSheet | `Features/DocumentList/FilterSheet.swift` | ⬜ |
-| DocumentDetailView | `Features/DocumentDetail/DocumentDetailView.swift` | ⬜ |
-| DocumentDetailViewModel | `Features/DocumentDetail/DocumentDetailViewModel.swift` | ⬜ |
-| SettingsView | `Features/Settings/SettingsView.swift` | ⬜ |
-| RootView | `App/RootView.swift` | ⬜ |
-| MainTabView | `App/MainTabView.swift` | ⬜ |
+| LoadingView | `Shared/Components/LoadingView.swift` | ✅ |
+| ErrorView | `Shared/Components/ErrorView.swift` | ✅ |
+| EmptyStateView | `Shared/Components/EmptyStateView.swift` | ✅ |
+| TagChip | `Shared/Components/TagChip.swift` | ✅ |
+| ClassificationBadge | `Shared/Components/ClassificationBadge.swift` | ✅ |
+| FlowLayout | `Shared/Components/FlowLayout.swift` | ✅ |
+| LoginView | `Features/Auth/LoginView.swift` | ✅ |
+| LoginViewModel | `Features/Auth/LoginViewModel.swift` | ✅ |
+| DocumentListView | `Features/DocumentList/DocumentListView.swift` | ✅ |
+| DocumentRowView | `Features/DocumentList/DocumentRowView.swift` | ✅ |
+| FilterSheet | `Features/DocumentList/FilterSheet.swift` | ✅ |
+| DocumentDetailView | `Features/DocumentDetail/DocumentDetailView.swift` | ✅ |
+| DocumentDetailViewModel | `Features/DocumentDetail/DocumentDetailViewModel.swift` | ✅ |
+| SettingsView | `Features/Settings/SettingsView.swift` | ✅ |
+| RootView | `App/RootView.swift` | ✅ |
+| MainTabView | `App/MainTabView.swift` | ✅ |
 
 ### Models
 
 | Item | File | Status |
 |------|------|--------|
-| Summary model | `Models/Summary.swift` | ⬜ |
-| Report model | `Models/Report.swift` | ⬜ |
-| ClassificationCount model | `Models/ClassificationCount.swift` | ⬜ |
+| Summary model | `Models/Summary.swift` | ✅ |
+| Report model | `Models/Report.swift` | ✅ |
+| ClassificationCount model | `Models/ClassificationCount.swift` | ✅ |
 
 ### Configuration
 
 | Item | File | Status |
 |------|------|--------|
-| project.yml with dependencies | `project.yml` | ⬜ |
-| amplifyconfiguration.json | `Resources/amplifyconfiguration.json` | ⬜ |
-| AppConfig.swift updates | `Core/Configuration/AppConfig.swift` | ⬜ |
+| project.yml with dependencies | `project.yml` | ✅ |
+| amplifyconfiguration.json | `Resources/amplifyconfiguration.json` | ✅ |
+| AppConfig.swift updates | `Core/Configuration/AppConfig.swift` | ✅ |
 
 ### Testing
 
 | Item | Status |
 |------|--------|
-| LoginViewModel unit tests | ⬜ |
-| DocumentDetailViewModel unit tests | ⬜ |
-| MockAuthService updates | ⬜ |
-| MockAPIClient updates | ⬜ |
-| UI tests for login flow | ⬜ |
-| UI tests for document list | ⬜ |
+| LoginViewModel unit tests | ✅ |
+| DocumentDetailViewModel unit tests | ✅ |
+| MockAuthService updates | ✅ |
+| MockAPIClient updates | ✅ |
+| UI tests for login flow | ✅ |
+| UI tests for document list | ✅ |
 
 ---
 
@@ -2648,21 +2648,21 @@ func test_filterButton_opensFilterSheet() {
 
 Phase 2 is complete when:
 
-- [ ] User can sign in with Cognito credentials
-- [ ] User can sign out
-- [ ] Document list loads and displays from API
-- [ ] Document list can be filtered by classification
-- [ ] Document detail view shows content with markdown rendering
-- [ ] Pull-to-refresh works on document list
-- [ ] Pagination loads more documents
-- [ ] Error states display appropriately
-- [ ] Empty states display appropriately
-- [ ] App persists auth state across launches
-- [ ] All unit tests pass
-- [ ] All UI tests pass
-- [ ] Code coverage ≥70%
-- [ ] No SwiftLint errors
-- [ ] CI pipeline passes
+- [x] User can sign in with Cognito credentials
+- [x] User can sign out
+- [x] Document list loads and displays from API
+- [x] Document list can be filtered by classification
+- [x] Document detail view shows content with markdown rendering
+- [x] Pull-to-refresh works on document list
+- [x] Pagination loads more documents
+- [x] Error states display appropriately
+- [x] Empty states display appropriately
+- [x] App persists auth state across launches
+- [x] All unit tests pass
+- [x] All UI tests pass
+- [x] Code coverage ≥70%
+- [x] No SwiftLint errors
+- [x] CI pipeline passes
 
 ---
 
