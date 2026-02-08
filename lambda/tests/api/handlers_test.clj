@@ -13,6 +13,8 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]))
 
+(def default-timestamp "1970-01-01T00:00:00Z")
+
 ;; =============================================================================
 ;; api_list_documents format-document tests
 ;; =============================================================================
@@ -20,15 +22,19 @@
 (defn format-document
   "Format document metadata for API response (from api_list_documents)"
   [doc]
-  {:id (:PK doc)
-   :title (or (:title doc) "Untitled")
-   :metadata {:classification (:classification doc)
-              :tags (or (:tags doc) [])
-              :linksTo (or (:links_to doc) [])
-              :entities (:entities doc)
-              :created (:created doc)
-              :modified (:modified doc)
-              :hasFrontmatter (:has_frontmatter doc)}})
+  (let [modified (or (:modified doc) default-timestamp)
+        created (or (:created doc) modified)]
+    {:id (:PK doc)
+     :title (or (:title doc) "Untitled")
+     :metadata {:classification (or (:classification doc) "reference")
+                :tags (or (:tags doc) [])
+                :linksTo (or (:links_to doc) [])
+                :entities (:entities doc)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter doc))
+                                  (:has_frontmatter doc)
+                                  false)}}))
 
 (deftest format-document-test
   (testing "Formats complete document metadata with nested metadata"
@@ -38,8 +44,8 @@
                :tags ["tag1" "tag2"]
                :links_to ["other.md"]
                :entities {:people ["John"]}
-               :created "2025-01-01"
-               :modified "2025-01-15"
+               :created "2025-01-01T00:00:00Z"
+               :modified "2025-01-15T12:00:00Z"
                :has_frontmatter true}
           result (format-document doc)
           metadata (:metadata result)]
@@ -50,8 +56,8 @@
       (is (= ["tag1" "tag2"] (:tags metadata)))
       (is (= ["other.md"] (:linksTo metadata)))
       (is (= {:people ["John"]} (:entities metadata)))
-      (is (= "2025-01-01" (:created metadata)))
-      (is (= "2025-01-15" (:modified metadata)))
+      (is (= "2025-01-01T00:00:00Z" (:created metadata)))
+      (is (= "2025-01-15T12:00:00Z" (:modified metadata)))
       (is (true? (:hasFrontmatter metadata)))))
 
   (testing "Provides defaults for missing fields"
@@ -60,9 +66,12 @@
           metadata (:metadata result)]
       (is (= "notes/minimal.md" (:id result)))
       (is (= "Untitled" (:title result)))
+      (is (= "reference" (:classification metadata)))
       (is (= [] (:tags metadata)))
       (is (= [] (:linksTo metadata)))
-      (is (nil? (:classification metadata))))))
+      (is (= default-timestamp (:created metadata)))
+      (is (= default-timestamp (:modified metadata)))
+      (is (false? (:hasFrontmatter metadata))))))
 
 ;; =============================================================================
 ;; api_get_document format-document-detail tests
@@ -71,16 +80,20 @@
 (defn format-document-detail
   "Format full document with content for API response (from api_get_document)"
   [metadata content]
-  {:id (:PK metadata)
-   :title (or (:title metadata) "Untitled")
-   :content content
-   :metadata {:classification (:classification metadata)
-              :tags (or (:tags metadata) [])
-              :linksTo (or (:links_to metadata) [])
-              :entities (:entities metadata)
-              :created (:created metadata)
-              :modified (:modified metadata)
-              :hasFrontmatter (:has_frontmatter metadata)}})
+  (let [modified (or (:modified metadata) default-timestamp)
+        created (or (:created metadata) modified)]
+    {:id (:PK metadata)
+     :title (or (:title metadata) "Untitled")
+     :content content
+     :metadata {:classification (or (:classification metadata) "reference")
+                :tags (or (:tags metadata) [])
+                :linksTo (or (:links_to metadata) [])
+                :entities (:entities metadata)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter metadata))
+                                  (:has_frontmatter metadata)
+                                  false)}}))
 
 (deftest format-document-detail-test
   (testing "Formats document with content and nested metadata"
@@ -89,6 +102,8 @@
                     :classification "idea"
                     :tags ["important"]
                     :links_to []
+                    :created "2025-01-10T08:00:00Z"
+                    :modified "2025-01-15T14:30:00Z"
                     :has_frontmatter true}
           content "# Full Document\n\nThis is the content."
           result (format-document-detail metadata content)
@@ -97,13 +112,21 @@
       (is (= "Full Document" (:title result)))
       (is (= content (:content result)))
       (is (= "idea" (:classification result-meta)))
-      (is (= ["important"] (:tags result-meta)))))
+      (is (= ["important"] (:tags result-meta)))
+      (is (= "2025-01-10T08:00:00Z" (:created result-meta)))
+      (is (= "2025-01-15T14:30:00Z" (:modified result-meta)))
+      (is (true? (:hasFrontmatter result-meta)))))
 
-  (testing "Handles nil content"
+  (testing "Handles nil content with defaults for missing metadata"
     (let [metadata {:PK "notes/no-content.md" :title "No Content"}
-          result (format-document-detail metadata nil)]
+          result (format-document-detail metadata nil)
+          result-meta (:metadata result)]
       (is (nil? (:content result)))
-      (is (= "No Content" (:title result))))))
+      (is (= "No Content" (:title result)))
+      (is (= "reference" (:classification result-meta)))
+      (is (= default-timestamp (:created result-meta)))
+      (is (= default-timestamp (:modified result-meta)))
+      (is (false? (:hasFrontmatter result-meta))))))
 
 ;; =============================================================================
 ;; api_search tests
@@ -122,15 +145,19 @@
 (defn format-search-result
   "Format document for search results (from api_search)"
   [doc]
-  {:id (:PK doc)
-   :title (or (:title doc) "Untitled")
-   :metadata {:classification (:classification doc)
-              :tags (or (:tags doc) [])
-              :linksTo (or (:links_to doc) [])
-              :entities (:entities doc)
-              :created (:created doc)
-              :modified (:modified doc)
-              :hasFrontmatter (:has_frontmatter doc)}})
+  (let [modified (or (:modified doc) default-timestamp)
+        created (or (:created doc) modified)]
+    {:id (:PK doc)
+     :title (or (:title doc) "Untitled")
+     :metadata {:classification (or (:classification doc) "reference")
+                :tags (or (:tags doc) [])
+                :linksTo (or (:links_to doc) [])
+                :entities (:entities doc)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter doc))
+                                  (:has_frontmatter doc)
+                                  false)}}))
 
 (deftest matches-query-test
   ;; Note: matches-query? expects query-lower to already be lowercase
@@ -164,21 +191,29 @@
                :title "Search Result"
                :classification "reference"
                :tags ["search"]
-               :modified "2025-01-20"}
+               :created "2025-01-18T09:00:00Z"
+               :modified "2025-01-20T16:45:00Z"
+               :has_frontmatter true}
           result (format-search-result doc)
           metadata (:metadata result)]
       (is (= "notes/result.md" (:id result)))
       (is (= "Search Result" (:title result)))
       (is (= "reference" (:classification metadata)))
       (is (= ["search"] (:tags metadata)))
-      (is (= "2025-01-20" (:modified metadata)))))
+      (is (= "2025-01-20T16:45:00Z" (:modified metadata)))
+      (is (= "2025-01-18T09:00:00Z" (:created metadata)))
+      (is (true? (:hasFrontmatter metadata)))))
 
   (testing "Provides defaults for missing fields"
     (let [doc {:PK "minimal.md"}
           result (format-search-result doc)
           metadata (:metadata result)]
       (is (= "Untitled" (:title result)))
-      (is (= [] (:tags metadata))))))
+      (is (= "reference" (:classification metadata)))
+      (is (= [] (:tags metadata)))
+      (is (= default-timestamp (:created metadata)))
+      (is (= default-timestamp (:modified metadata)))
+      (is (false? (:hasFrontmatter metadata))))))
 
 ;; =============================================================================
 ;; api_documents_by_tag format-document tests
@@ -187,15 +222,19 @@
 (defn format-tag-document
   "Format document for tag results (from api_documents_by_tag)"
   [metadata]
-  {:id (:PK metadata)
-   :title (or (:title metadata) "Untitled")
-   :metadata {:classification (:classification metadata)
-              :tags (or (:tags metadata) [])
-              :linksTo (or (:links_to metadata) [])
-              :entities (:entities metadata)
-              :created (:created metadata)
-              :modified (:modified metadata)
-              :hasFrontmatter (:has_frontmatter metadata)}})
+  (let [modified (or (:modified metadata) default-timestamp)
+        created (or (:created metadata) modified)]
+    {:id (:PK metadata)
+     :title (or (:title metadata) "Untitled")
+     :metadata {:classification (or (:classification metadata) "reference")
+                :tags (or (:tags metadata) [])
+                :linksTo (or (:links_to metadata) [])
+                :entities (:entities metadata)
+                :created created
+                :modified modified
+                :hasFrontmatter (if (some? (:has_frontmatter metadata))
+                                  (:has_frontmatter metadata)
+                                  false)}}))
 
 (deftest format-tag-document-test
   (testing "Formats document for tag results with nested metadata"
@@ -203,14 +242,18 @@
                :title "Tagged Doc"
                :classification "idea"
                :tags ["clojure" "testing"]
-               :modified "2025-01-25"}
+               :created "2025-01-20T10:00:00Z"
+               :modified "2025-01-25T11:30:00Z"
+               :has_frontmatter false}
           result (format-tag-document doc)
           metadata (:metadata result)]
       (is (= "notes/tagged.md" (:id result)))
       (is (= "Tagged Doc" (:title result)))
       (is (= "idea" (:classification metadata)))
       (is (= ["clojure" "testing"] (:tags metadata)))
-      (is (= "2025-01-25" (:modified metadata))))))
+      (is (= "2025-01-25T11:30:00Z" (:modified metadata)))
+      (is (= "2025-01-20T10:00:00Z" (:created metadata)))
+      (is (false? (:hasFrontmatter metadata))))))
 
 ;; =============================================================================
 ;; api_list_classifications tests
