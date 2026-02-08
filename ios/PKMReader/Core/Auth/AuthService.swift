@@ -15,6 +15,11 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
 
     /// Configure Amplify - call once at app startup
     func configure() async throws {
+        // Validate Cognito config before Amplify tries to parse pool IDs.
+        // Amplify force-unwraps on the "_" separator in pool IDs, so placeholder
+        // values like "COGNITO_USER_POOL_ID" cause a crash.
+        try Self.validateCognitoConfiguration()
+
         do {
             try Amplify.add(plugin: AWSCognitoAuthPlugin())
             try Amplify.configure()
@@ -22,6 +27,38 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         } catch {
             authState = .signedOut
             throw AuthError.unknown("Failed to configure Amplify: \(error.localizedDescription)")
+        }
+    }
+
+    /// Validate that amplifyconfiguration.json contains real Cognito IDs, not placeholders.
+    private static func validateCognitoConfiguration() throws {
+        guard let configURL = Bundle.main.url(forResource: "amplifyconfiguration", withExtension: "json"),
+              let data = try? Data(contentsOf: configURL),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AuthError.unknown(
+                "Missing amplifyconfiguration.json. Run scripts/configure-ios.sh to populate real values."
+            )
+        }
+
+        // Navigate to CognitoUserPool.Default.PoolId
+        guard let auth = json["auth"] as? [String: Any],
+              let plugins = auth["plugins"] as? [String: Any],
+              let cognito = plugins["awsCognitoAuthPlugin"] as? [String: Any],
+              let pool = cognito["CognitoUserPool"] as? [String: Any],
+              let defaultPool = pool["Default"] as? [String: Any],
+              let poolId = defaultPool["PoolId"] as? String else {
+            throw AuthError.unknown(
+                "Invalid amplifyconfiguration.json structure. "
+                + "Run scripts/configure-ios.sh to populate real values."
+            )
+        }
+
+        // Cognito pool IDs must contain "_" (e.g. "us-east-1_AbCdEfGhI")
+        guard poolId.contains("_") else {
+            throw AuthError.unknown(
+                "Cognito User Pool ID is not configured (found \"\(poolId)\"). "
+                + "Run scripts/configure-ios.sh to populate real values."
+            )
         }
     }
 

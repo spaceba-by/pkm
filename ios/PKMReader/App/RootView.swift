@@ -4,6 +4,7 @@ import SwiftUI
 struct RootView: View {
     @StateObject private var authService = AuthService.shared
     @State private var isInitialized = false
+    @State private var configurationError: Error?
 
     /// Check if app is launched in logged-out mode for UI testing
     private var isLoggedOutTestMode: Bool {
@@ -19,6 +20,8 @@ struct RootView: View {
             if isLoggedOutTestMode {
                 // UI testing mode: show login screen directly
                 LoginView(authService: authService)
+            } else if let error = configurationError {
+                ErrorView(error: error, retryAction: nil)
             } else if !isInitialized {
                 LoadingView(message: "Initializing...")
             } else {
@@ -43,6 +46,7 @@ struct RootView: View {
                 isInitialized = true
             } catch {
                 print("Failed to initialize auth: \(error)")
+                configurationError = error
                 isInitialized = true
             }
         }

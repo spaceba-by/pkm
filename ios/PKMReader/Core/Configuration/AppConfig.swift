@@ -4,21 +4,23 @@ import Foundation
 /// These are PUBLIC identifiers, not secrets.
 /// Cognito client IDs are designed to be embedded in mobile apps.
 /// The security comes from user authentication, not hidden identifiers.
+///
+/// Values populated by scripts/configure-ios.sh from Terraform outputs.
 enum AppConfig {
     #if DEBUG
-    // Development environment
+    // Development environment (same deployment for now)
     // swiftlint:disable:next force_unwrapping
-    static let apiBaseURL = URL(string: "https://api-dev.pkm.spaceba.by")!
-    static let cognitoUserPoolId = "us-east-1_DevPoolId"
-    static let cognitoClientId = "dev-client-id"
-    static let cognitoIdentityPoolId = "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    static let apiBaseURL = URL(string: "https://yv13564xab.execute-api.us-east-1.amazonaws.com/")!
+    static let cognitoUserPoolId = "us-east-1_hL1TtgZHP"
+    static let cognitoClientId = "3itfc5t9qf390q2k236r5cba5b"
+    static let cognitoIdentityPoolId = "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f"
     #else
     // Production environment
     // swiftlint:disable:next force_unwrapping
-    static let apiBaseURL = URL(string: "https://api.pkm.spaceba.by")!
-    static let cognitoUserPoolId = "us-east-1_ProdPoolId"
-    static let cognitoClientId = "prod-client-id"
-    static let cognitoIdentityPoolId = "us-east-1:yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+    static let apiBaseURL = URL(string: "https://yv13564xab.execute-api.us-east-1.amazonaws.com/")!
+    static let cognitoUserPoolId = "us-east-1_hL1TtgZHP"
+    static let cognitoClientId = "3itfc5t9qf390q2k236r5cba5b"
+    static let cognitoIdentityPoolId = "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f"
     #endif
 
     static let cognitoRegion = "us-east-1"

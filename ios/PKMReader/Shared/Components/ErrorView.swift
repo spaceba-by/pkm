@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// A view displaying an error with a retry button
+/// A view displaying an error with an optional retry button
 struct ErrorView: View {
     let error: Error
-    let retryAction: () -> Void
+    var retryAction: (() -> Void)?
 
     var body: some View {
         ContentUnavailableView {
@@ -11,10 +11,12 @@ struct ErrorView: View {
         } description: {
             Text(error.localizedDescription)
         } actions: {
-            Button("Retry") {
-                retryAction()
+            if let retryAction {
+                Button("Retry") {
+                    retryAction()
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
         }
         .accessibilityIdentifier("ErrorView")
     }
