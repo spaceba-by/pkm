@@ -48,7 +48,8 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
               let defaultPool = pool["Default"] as? [String: Any],
               let poolId = defaultPool["PoolId"] as? String else {
             throw AuthError.unknown(
-                "Invalid amplifyconfiguration.json structure. Run scripts/configure-ios.sh from the terraform/ directory."
+                "Invalid amplifyconfiguration.json structure. "
+                + "Run scripts/configure-ios.sh from the terraform/ directory."
             )
         }
 
