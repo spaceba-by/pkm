@@ -55,8 +55,8 @@ meeting
 
 **Used by:** `extract-entities` Lambda
 **Model:** Claude Haiku 4.5
-**Temperature:** 0.0 (deterministic)
-**Max Tokens:** 500
+**Temperature:** 0.5
+**Max Tokens:** 1000
 
 ```
 Extract named entities from this markdown document.
@@ -93,7 +93,7 @@ Output:
 **Used by:** `generate-daily-summary` Lambda
 **Model:** Claude Sonnet 4.5
 **Temperature:** 0.7 (creative)
-**Max Tokens:** 1000
+**Max Tokens:** 4000
 
 ```
 Analyze these documents created or modified today and provide a concise summary.
@@ -141,7 +141,7 @@ The work sets a solid foundation for implementation next week.
 **Used by:** `generate-weekly-report` Lambda
 **Model:** Claude Sonnet 4.5
 **Temperature:** 0.7 (creative)
-**Max Tokens:** 2048
+**Max Tokens:** 6000
 
 ```
 Analyze this week's PKM activity and provide:
@@ -320,8 +320,9 @@ Quick check-in with the team...")
 
 (def classification
   (bedrock/classify-document
+    "global.anthropic.claude-haiku-4-5-20251001-v1:0"
     content
-    "global.anthropic.claude-haiku-4-5-20251001-v1:0"))
+    {:title "Team Standup"}))
 
 (println "Classification:" classification)
 ```
@@ -336,8 +337,8 @@ the Azure integration project in Seattle.")
 
 (def entities
   (bedrock/extract-entities
-    content
-    "global.anthropic.claude-haiku-4-5-20251001-v1:0"))
+    "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+    content))
 
 (println "Entities:" entities)
 ```
@@ -353,8 +354,8 @@ the Azure integration project in Seattle.")
 
 (def summary
   (bedrock/generate-summary
-    documents
-    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"))
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    documents))
 
 (println "Summary:" summary)
 ```

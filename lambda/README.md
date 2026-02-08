@@ -75,7 +75,7 @@ bb build.clj                      # Build all functions
 bb build.clj extract_metadata     # Build a single function
 ```
 
-Output ZIPs are placed in `lambda/target/`.
+Output ZIPs are placed in `target/`.
 
 ## Lambda Functions
 
