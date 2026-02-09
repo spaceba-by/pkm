@@ -83,7 +83,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 ### In Progress
 
-- **Task 0007: iOS Enhanced Features**
+- **Task 0007: iOS Enhanced Features** ✅
 
   - See: [0007-ios-enhanced-features](tasks/0007-ios-enhanced-features.md)
   - Search view with debounced text input
@@ -93,6 +93,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - 5-tab layout: Documents, Search, Tags, Insights, Settings
 
 ### Planned
+
+- **Task 0012: iOS Test Coverage**
+
+  - See: [0012-ios-test-coverage](tasks/0012-ios-test-coverage.md)
+  - Add missing unit tests (InsightDetailViewModel, Settings)
+  - Implement mock API infrastructure for UI tests
+  - Enable and expand all deferred UI tests
+  - End-to-end flow coverage for search, tags, insights, settings
 
 - **Task 0008: iOS Polish & Release**
 
