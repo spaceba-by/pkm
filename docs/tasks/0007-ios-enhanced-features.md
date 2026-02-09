@@ -113,7 +113,7 @@ iOS Phase 3: Add search, tags browsing, AI summaries, weekly reports, and enhanc
 - [x] Step 5: Expand MainTabView and enhance Settings
   - Update `MainTabView` to 5 tabs: Documents, Search, Tags, Insights, Settings
   - Tab icons: doc.text, magnifyingglass, tag, lightbulb.max, gear
-  - Enhance `SettingsView` with cache clear button (calls `CacheService`)
+  - Enhance `SettingsView` with cache clear button (calls `DocumentCacheService`)
   - Add display preference toggles (e.g., compact list mode) using `@AppStorage`
   - Pass `apiClient` to all new tab views
 
