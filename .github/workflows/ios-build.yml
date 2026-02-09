@@ -35,14 +35,14 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
-      - name: Cache Swift packages
+      - name: Cache DerivedData
         uses: actions/cache@v4
         with:
-          path: |
-            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
-          key: ${{ runner.os }}-spm-${{ hashFiles('.github/workflows/ios-build.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-dd-${{ hashFiles('.github/workflows/ios-build.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift') }}
           restore-keys: |
-            ${{ runner.os }}-spm-${{ hashFiles('.github/workflows/ios-build.yml') }}-
+            ${{ runner.os }}-dd-${{ hashFiles('.github/workflows/ios-build.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
+            ${{ runner.os }}-dd-${{ hashFiles('.github/workflows/ios-build.yml') }}-
 
       - name: Setup Ruby (for Fastlane)
         uses: ruby/setup-ruby@v1
