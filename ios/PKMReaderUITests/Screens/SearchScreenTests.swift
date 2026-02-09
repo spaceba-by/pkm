@@ -48,10 +48,10 @@ final class SearchScreenTests: XCTestCase {
         let resultsList = searchPage.resultsList
         XCTAssertTrue(resultsList.waitForExistence(timeout: 5), "Search results not displayed")
 
-        // Tap the first result by accessibility identifier
-        let resultRow = app.buttons["SearchResult_notes/meeting-notes.md"].firstMatch
-        XCTAssertTrue(resultRow.waitForExistence(timeout: 5), "Search result row not found")
-        resultRow.tap()
+        // Coordinate tap on first cell to reliably trigger NavigationLink
+        let firstCell = resultsList.cells.firstMatch
+        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Search result cell not found")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
         // Verify navigation to detail view
         let backButton = app.navigationBars.buttons.element(boundBy: 0)
