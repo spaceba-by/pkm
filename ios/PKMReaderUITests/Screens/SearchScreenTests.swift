@@ -1,9 +1,6 @@
 import XCTest
 
-/// Search screen tests
-///
-/// Note: These tests require mock API infrastructure to bypass authentication.
-/// They are deferred until mock authenticated state is available.
+/// Search screen tests using mock API infrastructure
 final class SearchScreenTests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional
     private var app: XCUIApplication!
@@ -11,7 +8,16 @@ final class SearchScreenTests: XCTestCase {
     // swiftlint:enable implicitly_unwrapped_optional
 
     override func setUpWithError() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        continueAfterFailure = false
+
+        app = XCUIApplication()
+        app.launchWithMockData()
+        searchPage = SearchPage(app: app)
+
+        // Navigate to Search tab
+        let searchTab = app.tabBars.buttons["Search"]
+        XCTAssertTrue(searchTab.waitForExistence(timeout: 5), "Search tab not found")
+        searchTab.tap()
     }
 
     override func tearDownWithError() throws {
@@ -22,18 +28,39 @@ final class SearchScreenTests: XCTestCase {
     // MARK: - Search Flow Tests
 
     func test_searchView_displaysIdleState() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        searchPage.assertIsDisplayed()
+        searchPage.assertShowsIdleState()
     }
 
     func test_search_showsResults() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        searchPage.assertIsDisplayed()
+        searchPage.search(for: "meeting")
+
+        // Wait for debounced search results
+        let resultsList = searchPage.resultsList
+        XCTAssertTrue(resultsList.waitForExistence(timeout: 5), "Search results not displayed")
     }
 
     func test_tapResult_navigatesToDetail() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        searchPage.assertIsDisplayed()
+        searchPage.search(for: "meeting")
+
+        let resultsList = searchPage.resultsList
+        XCTAssertTrue(resultsList.waitForExistence(timeout: 5), "Search results not displayed")
+
+        // Tap the first result
+        searchPage.tapResult(at: 0)
+
+        // Verify navigation to detail view
+        let backButton = app.navigationBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Detail view not displayed")
     }
 
     func test_search_noResults_showsEmptyState() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        searchPage.assertIsDisplayed()
+        searchPage.search(for: "zzzznonexistent")
+
+        // Wait for empty state
+        searchPage.assertShowsEmptyState(timeout: 5)
     }
 }

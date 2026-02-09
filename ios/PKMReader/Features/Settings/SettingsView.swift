@@ -2,15 +2,16 @@ import SwiftUI
 
 /// Settings screen with user info, cache management, display preferences, and sign out
 struct SettingsView: View {
-    let authService: any AuthServiceProtocol
-    @State private var isSigningOut = false
-    @State private var showingSignOutAlert = false
-    @State private var isClearingCache = false
-    @State private var showCacheCleared = false
+    @StateObject private var viewModel: SettingsViewModel
     @AppStorage("compactListMode")
     private var compactListMode = false
     @AppStorage("showDocumentPreviews")
     private var showDocumentPreviews = true
+    @State private var showingSignOutAlert = false
+
+    init(authService: any AuthServiceProtocol) {
+        _viewModel = StateObject(wrappedValue: SettingsViewModel(authService: authService))
+    }
 
     var body: some View {
         NavigationStack {
@@ -24,20 +25,20 @@ struct SettingsView: View {
 
                 Section("Storage") {
                     Button {
-                        Task { await clearCache() }
+                        Task { await viewModel.clearCache() }
                     } label: {
                         HStack {
                             Text("Clear Cache")
                             Spacer()
-                            if isClearingCache {
+                            if viewModel.isClearingCache {
                                 ProgressView()
-                            } else if showCacheCleared {
+                            } else if viewModel.showCacheCleared {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundStyle(.green)
                             }
                         }
                     }
-                    .disabled(isClearingCache)
+                    .disabled(viewModel.isClearingCache)
                     .accessibilityIdentifier("ClearCacheButton")
                 }
 
@@ -48,12 +49,12 @@ struct SettingsView: View {
                         HStack {
                             Text("Sign Out")
                             Spacer()
-                            if isSigningOut {
+                            if viewModel.isSigningOut {
                                 ProgressView()
                             }
                         }
                     }
-                    .disabled(isSigningOut)
+                    .disabled(viewModel.isSigningOut)
                     .accessibilityIdentifier("SignOutButton")
                 }
 
@@ -70,36 +71,12 @@ struct SettingsView: View {
             .alert("Sign Out", isPresented: $showingSignOutAlert) {
                 Button("Cancel", role: .cancel) {}
                 Button("Sign Out", role: .destructive) {
-                    Task { await signOut() }
+                    Task { await viewModel.signOut() }
                 }
             } message: {
                 Text("Are you sure you want to sign out?")
             }
         }
-    }
-
-    private func signOut() async {
-        isSigningOut = true
-        do {
-            try await authService.signOut()
-        } catch {
-            print("Sign out error: \(error)")
-        }
-        isSigningOut = false
-    }
-
-    private func clearCache() async {
-        isClearingCache = true
-        do {
-            let cacheService = try DocumentCacheService()
-            cacheService.clearCache()
-            showCacheCleared = true
-            try? await Task.sleep(for: .seconds(2))
-            showCacheCleared = false
-        } catch {
-            print("Cache clear error: \(error)")
-        }
-        isClearingCache = false
     }
 }
 

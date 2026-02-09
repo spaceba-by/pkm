@@ -2,12 +2,9 @@ import SwiftUI
 
 /// Main tab-based navigation after authentication
 struct MainTabView: View {
-    let authService: AuthService
+    let apiClient: any APIClientProtocol
+    let authService: any AuthServiceProtocol
     @State private var selectedTab = 0
-
-    private var apiClient: APIClient {
-        APIClient(authService: authService)
-    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -46,5 +43,8 @@ struct MainTabView: View {
 }
 
 #Preview {
-    MainTabView(authService: AuthService.shared)
+    MainTabView(
+        apiClient: APIClient(authService: AuthService.shared),
+        authService: AuthService.shared
+    )
 }
