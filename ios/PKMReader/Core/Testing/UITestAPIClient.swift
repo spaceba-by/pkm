@@ -10,7 +10,16 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
         Document(
             id: "notes/meeting-notes.md",
             title: "Team Meeting Notes",
-            content: "# Team Meeting Notes\n\nAttendees: Alice, Bob, Charlie\n\n## Agenda\n- Project status update\n- Sprint planning\n- Action items review",
+            content: """
+                # Team Meeting Notes
+
+                Attendees: Alice, Bob, Charlie
+
+                ## Agenda
+                - Project status update
+                - Sprint planning
+                - Action items review
+                """,
             metadata: DocumentMetadata(
                 classification: .meeting,
                 tags: ["meeting", "team", "weekly"],
@@ -29,7 +38,14 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
         Document(
             id: "ideas/app-redesign.md",
             title: "App Redesign Ideas",
-            content: "# App Redesign Ideas\n\nConsider a fresh look with:\n- New color scheme\n- Improved navigation\n- Dark mode support",
+            content: """
+                # App Redesign Ideas
+
+                Consider a fresh look with:
+                - New color scheme
+                - Improved navigation
+                - Dark mode support
+                """,
             metadata: DocumentMetadata(
                 classification: .idea,
                 tags: ["idea", "design", "app"],
@@ -43,7 +59,15 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
         Document(
             id: "reference/swift-concurrency.md",
             title: "Swift Concurrency Guide",
-            content: "# Swift Concurrency Guide\n\n## async/await\nSwift concurrency model uses structured concurrency.\n\n## Actors\nActors provide data isolation.",
+            content: """
+                # Swift Concurrency Guide
+
+                ## async/await
+                Swift concurrency model uses structured concurrency.
+
+                ## Actors
+                Actors provide data isolation.
+                """,
             metadata: DocumentMetadata(
                 classification: .reference,
                 tags: ["swift", "concurrency", "reference"],
