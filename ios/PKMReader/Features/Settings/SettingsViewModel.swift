@@ -13,11 +13,11 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var showCacheCleared = false
 
     private let authService: any AuthServiceProtocol
-    private let clearCacheHandler: @Sendable () throws -> Void // swiftlint:disable:this attributes
+    private let clearCacheHandler: @Sendable () throws -> Void
 
     init(
         authService: any AuthServiceProtocol,
-        clearCacheHandler: (@Sendable () throws -> Void)? = nil // swiftlint:disable:this attributes
+        clearCacheHandler: (@Sendable () throws -> Void)? = nil
     ) {
         self.authService = authService
         self.clearCacheHandler = clearCacheHandler ?? {

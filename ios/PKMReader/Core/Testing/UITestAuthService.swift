@@ -3,6 +3,7 @@ import Foundation
 
 /// Mock auth service for UI testing that simulates an authenticated state
 /// Activated via the `--mock-api` launch argument
+// swiftlint:disable:next attributes
 final class UITestAuthService: AuthServiceProtocol, @unchecked Sendable {
     var isAuthenticated: Bool { true }
 

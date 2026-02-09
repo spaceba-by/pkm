@@ -3,6 +3,7 @@ import Foundation
 
 /// Mock API client that returns fixture data for UI testing
 /// Activated via the `--mock-api` launch argument
+// swiftlint:disable:next attributes
 final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
     // MARK: - Fixture Data
 
