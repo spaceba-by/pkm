@@ -6,7 +6,7 @@ This file provides guidance for Claude Code sessions working on the PKMReader iO
 
 PKMReader is an iOS app for reading markdown documents from the PKM (Personal Knowledge Management) system. It connects to a backend API (to be built in Phase 1) that serves documents from an S3 bucket.
 
-**Current Status**: Phase 0 & 1 complete - CI/CD foundation established, backend API infrastructure deployed. Ready for Phase 2 (iOS App Core).
+**Current Status**: Phase 0, 1, & 2 complete - CI/CD foundation established, backend API infrastructure deployed, core app scaffold implemented. Phase 3 (Enhanced Features) in progress.
 
 ## Common Commands
 
@@ -109,16 +109,16 @@ To add new source files:
 - **PR checks**: `.github/workflows/ios-test.yml` - lint, build, test, coverage
 - **Main branch**: `.github/workflows/ios-build.yml` - build artifacts
 
-Coverage threshold is 60% (enforced in CI).
+Coverage threshold is 20% (enforced in CI).
 
 ## Implementation Plan Reference
 
-See `docs/ios-app-scaffold-plan.md` for the full implementation plan:
+See `docs/tasks/` for task specifications. Current phases:
 
 - **Phase 0** ✅ - Build & Test Automation Foundation
 - **Phase 1** ✅ - Backend API Infrastructure (Cognito, API Gateway, Lambda)
-- **Phase 2** 🚧 - iOS App Core (Auth, APIClient, DocumentList, DocumentDetail) ← Next
-- **Phase 3** - Enhanced Features (Search, Tags, Summaries)
+- **Phase 2** ✅ - iOS App Core (Auth, APIClient, DocumentList, DocumentDetail)
+- **Phase 3** 🚧 - Enhanced Features (Search, Tags, Insights, Settings) ← Current
 - **Phase 4** - Polish & Release
 
 ## DO NOT

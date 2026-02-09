@@ -60,12 +60,18 @@
       (println "User" user-sub "fetching document:" document-key)
 
       (let [metadata (get-document-metadata document-key)]
-        (if-not metadata
-          (r/not-found (str "Document not found: " document-key))
-
+        (if metadata
+          ;; Document has DynamoDB metadata — standard path
           (let [content (get-document-content document-key)
                 document (format-document-detail metadata content)]
-            (r/ok document)))))
+            (r/ok document))
+
+          ;; No DynamoDB metadata — try S3 directly (agent outputs like summaries/reports)
+          (let [content (get-document-content document-key)]
+            (if content
+              (let [document (format-document-detail {:PK document-key} content)]
+                (r/ok document))
+              (r/not-found (str "Document not found: " document-key)))))))
 
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]

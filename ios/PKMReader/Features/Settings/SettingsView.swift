@@ -1,14 +1,46 @@
 import SwiftUI
 
-/// Settings screen with user info and sign out
+/// Settings screen with user info, cache management, display preferences, and sign out
 struct SettingsView: View {
     let authService: any AuthServiceProtocol
     @State private var isSigningOut = false
     @State private var showingSignOutAlert = false
+    @State private var isClearingCache = false
+    @State private var showCacheCleared = false
+    @AppStorage("compactListMode")
+    private var compactListMode = false
+    @AppStorage("showDocumentPreviews")
+    private var showDocumentPreviews = true
 
     var body: some View {
         NavigationStack {
             List {
+                Section("Display") {
+                    Toggle("Compact List Mode", isOn: $compactListMode)
+                        .accessibilityIdentifier("CompactListToggle")
+                    Toggle("Show Document Previews", isOn: $showDocumentPreviews)
+                        .accessibilityIdentifier("ShowPreviewsToggle")
+                }
+
+                Section("Storage") {
+                    Button {
+                        Task { await clearCache() }
+                    } label: {
+                        HStack {
+                            Text("Clear Cache")
+                            Spacer()
+                            if isClearingCache {
+                                ProgressView()
+                            } else if showCacheCleared {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                    }
+                    .disabled(isClearingCache)
+                    .accessibilityIdentifier("ClearCacheButton")
+                }
+
                 Section("Account") {
                     Button(role: .destructive) {
                         showingSignOutAlert = true
@@ -54,6 +86,20 @@ struct SettingsView: View {
             print("Sign out error: \(error)")
         }
         isSigningOut = false
+    }
+
+    private func clearCache() async {
+        isClearingCache = true
+        do {
+            let cacheService = try DocumentCacheService()
+            cacheService.clearCache()
+            showCacheCleared = true
+            try? await Task.sleep(for: .seconds(2))
+            showCacheCleared = false
+        } catch {
+            print("Cache clear error: \(error)")
+        }
+        isClearingCache = false
     }
 }
 

@@ -126,6 +126,20 @@
       (is (= "reference" (:classification result-meta)))
       (is (= default-timestamp (:created result-meta)))
       (is (= default-timestamp (:modified result-meta)))
+      (is (false? (:hasFrontmatter result-meta)))))
+
+  (testing "S3-only fallback: agent output with no DynamoDB metadata"
+    (let [metadata {:PK "_agent/summaries/daily/2025-01-20.md"}
+          content "# Daily Summary\n\nToday's activity..."
+          result (format-document-detail metadata content)
+          result-meta (:metadata result)]
+      (is (= "_agent/summaries/daily/2025-01-20.md" (:id result)))
+      (is (= "Untitled" (:title result)))
+      (is (= content (:content result)))
+      (is (= "reference" (:classification result-meta)))
+      (is (= [] (:tags result-meta)))
+      (is (= default-timestamp (:created result-meta)))
+      (is (= default-timestamp (:modified result-meta)))
       (is (false? (:hasFrontmatter result-meta))))))
 
 ;; =============================================================================

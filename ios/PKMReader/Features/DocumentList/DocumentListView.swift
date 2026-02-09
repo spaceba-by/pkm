@@ -143,4 +143,5 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listClassifications() async throws -> [ClassificationCount] { [] }
     func listSummaries(limit: Int) async throws -> [Summary] { [] }
     func listReports(limit: Int) async throws -> [Report] { [] }
+    func documentsByTag(tag: String, limit: Int) async throws -> [Document] { [] }
 }

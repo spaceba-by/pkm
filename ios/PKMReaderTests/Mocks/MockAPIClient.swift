@@ -28,6 +28,9 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Result to return from listReports
     var listReportsResult: Result<[Report], Error> = .success([])
 
+    /// Result to return from documentsByTag
+    var documentsByTagResult: Result<[Document], Error> = .success([])
+
     // MARK: - Call Tracking
 
     /// Number of times listDocuments was called
@@ -59,6 +62,15 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     /// Number of times listTags was called
     private(set) var listTagsCallCount = 0
+
+    /// Number of times documentsByTag was called
+    private(set) var documentsByTagCallCount = 0
+
+    /// Last tag passed to documentsByTag
+    private(set) var lastDocumentsByTagTag: String?
+
+    /// Last limit passed to documentsByTag
+    private(set) var lastDocumentsByTagLimit: Int?
 
     // MARK: - APIClientProtocol
 
@@ -108,6 +120,13 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try listReportsResult.get()
     }
 
+    func documentsByTag(tag: String, limit: Int) async throws -> [Document] {
+        documentsByTagCallCount += 1
+        lastDocumentsByTagTag = tag
+        lastDocumentsByTagLimit = limit
+        return try documentsByTagResult.get()
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -122,5 +141,8 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         lastSearchQuery = nil
         lastSearchLimit = nil
         listTagsCallCount = 0
+        documentsByTagCallCount = 0
+        lastDocumentsByTagTag = nil
+        lastDocumentsByTagLimit = nil
     }
 }

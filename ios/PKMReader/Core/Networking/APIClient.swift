@@ -129,6 +129,29 @@ actor APIClient: APIClientProtocol {
         return response.reports
     }
 
+    func documentsByTag(tag: String, limit: Int) async throws -> [Document] {
+        let tagDocumentsURL = baseURL
+            .appendingPathComponent("tags")
+            .appendingPathComponent(tag)
+            .appendingPathComponent("documents")
+
+        var components = URLComponents(
+            url: tagDocumentsURL,
+            resolvingAgainstBaseURL: false
+        )
+
+        components?.queryItems = [
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+
+        guard let url = components?.url else {
+            throw APIError.invalidURL
+        }
+
+        let response: DocumentsByTagResponse = try await performRequest(url: url)
+        return response.documents
+    }
+
     // MARK: - Private
 
     private func performRequest<T: Decodable>(url: URL) async throws -> T {
@@ -203,5 +226,11 @@ struct SummaryListResponse: Codable, Sendable {
 
 struct ReportListResponse: Codable, Sendable {
     let reports: [Report]
+    let count: Int
+}
+
+struct DocumentsByTagResponse: Codable, Sendable {
+    let tag: String
+    let documents: [Document]
     let count: Int
 }

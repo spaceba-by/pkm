@@ -53,8 +53,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │                                                               │
 │  ┌──────────────────────────────────────────────────────────┐│
 │  │         Amazon Bedrock                                    ││
-│  │  • Claude 3 Haiku (classify, extract)                    ││
-│  │  • Claude 3.5 Sonnet (summaries, reports)                ││
+│  │  • Claude Haiku 4.5 (classify, extract)                   ││
+│  │  • Claude Sonnet 4.5 (summaries, reports)                ││
 │  └──────────────────────────────────────────────────────────┘│
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
@@ -195,12 +195,12 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 #### Amazon Bedrock
 
 **Models:**
-- **Claude 3 Haiku:** High-volume, low-cost operations
+- **Claude Haiku 4.5:** High-volume, low-cost operations
   - Document classification
   - Entity extraction
   - Cost: ~$0.25 per 1M input tokens
 
-- **Claude 3.5 Sonnet:** Quality-critical operations
+- **Claude Sonnet 4.5:** Quality-critical operations
   - Daily summaries
   - Weekly reports
   - Cost: ~$3 per 1M input tokens

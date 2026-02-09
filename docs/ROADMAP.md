@@ -81,14 +81,26 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - SwiftUI views with MVVM architecture
   - Document list with classification filtering, document detail with markdown rendering
 
-### Planned
+### In Progress
 
-- **Task 0007: iOS Enhanced Features**
+- **Task 0007: iOS Enhanced Features** ✅
 
   - See: [0007-ios-enhanced-features](tasks/0007-ios-enhanced-features.md)
-  - Search view, tags browsing, summaries/reports views
-  - Settings view
-  - Full-featured read-only PKM app
+  - Search view with debounced text input
+  - Tags browsing with drill-down to documents by tag
+  - Insights tab combining daily summaries and weekly reports
+  - Enhanced settings with cache management and preferences
+  - 5-tab layout: Documents, Search, Tags, Insights, Settings
+
+### Planned
+
+- **Task 0012: iOS Test Coverage**
+
+  - See: [0012-ios-test-coverage](tasks/0012-ios-test-coverage.md)
+  - Add missing unit tests (InsightDetailViewModel, Settings)
+  - Implement mock API infrastructure for UI tests
+  - Enable and expand all deferred UI tests
+  - End-to-end flow coverage for search, tags, insights, settings
 
 - **Task 0008: iOS Polish & Release**
 
