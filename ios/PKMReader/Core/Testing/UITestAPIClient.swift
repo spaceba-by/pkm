@@ -3,7 +3,7 @@ import Foundation
 
 /// Mock API client that returns fixture data for UI testing
 /// Activated via the `--mock-api` launch argument
-final class UITestAPIClient: APIClientProtocol, @unchecked Sendable { // swiftlint:disable:this attributes
+final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
     // MARK: - Fixture Data
 
     private let fixtureDocuments: [Document] = [
