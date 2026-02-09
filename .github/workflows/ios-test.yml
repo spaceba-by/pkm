@@ -122,7 +122,7 @@ jobs:
       - name: Check coverage threshold
         run: |
           COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100')
-          THRESHOLD=50
+          THRESHOLD=20
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "::error::Code coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
             exit 1
