@@ -84,7 +84,7 @@ lambda/
 ├── shared/api/           # API response utilities (response.clj)
 ├── shared/markdown/      # Markdown parsing utilities
 ├── functions/            # 14 Lambda function implementations
-└── tests/                # Unit tests (27 tests, 158 assertions)
+└── tests/                # Unit tests (27 tests, 185 assertions)
 
 terraform/                # All AWS infrastructure
 ├── lambda.tf             # Processing Lambda functions

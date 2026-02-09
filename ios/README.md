@@ -6,7 +6,8 @@ iOS mobile app for the PKM (Personal Knowledge Management) system. Reads markdow
 
 - **Phase 0** ✅ - Build & Test Automation Foundation
 - **Phase 1** ✅ - Backend API Infrastructure (Cognito + API Gateway + Lambda)
-- **Phase 2** 🚧 - iOS App Core (Auth, APIClient, Views) ← Next
+- **Phase 2** ✅ - iOS App Core (Auth, APIClient, Views)
+- **Phase 3** 🚧 - Enhanced Features (Search, Tags, Insights, Settings) ← Current
 
 ## Requirements
 
@@ -75,7 +76,10 @@ ios/
 │   │   ├── Auth/
 │   │   ├── DocumentDetail/
 │   │   ├── DocumentList/
-│   │   └── Search/
+│   │   ├── Insights/
+│   │   ├── Search/
+│   │   ├── Settings/
+│   │   └── Tags/
 │   ├── Models/                   # Data models
 │   ├── Resources/                # Assets, Info.plist
 │   └── Shared/                   # Shared components
@@ -120,7 +124,7 @@ All services have protocol interfaces for testability:
 
 ### Testing Strategy
 
-- **Unit Tests**: ViewModels, Services, Models (target 60%+ coverage)
+- **Unit Tests**: ViewModels, Services, Models (target 20%+ coverage)
 - **UI Tests**: Critical user flows with Page Object pattern
 - **Mocks**: All protocol implementations have mock versions in `PKMReaderTests/Mocks/`
 
@@ -133,7 +137,7 @@ On every PR to `main` (via `.github/workflows/ios-test.yml`):
 2. Build for testing
 3. Run unit tests
 4. Run UI tests
-5. Code coverage check (60% minimum)
+5. Code coverage check (20% minimum)
 
 ### Main Branch
 

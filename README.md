@@ -30,7 +30,7 @@ iOS App → API Gateway (JWT) → Lambda → DynamoDB/S3
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
 - **Lambda:** 14 serverless functions (6 processing + 8 API)
-- **Bedrock:** Claude 3 models for AI capabilities
+- **Bedrock:** Claude Haiku 4.5 and Sonnet 4.5 for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
 - **CloudWatch:** Monitoring and logging
@@ -156,8 +156,8 @@ pkm-agent-system/
 │   ├── architecture.md
 │   ├── sync-guide.md
 │   ├── prompts.md
-│   ├── ios-app-scaffold-plan.md
-│   └── ios-phase-1-backend-api-plan.md
+│   ├── ISSUES.md
+│   └── tasks/             # Numbered task specifications
 ├── terraform/             # Infrastructure as Code
 │   ├── main.tf
 │   ├── s3.tf
@@ -239,11 +239,11 @@ Edit `terraform/variables.tf`:
 
 ```hcl
 variable "bedrock_haiku_model_id" {
-  default = "anthropic.claude-3-haiku-20240307-v1:0"
+  default = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "bedrock_sonnet_model_id" {
-  default = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+  default = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
 ```
 
@@ -298,7 +298,7 @@ journalctl --user -u pkm-sync.service -f
 **Solution:** Enable model access in Bedrock console
 ```bash
 # Navigate to AWS Console → Amazon Bedrock → Model access
-# Enable Claude 3 Haiku and Claude 3.5 Sonnet
+# Enable Claude Haiku 4.5 and Claude Sonnet 4.5
 ```
 
 ### Issue: Sync Not Working
@@ -366,8 +366,8 @@ terraform apply
 - [x] Entity extraction
 - [x] Classification index
 - [x] Mobile API (Cognito + API Gateway)
-- [x] iOS app foundation (Phase 0-1)
-- [ ] iOS app UI implementation (Phase 2-3)
+- [x] iOS app foundation (Phase 0-2)
+- [ ] iOS enhanced features (Phase 3) — in progress
 - [ ] Semantic search with OpenSearch
 - [ ] Interactive chat interface
 - [ ] Task extraction and tracking
