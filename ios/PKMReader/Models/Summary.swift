@@ -8,6 +8,12 @@ struct Summary: Identifiable, Codable, Sendable {
     /// The date of the summary (YYYY-MM-DD)
     let date: String
 
-    /// When the summary was last modified
-    let modified: Date
+    /// When the summary was last modified (optional, not always returned by API)
+    let modified: Date?
+
+    init(id: String, date: String, modified: Date? = nil) {
+        self.id = id
+        self.date = date
+        self.modified = modified
+    }
 }

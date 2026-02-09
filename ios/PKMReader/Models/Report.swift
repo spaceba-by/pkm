@@ -8,6 +8,12 @@ struct Report: Identifiable, Codable, Sendable {
     /// The week start date (YYYY-MM-DD)
     let weekOf: String
 
-    /// When the report was last modified
-    let modified: Date
+    /// When the report was last modified (optional, not always returned by API)
+    let modified: Date?
+
+    init(id: String, weekOf: String, modified: Date? = nil) {
+        self.id = id
+        self.weekOf = weekOf
+        self.modified = modified
+    }
 }

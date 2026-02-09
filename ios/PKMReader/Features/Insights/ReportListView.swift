@@ -48,9 +48,11 @@ struct ReportListView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Week of \(report.weekOf)")
                                 .font(.headline)
-                            Text(report.modified, style: .relative)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if let modified = report.modified {
+                                Text(modified, style: .relative)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         Spacer()
                         Image(systemName: "chevron.right")

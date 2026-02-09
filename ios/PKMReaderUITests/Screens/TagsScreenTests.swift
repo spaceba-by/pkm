@@ -37,11 +37,10 @@ final class TagsScreenTests: XCTestCase {
     func test_tapTag_showsDocuments() throws {
         tagsPage.assertIsDisplayed()
 
-        let tagsList = tagsPage.tagsList
-        XCTAssertTrue(tagsList.waitForExistence(timeout: 5), "Tags list not displayed")
-
-        // Tap the first tag
-        tagsPage.tapTag(at: 0)
+        // Wait for a specific tag row to appear, then tap it
+        let tagRow = app.buttons["TagRow_meeting"].firstMatch
+        XCTAssertTrue(tagRow.waitForExistence(timeout: 5), "Tag row not found")
+        tagRow.tap()
 
         // Verify navigation to tag documents view
         let tagDocumentsView = app.otherElements["TagDocumentsView"]
@@ -51,20 +50,19 @@ final class TagsScreenTests: XCTestCase {
     func test_tapDocument_navigatesToDetail() throws {
         tagsPage.assertIsDisplayed()
 
-        let tagsList = tagsPage.tagsList
-        XCTAssertTrue(tagsList.waitForExistence(timeout: 5), "Tags list not displayed")
+        // Tap the "meeting" tag
+        let tagRow = app.buttons["TagRow_meeting"].firstMatch
+        XCTAssertTrue(tagRow.waitForExistence(timeout: 5), "Tag row not found")
+        tagRow.tap()
 
-        // Tap the "meeting" tag which has associated documents
-        tagsPage.tapTag(named: "meeting")
-
-        // Wait for documents list to appear
+        // Wait for tag documents view
         let tagDocumentsView = app.otherElements["TagDocumentsView"]
         XCTAssertTrue(tagDocumentsView.waitForExistence(timeout: 5), "Tag documents view not displayed")
 
-        // Tap the first document in the list
-        let documentsList = app.collectionViews["TagDocumentsList"]
-        XCTAssertTrue(documentsList.waitForExistence(timeout: 5), "Documents list not displayed")
-        documentsList.cells.element(boundBy: 0).tap()
+        // Tap the first document by its accessibility identifier
+        let documentRow = app.buttons["TagDocumentRow_notes/meeting-notes.md"].firstMatch
+        XCTAssertTrue(documentRow.waitForExistence(timeout: 5), "Document row not found")
+        documentRow.tap()
 
         // Verify navigation to document detail
         let backButton = app.navigationBars.buttons.element(boundBy: 0)
@@ -76,15 +74,12 @@ final class TagsScreenTests: XCTestCase {
     func test_pullToRefresh_reloadsTags() throws {
         tagsPage.assertIsDisplayed()
 
-        let tagsList = tagsPage.tagsList
-        XCTAssertTrue(tagsList.waitForExistence(timeout: 5), "Tags list not displayed")
-
-        // Pull down to refresh
-        let firstCell = tagsList.cells.element(boundBy: 0)
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        firstCell.swipeDown()
+        let tagRow = app.buttons["TagRow_meeting"].firstMatch
+        XCTAssertTrue(tagRow.waitForExistence(timeout: 5), "Tag row not found")
+        tagRow.swipeDown()
 
         // After refresh, tags list should still be displayed
+        let tagsList = tagsPage.tagsList
         XCTAssertTrue(tagsList.waitForExistence(timeout: 5), "Tags list not displayed after refresh")
     }
 }

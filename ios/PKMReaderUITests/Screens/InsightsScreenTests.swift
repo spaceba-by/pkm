@@ -51,8 +51,10 @@ final class InsightsScreenTests: XCTestCase {
         let summaryList = insightsPage.summaryList
         XCTAssertTrue(summaryList.waitForExistence(timeout: 5), "Summary list not displayed")
 
-        // Tap the first summary
-        insightsPage.tapSummary(at: 0)
+        // Tap the first summary by accessibility identifier
+        let summaryRow = app.buttons["SummaryRow_2024-01-03"].firstMatch
+        XCTAssertTrue(summaryRow.waitForExistence(timeout: 5), "Summary row not found")
+        summaryRow.tap()
 
         // Verify navigation to summary detail
         let detailView = app.otherElements["SummaryDetailView"]
@@ -68,8 +70,10 @@ final class InsightsScreenTests: XCTestCase {
         let reportList = insightsPage.reportList
         XCTAssertTrue(reportList.waitForExistence(timeout: 5), "Report list not displayed")
 
-        // Tap the first report
-        insightsPage.tapReport(at: 0)
+        // Tap the first report by accessibility identifier
+        let reportRow = app.buttons["ReportRow_2024-01-15"].firstMatch
+        XCTAssertTrue(reportRow.waitForExistence(timeout: 5), "Report row not found")
+        reportRow.tap()
 
         // Verify navigation to report detail
         let detailView = app.otherElements["ReportDetailView"]

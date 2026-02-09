@@ -48,9 +48,11 @@ struct SummaryListView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(summary.date)
                                 .font(.headline)
-                            Text(summary.modified, style: .relative)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if let modified = summary.modified {
+                                Text(modified, style: .relative)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
