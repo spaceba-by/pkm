@@ -3,6 +3,8 @@ import Foundation
 /// View model for the Settings screen
 @MainActor
 final class SettingsViewModel: ObservableObject {
+    typealias CacheClearHandler = @Sendable () throws -> Void
+
     /// Current state for sign out operation
     @Published private(set) var isSigningOut = false
 
@@ -13,11 +15,11 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var showCacheCleared = false
 
     private let authService: any AuthServiceProtocol
-    private let clearCacheHandler: @Sendable () throws -> Void
+    private let clearCacheHandler: CacheClearHandler
 
     init(
         authService: any AuthServiceProtocol,
-        clearCacheHandler: @escaping @Sendable () throws -> Void = {
+        clearCacheHandler: @escaping CacheClearHandler = {
             let cacheService = try DocumentCacheService()
             cacheService.clearCache()
         }

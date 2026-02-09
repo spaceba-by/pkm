@@ -15,8 +15,8 @@ final class SettingsViewModelTests: XCTestCase {
         cacheClearCallCount = 0
         sut = SettingsViewModel(
             authService: mockAuthService,
-            clearCacheHandler: { [unowned self] in
-                self.cacheClearCallCount += 1
+            clearCacheHandler: { [weak self] in
+                self?.cacheClearCallCount += 1
             }
         )
     }
