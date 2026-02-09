@@ -45,10 +45,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-dd-${{ hashFiles('.github/workflows/ios-build.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift') }}
+          key: ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift', 'ios/PKMReaderTests/**/*.swift', 'ios/PKMReaderUITests/**/*.swift') }}
           restore-keys: |
-            ${{ runner.os }}-dd-${{ hashFiles('.github/workflows/ios-build.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
-            ${{ runner.os }}-dd-${{ hashFiles('.github/workflows/ios-build.yml') }}-
+            ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
+            ${{ runner.os }}-dd-
 
       - name: Setup Ruby (for Fastlane)
         uses: ruby/setup-ruby@v1
