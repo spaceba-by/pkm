@@ -35,6 +35,12 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+
       - name: Cache DerivedData
         uses: actions/cache@v4
         with:
