@@ -3,8 +3,6 @@ import Foundation
 /// View model for the Settings screen
 @MainActor
 final class SettingsViewModel: ObservableObject {
-    typealias CacheClearHandler = @Sendable () throws -> Void
-
     /// Current state for sign out operation
     @Published private(set) var isSigningOut = false
 
@@ -15,17 +13,17 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var showCacheCleared = false
 
     private let authService: any AuthServiceProtocol
-    private let clearCacheHandler: CacheClearHandler
+    private let clearCacheHandler: @Sendable () throws -> Void // swiftlint:disable:this attributes
 
     init(
         authService: any AuthServiceProtocol,
-        clearCacheHandler: @escaping CacheClearHandler = {
+        clearCacheHandler: (@Sendable () throws -> Void)? = nil // swiftlint:disable:this attributes
+    ) {
+        self.authService = authService
+        self.clearCacheHandler = clearCacheHandler ?? {
             let cacheService = try DocumentCacheService()
             cacheService.clearCache()
         }
-    ) {
-        self.authService = authService
-        self.clearCacheHandler = clearCacheHandler
     }
 
     /// Sign out the current user
