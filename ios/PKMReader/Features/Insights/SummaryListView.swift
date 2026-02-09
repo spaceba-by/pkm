@@ -41,9 +41,7 @@ struct SummaryListView: View {
     private func summaryList(_ summaries: [Summary]) -> some View {
         List {
             ForEach(summaries) { summary in
-                NavigationLink {
-                    SummaryDetailView(summary: summary, apiClient: viewModel.apiClient)
-                } label: {
+                NavigationLink(value: summary) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(summary.date)
@@ -55,15 +53,15 @@ struct SummaryListView: View {
                             }
                         }
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
                     }
                 }
                 .accessibilityIdentifier("SummaryRow_\(summary.date)")
             }
         }
         .listStyle(.plain)
+        .navigationDestination(for: Summary.self) { summary in
+            SummaryDetailView(summary: summary, apiClient: viewModel.apiClient)
+        }
         .accessibilityIdentifier("SummaryList")
     }
 }

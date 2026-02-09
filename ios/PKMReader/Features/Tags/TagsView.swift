@@ -35,6 +35,9 @@ struct TagsView: View {
             .refreshable {
                 await viewModel.refresh()
             }
+            .navigationDestination(for: Tag.self) { tag in
+                TagDocumentsView(tag: tag, apiClient: viewModel.apiClient)
+            }
         }
         .task {
             await viewModel.loadTags()
@@ -45,9 +48,7 @@ struct TagsView: View {
     private func tagsList(_ tags: [Tag]) -> some View {
         List {
             ForEach(tags) { tag in
-                NavigationLink {
-                    TagDocumentsView(tag: tag, apiClient: viewModel.apiClient)
-                } label: {
+                NavigationLink(value: tag) {
                     HStack {
                         Label(tag.name, systemImage: "tag")
                         Spacer()
