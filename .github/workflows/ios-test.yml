@@ -107,7 +107,6 @@ jobs:
             -default-test-execution-time-allowance 120 \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            | xcbeautify
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
