@@ -43,7 +43,7 @@ jobs:
 
     env:
       SCHEME: PKMReader
-      DESTINATION: 'platform=iOS Simulator,name=iPhone 17,OS=26.0.1'
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
 
     steps:
       - name: Checkout repository
@@ -92,21 +92,28 @@ jobs:
             xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
           fi
 
-      - name: Build and test
+      - name: Build for testing
         working-directory: ios
         run: |
-          set -o pipefail
-          # Run all tests in a single xcodebuild invocation for faster execution
-          xcodebuild test \
+          xcodebuild build-for-testing \
+            -project PKMReader.xcodeproj \
+            -scheme $SCHEME \
+            -destination "$DESTINATION" \
+            -enableCodeCoverage YES \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run tests
+        working-directory: ios
+        run: |
+          xcodebuild test-without-building \
             -project PKMReader.xcodeproj \
             -scheme $SCHEME \
             -destination "$DESTINATION" \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults/all-tests.xcresult \
             -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 120 \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
+            -default-test-execution-time-allowance 120
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
