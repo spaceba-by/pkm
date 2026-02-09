@@ -58,8 +58,7 @@ struct RootView: View {
         }
     }
 
-    @ViewBuilder
-    private var authenticatedContent: some View {
+    @ViewBuilder private var authenticatedContent: some View {
         if let error = configurationError {
             ErrorView(error: error, retryAction: nil)
         } else if !isInitialized {
