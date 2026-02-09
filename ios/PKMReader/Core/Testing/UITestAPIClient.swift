@@ -168,9 +168,9 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
 
     func listClassifications() async throws -> [ClassificationCount] {
         [
-            ClassificationCount(classification: .meeting, count: 5),
-            ClassificationCount(classification: .idea, count: 3),
-            ClassificationCount(classification: .reference, count: 8)
+            ClassificationCount(name: "meeting", displayName: "Meeting", count: 5, icon: "person.3"),
+            ClassificationCount(name: "idea", displayName: "Idea", count: 3, icon: "lightbulb"),
+            ClassificationCount(name: "reference", displayName: "Reference", count: 8, icon: "book")
         ]
     }
 
