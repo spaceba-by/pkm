@@ -39,9 +39,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ios/.build
-            ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('.github/workflows/ios-build.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-${{ hashFiles('.github/workflows/ios-build.yml') }}-
 
       - name: Setup Ruby (for Fastlane)
         uses: ruby/setup-ruby@v1

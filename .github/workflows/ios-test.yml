@@ -20,6 +20,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache Homebrew tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/swiftlint--*
+          key: ${{ runner.os }}-brew-lint-${{ hashFiles('.github/workflows/ios-test.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-lint-
+
       - name: Install SwiftLint
         run: brew install swiftlint
 
@@ -30,7 +40,6 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: macos-26
-    needs: lint
 
     env:
       SCHEME: PKMReader
@@ -45,6 +54,17 @@ jobs:
         with:
           xcode-version: '26.0'
 
+      - name: Cache Homebrew tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/xcodegen--*
+            ~/Library/Caches/Homebrew/xcbeautify--*
+          key: ${{ runner.os }}-brew-build-${{ hashFiles('.github/workflows/ios-test.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-build-
+
       - name: Install tools
         run: brew install xcodegen xcbeautify
 
@@ -56,11 +76,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ios/.build
-            ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('.github/workflows/ios-test.yml') }}-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
-            ${{ runner.os }}-spm-
+            ${{ runner.os }}-spm-${{ hashFiles('.github/workflows/ios-test.yml') }}-
 
       - name: Boot simulator
         run: |
@@ -96,31 +115,26 @@ jobs:
           path: ios/TestResults/
           retention-days: 14
 
-  code-coverage:
-    name: Code Coverage
-    runs-on: macos-26
-    needs: build-and-test
-
-    steps:
-      - name: Select Xcode 26
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.0'
-
-      - name: Download test results
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results
-          path: TestResults/
-
       - name: Generate coverage report
+        if: always()
+        working-directory: ios
         run: |
-          xcrun xccov view --report --json TestResults/all-tests.xcresult > coverage.json
-          COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100 | floor')
-          echo "## Code Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+          if [ -d "TestResults/all-tests.xcresult" ]; then
+            xcrun xccov view --report --json TestResults/all-tests.xcresult > coverage.json
+            COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100 | floor')
+            echo "## Code Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::warning::No test results found, skipping coverage report"
+          fi
 
       - name: Check coverage threshold
+        if: always()
+        working-directory: ios
         run: |
+          if [ ! -f "coverage.json" ]; then
+            echo "::warning::No coverage data available"
+            exit 0
+          fi
           COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100')
           THRESHOLD=20
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
