@@ -6,6 +6,7 @@ on:
     paths:
       - 'ios/**'
       - '.github/workflows/ios-*.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ios-test-${{ github.head_ref || github.ref }}
@@ -98,6 +99,9 @@ jobs:
             xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
           fi
 
+      - name: Experiment flag notice
+        run: echo "EXPERIMENT: Using -onlyUsePackageVersionsFromResolvedFile flag"
+
       - name: Build for testing
         working-directory: ios
         run: |
@@ -107,6 +111,7 @@ jobs:
             -project PKMReader.xcodeproj \
             -scheme $SCHEME \
             -destination "$DESTINATION" \
+            -onlyUsePackageVersionsFromResolvedFile \
             -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO 2>&1 \
@@ -119,6 +124,7 @@ jobs:
             -project PKMReader.xcodeproj \
             -scheme $SCHEME \
             -destination "$DESTINATION" \
+            -onlyUsePackageVersionsFromResolvedFile \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults/all-tests.xcresult \
             -test-timeouts-enabled YES \
