@@ -1,6 +1,8 @@
 name: iOS Tests
 
 on:
+  push:
+    branches: ['ci/experiment-no-sim-preboot']
   pull_request:
     branches: [main]
     paths:
