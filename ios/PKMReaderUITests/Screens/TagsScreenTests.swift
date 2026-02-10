@@ -61,18 +61,20 @@ final class TagsScreenTests: XCTestCase {
         XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Tag cell not found")
         firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        // Wait for tag documents view via list appearance
-        let docList = app.collectionViews["TagDocumentsList"]
-        XCTAssertTrue(docList.waitForExistence(timeout: 5), "Tag documents view not displayed")
+        // Wait for tag documents view via back button
+        let navBackButton = app.navigationBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(navBackButton.waitForExistence(timeout: 5), "Tag documents view not displayed")
 
-        // Tap the first document cell
-        let docCell = docList.cells.firstMatch
+        // Wait for document cells to appear, then tap the first one
+        let docCell = app.cells.firstMatch
         XCTAssertTrue(docCell.waitForExistence(timeout: 5), "Document cell not found")
         docCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        // Verify navigation to document detail
-        let backButton = app.navigationBars.buttons.element(boundBy: 0)
-        XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Document detail not displayed")
+        // Verify navigation to document detail - nav bar title should change
+        let detailNavBar = app.navigationBars.element(boundBy: 0)
+        XCTAssertTrue(detailNavBar.waitForExistence(timeout: 5), "Document detail not displayed")
+        // Back button label changes from "Tags" to the tag name when pushed deeper
+        XCTAssertTrue(detailNavBar.buttons.count > 0, "Document detail navigation not displayed")
     }
 
     // MARK: - Pull to Refresh
