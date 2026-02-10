@@ -12,7 +12,7 @@ struct TagDocumentsView: View {
     }
 
     var body: some View {
-        Group {
+        VStack {
             switch viewModel.state {
             case .loading:
                 LoadingView(message: "Loading documents...")
