@@ -102,7 +102,8 @@ jobs:
           fi
 
       - name: Experiment flag notice
-        run: echo "EXPERIMENT: Using -onlyUsePackageVersionsFromResolvedFile flag"
+        run: |
+          echo "EXPERIMENT: Using -onlyUsePackageVersionsFromResolvedFile flag"
 
       - name: Build for testing
         working-directory: ios
