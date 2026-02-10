@@ -1,6 +1,8 @@
 name: iOS Tests
 
 on:
+  push:
+    branches: ['ci/experiment-resolved-file-flag']
   pull_request:
     branches: [main]
     paths:
