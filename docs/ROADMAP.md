@@ -81,8 +81,6 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - SwiftUI views with MVVM architecture
   - Document list with classification filtering, document detail with markdown rendering
 
-### In Progress
-
 - **Task 0007: iOS Enhanced Features** ✅
 
   - See: [0007-ios-enhanced-features](tasks/0007-ios-enhanced-features.md)
@@ -92,15 +90,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Enhanced settings with cache management and preferences
   - 5-tab layout: Documents, Search, Tags, Insights, Settings
 
-### Planned
-
-- **Task 0012: iOS Test Coverage**
+- **Task 0012: iOS Test Coverage** ✅
 
   - See: [0012-ios-test-coverage](tasks/0012-ios-test-coverage.md)
-  - Add missing unit tests (InsightDetailViewModel, Settings)
-  - Implement mock API infrastructure for UI tests
-  - Enable and expand all deferred UI tests
-  - End-to-end flow coverage for search, tags, insights, settings
+  - Unit tests for InsightDetailViewModel and SettingsViewModel
+  - Mock API infrastructure (`--mock-api` launch argument) for UI tests
+  - 16 UI tests enabled across Search, Tags, Insights, Settings
+  - Code coverage above 60%
+
+### Planned
 
 - **Task 0008: iOS Polish & Release**
 
