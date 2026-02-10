@@ -14,16 +14,19 @@ final class SettingsViewModel: ObservableObject {
 
     private let authService: any AuthServiceProtocol
     private let clearCacheHandler: () throws -> Void
+    private let confirmationDuration: Duration
 
     init(
         authService: any AuthServiceProtocol,
-        clearCacheHandler: (() throws -> Void)? = nil
+        clearCacheHandler: (() throws -> Void)? = nil,
+        confirmationDuration: Duration = .seconds(2)
     ) {
         self.authService = authService
         self.clearCacheHandler = clearCacheHandler ?? {
             let cacheService = try DocumentCacheService()
             cacheService.clearCache()
         }
+        self.confirmationDuration = confirmationDuration
     }
 
     /// Sign out the current user
@@ -43,7 +46,7 @@ final class SettingsViewModel: ObservableObject {
         do {
             try clearCacheHandler()
             showCacheCleared = true
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: confirmationDuration)
             showCacheCleared = false
         } catch {
             print("Cache clear error: \(error)")

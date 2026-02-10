@@ -17,7 +17,8 @@ final class SettingsViewModelTests: XCTestCase {
             authService: mockAuthService,
             clearCacheHandler: { [weak self] in
                 self?.cacheClearCallCount += 1
-            }
+            },
+            confirmationDuration: .zero
         )
     }
 
@@ -84,7 +85,8 @@ final class SettingsViewModelTests: XCTestCase {
     func test_clearCache_handlesError_gracefully() async {
         sut = SettingsViewModel(
             authService: mockAuthService,
-            clearCacheHandler: { throw NSError(domain: "test", code: -1) }
+            clearCacheHandler: { throw NSError(domain: "test", code: -1) },
+            confirmationDuration: .zero
         )
 
         await sut.clearCache()
