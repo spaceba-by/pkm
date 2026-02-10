@@ -15,7 +15,7 @@ struct SummaryDetailView: View {
     }
 
     var body: some View {
-        VStack {
+        Group {
             switch viewModel.contentState {
             case .loading:
                 LoadingView(message: "Loading summary...")
