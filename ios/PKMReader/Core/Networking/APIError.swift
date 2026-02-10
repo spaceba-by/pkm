@@ -25,25 +25,54 @@ enum APIError: Error, Equatable, Sendable {
 
     /// Server returned an error message
     case serverError(String)
+
+    /// Whether this error is transient and the request should be retried
+    var isRetryable: Bool {
+        switch self {
+        case .networkError, .timeout:
+            return true
+        case .httpError(let statusCode):
+            return statusCode >= 500 || statusCode == 429
+        default:
+            return false
+        }
+    }
+
+    /// Whether this error indicates a network connectivity problem
+    var isNetworkError: Bool {
+        switch self {
+        case .networkError, .timeout:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 extension APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid URL"
+            return "The request could not be completed due to an invalid URL."
         case .invalidResponse:
-            return "Invalid server response"
+            return "The server returned an unexpected response. Please try again."
         case .httpError(let statusCode):
-            return "HTTP error: \(statusCode)"
+            switch statusCode {
+            case 429:
+                return "Too many requests. Please wait a moment and try again."
+            case 500...599:
+                return "The server is temporarily unavailable. Please try again."
+            default:
+                return "The request failed (error \(statusCode)). Please try again."
+            }
         case .decodingError:
-            return "Failed to decode response"
+            return "The server response could not be read. Please try again."
         case .unauthorized:
-            return "Authentication required"
+            return "Your session has expired. Please sign in again."
         case .networkError:
-            return "Network connection failed"
+            return "No internet connection. Check your network settings and try again."
         case .timeout:
-            return "Request timed out"
+            return "The request timed out. Check your connection and try again."
         case .serverError(let message):
             return message
         }

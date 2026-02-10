@@ -98,15 +98,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - 16 UI tests enabled across Search, Tags, Insights, Settings
   - Code coverage above 60%
 
-### Planned
+### In Progress
 
-- **Task 0008: iOS Polish & Release**
+- **Task 0008: iOS Polish & Release** 🔄
 
   - See: [0008-ios-polish-release](tasks/0008-ios-polish-release.md)
-  - Comprehensive error handling and retry logic
-  - Accessibility support (VoiceOver, Dynamic Type)
-  - Snapshot tests, performance optimization
-  - App Store submission
+  - Step 1 complete: Error handling, retry logic, offline support
+  - Remaining: Accessibility, snapshot tests, performance, App Store submission
+
+### Planned
 
 - **Task 0009: Semantic Search**
 

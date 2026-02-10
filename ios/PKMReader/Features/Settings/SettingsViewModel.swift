@@ -12,6 +12,9 @@ final class SettingsViewModel: ObservableObject {
     /// Whether to show cache cleared confirmation
     @Published private(set) var showCacheCleared = false
 
+    /// Error message to display to the user
+    @Published var errorMessage: String?
+
     private let authService: any AuthServiceProtocol
     private let clearCacheHandler: () throws -> Void
     private let confirmationDuration: Duration
@@ -35,7 +38,7 @@ final class SettingsViewModel: ObservableObject {
         do {
             try await authService.signOut()
         } catch {
-            print("Sign out error: \(error)")
+            errorMessage = "Failed to sign out. Please try again."
         }
         isSigningOut = false
     }
@@ -49,7 +52,7 @@ final class SettingsViewModel: ObservableObject {
             try? await Task.sleep(for: confirmationDuration)
             showCacheCleared = false
         } catch {
-            print("Cache clear error: \(error)")
+            errorMessage = "Failed to clear cache. Please try again."
         }
         isClearingCache = false
     }
