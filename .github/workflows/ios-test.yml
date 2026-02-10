@@ -101,7 +101,8 @@ jobs:
           fi
 
       - name: Experiment marker
-        run: echo "EXPERIMENT: No xcbeautify pipe (raw xcodebuild output)"
+        run: |
+          echo "EXPERIMENT: No xcbeautify pipe (raw xcodebuild output)"
 
       - name: Build for testing
         working-directory: ios
