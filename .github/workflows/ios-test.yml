@@ -6,6 +6,7 @@ on:
     paths:
       - 'ios/**'
       - '.github/workflows/ios-*.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ios-test-${{ github.head_ref || github.ref }}
@@ -87,16 +88,8 @@ jobs:
             ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
             ${{ runner.os }}-dd-
 
-      - name: Boot simulator
-        run: |
-          # Pre-boot the simulator to avoid boot time during tests
-          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 17" | grep "26.0" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
-          if [ -n "$DEVICE_ID" ]; then
-            echo "Booting simulator $DEVICE_ID"
-            xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-            # Wait for boot to complete
-            xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
-          fi
+      - name: Experiment marker
+        run: echo "EXPERIMENT: No simulator pre-boot (simulator boots on-demand during test)"
 
       - name: Build for testing
         working-directory: ios
