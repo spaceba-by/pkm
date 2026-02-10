@@ -91,7 +91,8 @@ jobs:
             ${{ runner.os }}-dd-
 
       - name: Experiment marker
-        run: echo "EXPERIMENT: No simulator pre-boot (simulator boots on-demand during test)"
+        run: |
+          echo "EXPERIMENT: No simulator pre-boot (simulator boots on-demand during test)"
 
       - name: Build for testing
         working-directory: ios
