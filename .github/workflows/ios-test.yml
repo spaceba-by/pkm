@@ -6,6 +6,7 @@ on:
     paths:
       - 'ios/**'
       - '.github/workflows/ios-*.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ios-test-${{ github.head_ref || github.ref }}
@@ -60,13 +61,12 @@ jobs:
           path: |
             ~/Library/Caches/Homebrew/downloads
             ~/Library/Caches/Homebrew/xcodegen--*
-            ~/Library/Caches/Homebrew/xcbeautify--*
           key: ${{ runner.os }}-brew-build-${{ hashFiles('.github/workflows/ios-test.yml') }}
           restore-keys: |
             ${{ runner.os }}-brew-build-
 
       - name: Install tools
-        run: brew install xcodegen xcbeautify
+        run: brew install xcodegen
 
       - name: Generate Xcode project
         working-directory: ios
@@ -98,10 +98,12 @@ jobs:
             xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
           fi
 
+      - name: Experiment marker
+        run: echo "EXPERIMENT: No xcbeautify pipe (raw xcodebuild output)"
+
       - name: Build for testing
         working-directory: ios
         run: |
-          set -o pipefail
           NSUnbufferedIO=YES \
           xcodebuild build-for-testing \
             -project PKMReader.xcodeproj \
@@ -109,8 +111,7 @@ jobs:
             -destination "$DESTINATION" \
             -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO 2>&1 \
-            | xcbeautify --renderer github-actions
+            CODE_SIGNING_REQUIRED=NO
 
       - name: Run tests
         working-directory: ios
