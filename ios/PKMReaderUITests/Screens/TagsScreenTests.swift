@@ -74,7 +74,7 @@ final class TagsScreenTests: XCTestCase {
         let detailNavBar = app.navigationBars.element(boundBy: 0)
         XCTAssertTrue(detailNavBar.waitForExistence(timeout: 5), "Document detail not displayed")
         // Back button label changes from "Tags" to the tag name when pushed deeper
-        XCTAssertTrue(detailNavBar.buttons.count > 0, "Document detail navigation not displayed")
+        XCTAssertFalse(detailNavBar.buttons.allElementsBoundByIndex.isEmpty, "Document detail navigation not displayed")
     }
 
     // MARK: - Pull to Refresh
