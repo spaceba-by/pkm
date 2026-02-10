@@ -41,27 +41,27 @@ struct ReportListView: View {
     private func reportList(_ reports: [Report]) -> some View {
         List {
             ForEach(reports) { report in
-                NavigationLink {
-                    ReportDetailView(report: report, apiClient: viewModel.apiClient)
-                } label: {
+                NavigationLink(value: report) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Week of \(report.weekOf)")
                                 .font(.headline)
-                            Text(report.modified, style: .relative)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if let modified = report.modified {
+                                Text(modified, style: .relative)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
                     }
                 }
                 .accessibilityIdentifier("ReportRow_\(report.weekOf)")
             }
         }
         .listStyle(.plain)
+        .navigationDestination(for: Report.self) { report in
+            ReportDetailView(report: report, apiClient: viewModel.apiClient)
+        }
         .accessibilityIdentifier("ReportList")
     }
 }

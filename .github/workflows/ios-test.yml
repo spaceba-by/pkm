@@ -101,7 +101,7 @@ jobs:
       - name: Build for testing
         working-directory: ios
         run: |
-          set -o pipefail && \
+          set -o pipefail
           NSUnbufferedIO=YES \
           xcodebuild build-for-testing \
             -project PKMReader.xcodeproj \
@@ -109,14 +109,12 @@ jobs:
             -destination "$DESTINATION" \
             -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_REQUIRED=NO 2>&1 \
             | xcbeautify --renderer github-actions
 
       - name: Run tests
         working-directory: ios
         run: |
-          set -o pipefail && \
-          NSUnbufferedIO=YES \
           xcodebuild test-without-building \
             -project PKMReader.xcodeproj \
             -scheme $SCHEME \
@@ -124,8 +122,7 @@ jobs:
             -enableCodeCoverage YES \
             -resultBundlePath TestResults/all-tests.xcresult \
             -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 120 \
-            | xcbeautify --renderer github-actions
+            -default-test-execution-time-allowance 120
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

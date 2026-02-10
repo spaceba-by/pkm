@@ -1,9 +1,6 @@
 import XCTest
 
-/// Insights screen tests
-///
-/// Note: These tests require mock API infrastructure to bypass authentication.
-/// They are deferred until mock authenticated state is available.
+/// Insights screen tests using mock API infrastructure
 final class InsightsScreenTests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional
     private var app: XCUIApplication!
@@ -11,7 +8,16 @@ final class InsightsScreenTests: XCTestCase {
     // swiftlint:enable implicitly_unwrapped_optional
 
     override func setUpWithError() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        continueAfterFailure = false
+
+        app = XCUIApplication()
+        app.launchWithMockData()
+        insightsPage = InsightsPage(app: app)
+
+        // Navigate to Insights tab
+        let insightsTab = app.tabBars.buttons["Insights"]
+        XCTAssertTrue(insightsTab.waitForExistence(timeout: 5), "Insights tab not found")
+        insightsTab.tap()
     }
 
     override func tearDownWithError() throws {
@@ -22,18 +28,55 @@ final class InsightsScreenTests: XCTestCase {
     // MARK: - Insights Flow Tests
 
     func test_insightsView_showsSummaries() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        insightsPage.assertIsDisplayed()
+
+        // Summaries should be the default segment
+        let summaryList = insightsPage.summaryList
+        XCTAssertTrue(summaryList.waitForExistence(timeout: 5), "Summary list not displayed")
     }
 
     func test_switchToReports_showsReports() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        insightsPage.assertIsDisplayed()
+
+        // Switch to Reports segment
+        insightsPage.selectReports()
+
+        let reportList = insightsPage.reportList
+        XCTAssertTrue(reportList.waitForExistence(timeout: 5), "Report list not displayed")
     }
 
     func test_tapSummary_showsDetail() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        insightsPage.assertIsDisplayed()
+
+        let summaryList = insightsPage.summaryList
+        XCTAssertTrue(summaryList.waitForExistence(timeout: 5), "Summary list not displayed")
+
+        // Coordinate tap on first cell to reliably trigger NavigationLink
+        let firstCell = summaryList.cells.firstMatch
+        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Summary cell not found")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        // Verify navigation to summary detail via back button presence
+        let backButton = app.navigationBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Summary detail view not displayed")
     }
 
     func test_tapReport_showsDetail() throws {
-        throw XCTSkip("Deferred: Requires mock API infrastructure")
+        insightsPage.assertIsDisplayed()
+
+        // Switch to Reports
+        insightsPage.selectReports()
+
+        let reportList = insightsPage.reportList
+        XCTAssertTrue(reportList.waitForExistence(timeout: 5), "Report list not displayed")
+
+        // Coordinate tap on first cell to reliably trigger NavigationLink
+        let firstCell = reportList.cells.firstMatch
+        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Report cell not found")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        // Verify navigation to report detail via back button presence
+        let backButton = app.navigationBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Report detail view not displayed")
     }
 }
