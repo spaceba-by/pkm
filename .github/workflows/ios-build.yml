@@ -67,20 +67,15 @@ jobs:
         working-directory: ios
         run: |
           set -o pipefail
+          NSUnbufferedIO=YES \
           xcodebuild build \
             -project PKMReader.xcodeproj \
             -scheme $SCHEME \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            | xcbeautify || xcodebuild build \
-            -project PKMReader.xcodeproj \
-            -scheme $SCHEME \
-            -destination 'generic/platform=iOS Simulator' \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO 2>&1 \
+            | xcbeautify --renderer github-actions
 
       - name: Create build info
         run: |
