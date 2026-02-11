@@ -77,32 +77,27 @@ final class APIErrorTests: XCTestCase {
     // MARK: - Error Descriptions
 
     func test_networkError_hasUserFriendlyDescription() {
-        let description = APIError.networkError.errorDescription
-        XCTAssertNotNil(description)
-        XCTAssertTrue(description!.contains("internet"))
+        let description = APIError.networkError.errorDescription ?? ""
+        XCTAssertTrue(description.contains("internet"))
     }
 
     func test_timeout_hasUserFriendlyDescription() {
-        let description = APIError.timeout.errorDescription
-        XCTAssertNotNil(description)
-        XCTAssertTrue(description!.contains("timed out"))
+        let description = APIError.timeout.errorDescription ?? ""
+        XCTAssertTrue(description.contains("timed out"))
     }
 
     func test_unauthorized_hasUserFriendlyDescription() {
-        let description = APIError.unauthorized.errorDescription
-        XCTAssertNotNil(description)
-        XCTAssertTrue(description!.contains("session"))
+        let description = APIError.unauthorized.errorDescription ?? ""
+        XCTAssertTrue(description.contains("session"))
     }
 
     func test_httpError429_mentionsRateLimit() {
-        let description = APIError.httpError(statusCode: 429).errorDescription
-        XCTAssertNotNil(description)
-        XCTAssertTrue(description!.contains("many requests"))
+        let description = APIError.httpError(statusCode: 429).errorDescription ?? ""
+        XCTAssertTrue(description.contains("many requests"))
     }
 
     func test_httpError500_mentionsServer() {
-        let description = APIError.httpError(statusCode: 500).errorDescription
-        XCTAssertNotNil(description)
-        XCTAssertTrue(description!.contains("server"))
+        let description = APIError.httpError(statusCode: 500).errorDescription ?? ""
+        XCTAssertTrue(description.contains("server"))
     }
 }
