@@ -27,8 +27,8 @@ struct SummaryDetailView: View {
                         .padding()
                 }
 
-            case .error(let errorMessage):
-                ErrorView(error: GenericError(message: errorMessage)) {
+            case .error(let error):
+                ErrorView(error: error) {
                     Task { await viewModel.loadContent() }
                 }
             }
@@ -40,10 +40,4 @@ struct SummaryDetailView: View {
         }
         .accessibilityIdentifier("SummaryDetailView")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }

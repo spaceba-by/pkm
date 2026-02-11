@@ -27,8 +27,8 @@ struct TagDocumentsView: View {
                     message: "No documents found with tag \"\(viewModel.tag.name)\""
                 )
 
-            case .error(let errorMessage):
-                ErrorView(error: GenericError(message: errorMessage)) {
+            case .error(let error):
+                ErrorView(error: error) {
                     Task { await viewModel.loadDocuments() }
                 }
             }
@@ -58,10 +58,4 @@ struct TagDocumentsView: View {
         }
         .accessibilityIdentifier("TagDocumentsList")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }

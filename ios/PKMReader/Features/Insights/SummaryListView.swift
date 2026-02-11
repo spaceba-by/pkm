@@ -24,8 +24,8 @@ struct SummaryListView: View {
                     message: "No daily summaries available yet"
                 )
 
-            case .error(let errorMessage):
-                ErrorView(error: GenericError(message: errorMessage)) {
+            case .error(let error):
+                ErrorView(error: error) {
                     Task { await viewModel.loadSummaries() }
                 }
             }
@@ -64,10 +64,4 @@ struct SummaryListView: View {
         }
         .accessibilityIdentifier("SummaryList")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }

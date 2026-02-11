@@ -9,6 +9,7 @@ final class NetworkMonitor: ObservableObject {
 
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "NetworkMonitor")
+    private var isStarted = false
 
     /// Shared singleton instance
     static let shared = NetworkMonitor()
@@ -19,6 +20,8 @@ final class NetworkMonitor: ObservableObject {
 
     /// Start monitoring network changes
     func start() {
+        guard !isStarted else { return }
+        isStarted = true
         monitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor [weak self] in
                 self?.isConnected = path.status == .satisfied

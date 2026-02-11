@@ -8,7 +8,7 @@ final class SummariesViewModel: ObservableObject {
         case loading
         case loaded([Summary])
         case empty
-        case error(String)
+        case error(Error)
 
         static func == (lhs: State, rhs: State) -> Bool {
             switch (lhs, rhs) {
@@ -18,8 +18,8 @@ final class SummariesViewModel: ObservableObject {
                 lhsItems.map(\.id) == rhsItems.map(\.id)
             case (.empty, .empty):
                 true
-            case let (.error(lhsMsg), .error(rhsMsg)):
-                lhsMsg == rhsMsg
+            case let (.error(lhsErr), .error(rhsErr)):
+                lhsErr.localizedDescription == rhsErr.localizedDescription
             default:
                 false
             }
@@ -47,7 +47,7 @@ final class SummariesViewModel: ObservableObject {
                 state = .loaded(summaries)
             }
         } catch {
-            state = .error(error.localizedDescription)
+            state = .error(error)
         }
     }
 
