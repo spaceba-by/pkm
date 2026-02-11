@@ -77,7 +77,7 @@ struct RootView: View {
 
             case .signedIn:
                 MainTabView(
-                    apiClient: APIClient(authService: authService),
+                    apiClient: APIClient(authService: authService, networkMonitor: networkMonitor),
                     authService: authService,
                     networkMonitor: networkMonitor
                 )

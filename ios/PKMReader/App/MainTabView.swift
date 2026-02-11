@@ -71,7 +71,7 @@ private struct OfflineBanner: View {
 
 #Preview {
     MainTabView(
-        apiClient: APIClient(authService: AuthService.shared),
+        apiClient: APIClient(authService: AuthService.shared, networkMonitor: NetworkMonitor.shared),
         authService: AuthService.shared,
         networkMonitor: NetworkMonitor.shared
     )

@@ -8,16 +8,19 @@ actor APIClient: APIClientProtocol {
     private let decoder: JSONDecoder
     private let maxRetries: Int
     private let baseRetryDelay: TimeInterval
+    private let networkMonitor: NetworkMonitor
 
     init(
         baseURL: URL = AppConfig.apiBaseURL,
         authService: any AuthServiceProtocol,
+        networkMonitor: NetworkMonitor,
         session: URLSession = .shared,
         maxRetries: Int = 3,
         baseRetryDelay: TimeInterval = 1.0
     ) {
         self.baseURL = baseURL
         self.authService = authService
+        self.networkMonitor = networkMonitor
         self.session = session
         self.maxRetries = maxRetries
         self.baseRetryDelay = baseRetryDelay
@@ -161,6 +164,11 @@ actor APIClient: APIClientProtocol {
     // MARK: - Private
 
     private func performRequestWithRetry<T: Decodable>(url: URL) async throws -> T {
+        // Fail fast if offline
+        guard await networkMonitor.isConnected else {
+            throw APIError.networkError
+        }
+
         var lastError: Error = APIError.networkError
 
         for attempt in 0...maxRetries {
@@ -169,6 +177,10 @@ actor APIClient: APIClientProtocol {
                 return result
             } catch let error as APIError where error.isRetryable && attempt < maxRetries {
                 lastError = error
+                // Don't retry if we've gone offline
+                guard await networkMonitor.isConnected else {
+                    throw APIError.networkError
+                }
                 let delay = baseRetryDelay * pow(2.0, Double(attempt))
                 try await Task.sleep(for: .seconds(delay))
                 continue
