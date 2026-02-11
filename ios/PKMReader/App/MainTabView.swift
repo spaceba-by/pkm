@@ -51,6 +51,9 @@ struct MainTabView: View {
 
 /// Banner shown when the device is offline
 private struct OfflineBanner: View {
+    @ScaledMetric(relativeTo: .footnote)
+    private var verticalPadding: CGFloat = 6
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "wifi.slash")
@@ -60,11 +63,12 @@ private struct OfflineBanner: View {
                 .fontWeight(.medium)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
+        .padding(.vertical, verticalPadding)
         .background(Color(.systemOrange).opacity(0.9))
         .foregroundStyle(.white)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("No internet connection")
+        .accessibilityAddTraits(.updatesFrequently)
         .accessibilityIdentifier("OfflineBanner")
     }
 }

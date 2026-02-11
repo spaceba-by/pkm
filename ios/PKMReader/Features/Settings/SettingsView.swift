@@ -18,8 +18,10 @@ struct SettingsView: View {
             List {
                 Section("Display") {
                     Toggle("Compact List Mode", isOn: $compactListMode)
+                        .accessibilityHint("Reduces spacing in document lists")
                         .accessibilityIdentifier("CompactListToggle")
                     Toggle("Show Document Previews", isOn: $showDocumentPreviews)
+                        .accessibilityHint("Shows content preview in document lists")
                         .accessibilityIdentifier("ShowPreviewsToggle")
                 }
 
@@ -39,6 +41,7 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(viewModel.isClearingCache)
+                    .accessibilityHint("Removes cached documents and data")
                     .accessibilityIdentifier("ClearCacheButton")
                 }
 
@@ -55,6 +58,7 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(viewModel.isSigningOut)
+                    .accessibilityHint("Signs out of your account")
                     .accessibilityIdentifier("SignOutButton")
                 }
 

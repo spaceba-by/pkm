@@ -55,6 +55,8 @@ struct ReportListView: View {
                         Spacer()
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Report for week of \(report.weekOf)")
                 .accessibilityIdentifier("ReportRow_\(report.weekOf)")
             }
         }

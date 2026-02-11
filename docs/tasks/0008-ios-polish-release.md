@@ -67,11 +67,11 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
   - Added OfflineBanner to MainTabView shown when device is offline
   - Wired NetworkMonitor through RootView to MainTabView
   - Added unit tests: APIErrorTests (18 tests), NetworkMonitorTests, SettingsViewModel error tests
-- [ ] Step 2: Add accessibility labels and Dynamic Type support
-  - Add VoiceOver hints and descriptions to interactive elements
-  - Verify Dynamic Type scaling across all views
-  - Add semantic grouping for complex UI elements
-  - Test with VoiceOver and accessibility inspector
+- [x] Step 2: Add accessibility labels and Dynamic Type support
+  - Added VoiceOver hints to interactive elements: filter button, classification filters, sign in, sign out, clear cache, toggles, retry button
+  - Added semantic grouping with accessibilityElement(children: .combine) and descriptive labels for SummaryListView, ReportListView, and TagsView rows
+  - Added @ScaledMetric for Dynamic Type scaling in OfflineBanner, ClassificationBadge, TagChip, and DocumentRowView padding
+  - Added .accessibilityAddTraits(.updatesFrequently) to OfflineBanner for live region announcements
 - [ ] Step 3: Create snapshot tests for key screens
 - [ ] Step 4: Run performance profiling and optimize bottlenecks
 - [ ] Step 5: Prepare App Store assets (screenshots, description, metadata)

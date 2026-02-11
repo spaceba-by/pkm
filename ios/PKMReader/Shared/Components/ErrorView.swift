@@ -31,6 +31,7 @@ struct ErrorView: View {
                     retryAction()
                 }
                 .buttonStyle(.bordered)
+                .accessibilityHint("Attempts the failed operation again")
             }
         }
         .accessibilityIdentifier("ErrorView")

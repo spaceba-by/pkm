@@ -4,6 +4,11 @@ import SwiftUI
 struct ClassificationBadge: View {
     let classification: DocumentClassification
 
+    @ScaledMetric(relativeTo: .caption)
+    private var horizontalPadding: CGFloat = 8
+    @ScaledMetric(relativeTo: .caption)
+    private var verticalPadding: CGFloat = 4
+
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: classification.icon)
@@ -11,8 +16,8 @@ struct ClassificationBadge: View {
         }
         .font(.caption)
         .foregroundStyle(.primary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, verticalPadding)
         .background(classification.color.opacity(0.15))
         .clipShape(Capsule())
         .accessibilityLabel("Classification: \(classification.displayName)")

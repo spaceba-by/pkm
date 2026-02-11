@@ -56,6 +56,10 @@ struct TagsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                    "\(tag.name), \(tag.documentCount) \(tag.documentCount == 1 ? "document" : "documents")"
+                )
                 .accessibilityIdentifier("TagRow_\(tag.name)")
             }
         }

@@ -80,6 +80,7 @@ struct LoginView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(!viewModel.isValid || viewModel.isLoading)
+                    .accessibilityHint("Signs in with your email and password")
                     .accessibilityIdentifier("SignInButton")
 
                     Spacer()

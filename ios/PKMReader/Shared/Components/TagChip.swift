@@ -4,12 +4,17 @@ import SwiftUI
 struct TagChip: View {
     let tag: String
 
+    @ScaledMetric(relativeTo: .caption)
+    private var horizontalPadding: CGFloat = 8
+    @ScaledMetric(relativeTo: .caption)
+    private var verticalPadding: CGFloat = 4
+
     var body: some View {
         Text("#\(tag)")
             .font(.caption)
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .background(.secondary.opacity(0.15))
             .clipShape(Capsule())
             .accessibilityLabel("Tag: \(tag)")

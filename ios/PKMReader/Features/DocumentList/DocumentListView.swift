@@ -73,6 +73,7 @@ struct DocumentListView: View {
                 : "line.3.horizontal.decrease.circle")
         }
         .accessibilityLabel("Filter documents")
+        .accessibilityHint("Opens filter options by classification")
         .accessibilityIdentifier("FilterButton")
     }
 

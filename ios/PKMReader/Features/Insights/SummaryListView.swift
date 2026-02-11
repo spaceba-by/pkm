@@ -55,6 +55,8 @@ struct SummaryListView: View {
                         Spacer()
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Summary for \(summary.date)")
                 .accessibilityIdentifier("SummaryRow_\(summary.date)")
             }
         }
