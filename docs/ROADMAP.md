@@ -129,6 +129,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Interactive graph visualization in iOS app
   - Navigate documents by entity connections
 
+- **Task 0013: Persistent Search**
+
+  - See: [0013-persistent-search](tasks/0013-persistent-search.md)
+  - Search monitors with configurable terms, schedule, and novelty threshold
+  - Periodic web search execution via Brave Search API
+  - AI-driven summarization and comparison agent (Bedrock Sonnet)
+  - Threshold-based flagging for significant updates with notification event records
+
 ### Future Ideas (not yet scoped)
 
 - Interactive chat interface to query PKM
