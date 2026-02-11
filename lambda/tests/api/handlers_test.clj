@@ -129,11 +129,11 @@
       (is (false? (:hasFrontmatter result-meta)))))
 
   (testing "S3-only fallback: agent output with no DynamoDB metadata"
-    (let [metadata {:PK "_agent/summaries/daily/2025-01-20.md"}
+    (let [metadata {:PK "_agent/summaries/2025-01-20.md"}
           content "# Daily Summary\n\nToday's activity..."
           result (format-document-detail metadata content)
           result-meta (:metadata result)]
-      (is (= "_agent/summaries/daily/2025-01-20.md" (:id result)))
+      (is (= "_agent/summaries/2025-01-20.md" (:id result)))
       (is (= "Untitled" (:title result)))
       (is (= content (:content result)))
       (is (= "reference" (:classification result-meta)))
@@ -313,24 +313,24 @@
 
 (deftest parse-summary-key-test
   (testing "Parses daily summary filename"
-    (let [key "_agent/summaries/daily/2025-01-20.md"
+    (let [key "_agent/summaries/2025-01-20.md"
           result (parse-summary-key key)]
       (is (= key (:id result)))
       (is (= "2025-01-20" (:date result)))))
 
   (testing "Returns nil for non-markdown files"
-    (is (nil? (parse-summary-key "_agent/summaries/daily/readme.txt")))
+    (is (nil? (parse-summary-key "_agent/summaries/readme.txt")))
     (is (nil? (parse-summary-key nil))))
 
   (testing "Handles various date formats"
-    (let [result (parse-summary-key "_agent/summaries/daily/2025-01-01.md")]
+    (let [result (parse-summary-key "_agent/summaries/2025-01-01.md")]
       (is (= "2025-01-01" (:date result))))))
 
 (deftest list-summaries-sorting-test
   (testing "Summaries sort by date descending"
-    (let [keys ["_agent/summaries/daily/2025-01-15.md"
-                "_agent/summaries/daily/2025-01-20.md"
-                "_agent/summaries/daily/2025-01-10.md"]
+    (let [keys ["_agent/summaries/2025-01-15.md"
+                "_agent/summaries/2025-01-20.md"
+                "_agent/summaries/2025-01-10.md"]
           parsed (mapv parse-summary-key keys)
           sorted (->> parsed
                       (sort-by :date #(compare %2 %1))
