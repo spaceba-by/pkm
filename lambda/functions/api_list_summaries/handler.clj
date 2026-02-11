@@ -6,7 +6,7 @@
             [clojure.string :as str]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
-(def summaries-prefix "_agent/summaries/daily/")
+(def summaries-prefix "_agent/summaries/")
 (def default-limit 30)
 (def max-limit 100)
 
