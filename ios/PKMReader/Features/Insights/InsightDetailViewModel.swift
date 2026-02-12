@@ -7,7 +7,7 @@ final class InsightDetailViewModel: ObservableObject {
     enum ContentState: Equatable {
         case loading
         case loaded(String)
-        case error(String)
+        case error(Error)
 
         static func == (lhs: ContentState, rhs: ContentState) -> Bool {
             switch (lhs, rhs) {
@@ -15,8 +15,8 @@ final class InsightDetailViewModel: ObservableObject {
                 true
             case let (.loaded(lhsContent), .loaded(rhsContent)):
                 lhsContent == rhsContent
-            case let (.error(lhsMsg), .error(rhsMsg)):
-                lhsMsg == rhsMsg
+            case let (.error(lhsErr), .error(rhsErr)):
+                lhsErr.localizedDescription == rhsErr.localizedDescription
             default:
                 false
             }
@@ -50,7 +50,7 @@ final class InsightDetailViewModel: ObservableObject {
                 contentState = .loaded("*No content available*")
             }
         } catch {
-            contentState = .error(error.localizedDescription)
+            contentState = .error(error)
         }
     }
 }

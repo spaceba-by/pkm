@@ -19,8 +19,8 @@ struct DocumentListView: View {
                 case .loaded(let documents):
                     documentList(documents)
 
-                case .error(let errorMessage):
-                    ErrorView(error: GenericError(message: errorMessage)) {
+                case .error(let error):
+                    ErrorView(error: error) {
                         Task { await viewModel.loadDocuments() }
                     }
 
@@ -73,6 +73,7 @@ struct DocumentListView: View {
                 : "line.3.horizontal.decrease.circle")
         }
         .accessibilityLabel("Filter documents")
+        .accessibilityHint("Opens filter options by classification")
         .accessibilityIdentifier("FilterButton")
     }
 
@@ -99,12 +100,6 @@ struct DocumentListView: View {
         }
         .accessibilityIdentifier("DocumentList")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }
 
 #Preview {

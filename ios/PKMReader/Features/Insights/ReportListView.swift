@@ -24,8 +24,8 @@ struct ReportListView: View {
                     message: "No weekly reports available yet"
                 )
 
-            case .error(let errorMessage):
-                ErrorView(error: GenericError(message: errorMessage)) {
+            case .error(let error):
+                ErrorView(error: error) {
                     Task { await viewModel.loadReports() }
                 }
             }
@@ -55,6 +55,8 @@ struct ReportListView: View {
                         Spacer()
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Report for week of \(report.weekOf)")
                 .accessibilityIdentifier("ReportRow_\(report.weekOf)")
             }
         }
@@ -64,10 +66,4 @@ struct ReportListView: View {
         }
         .accessibilityIdentifier("ReportList")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }

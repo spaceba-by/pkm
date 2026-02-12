@@ -68,6 +68,13 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(mockAuthService.signOutCallCount, 1)
     }
 
+    func test_signOut_error_setsErrorMessage() async {
+        mockAuthService.signOutResult = .failure(AuthError.notAuthenticated)
+        await sut.signOut()
+
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
     // MARK: - Clear Cache
 
     func test_clearCache_callsHandler() async {
@@ -93,5 +100,21 @@ final class SettingsViewModelTests: XCTestCase {
 
         // Should still complete and reset state
         XCTAssertFalse(sut.isClearingCache)
+    }
+
+    func test_clearCache_error_setsErrorMessage() async {
+        sut = SettingsViewModel(
+            authService: mockAuthService,
+            clearCacheHandler: { throw NSError(domain: "test", code: -1) },
+            confirmationDuration: .zero
+        )
+
+        await sut.clearCache()
+
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
+    func test_initialState_noErrorMessage() {
+        XCTAssertNil(sut.errorMessage)
     }
 }

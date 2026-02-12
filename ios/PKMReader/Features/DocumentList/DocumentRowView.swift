@@ -4,6 +4,9 @@ import SwiftUI
 struct DocumentRowView: View {
     let document: Document
 
+    @ScaledMetric(relativeTo: .body)
+    private var verticalPadding: CGFloat = 4
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Title with classification icon
@@ -38,7 +41,7 @@ struct DocumentRowView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, verticalPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(document.displayTitle), \(document.metadata.classification.displayName)")
     }

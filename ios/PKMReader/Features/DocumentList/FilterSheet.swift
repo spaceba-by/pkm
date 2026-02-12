@@ -28,6 +28,7 @@ struct FilterSheet: View {
                             }
                         }
                     }
+                    .accessibilityHint("Shows all document types")
                     .accessibilityIdentifier("Filter_All")
 
                     // Classification options
@@ -47,6 +48,7 @@ struct FilterSheet: View {
                                 }
                             }
                         }
+                        .accessibilityHint("Filters to \(classification.displayName.lowercased()) documents only")
                         .accessibilityIdentifier("Filter_\(classification.rawValue)")
                     }
                 }

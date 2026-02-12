@@ -18,8 +18,10 @@ struct SettingsView: View {
             List {
                 Section("Display") {
                     Toggle("Compact List Mode", isOn: $compactListMode)
+                        .accessibilityHint("Reduces spacing in document lists")
                         .accessibilityIdentifier("CompactListToggle")
                     Toggle("Show Document Previews", isOn: $showDocumentPreviews)
+                        .accessibilityHint("Shows content preview in document lists")
                         .accessibilityIdentifier("ShowPreviewsToggle")
                 }
 
@@ -39,6 +41,7 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(viewModel.isClearingCache)
+                    .accessibilityHint("Removes cached documents and data")
                     .accessibilityIdentifier("ClearCacheButton")
                 }
 
@@ -55,6 +58,7 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(viewModel.isSigningOut)
+                    .accessibilityHint("Signs out of your account")
                     .accessibilityIdentifier("SignOutButton")
                 }
 
@@ -76,7 +80,23 @@ struct SettingsView: View {
             } message: {
                 Text("Are you sure you want to sign out?")
             }
+            .alert("Error", isPresented: showErrorBinding) {
+                Button("OK", role: .cancel) {
+                    viewModel.errorMessage = nil
+                }
+            } message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                }
+            }
         }
+    }
+
+    private var showErrorBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )
     }
 }
 

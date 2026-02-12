@@ -1,20 +1,29 @@
 import Foundation
 
-/// HTTP client for PKM API with authentication
+/// HTTP client for PKM API with authentication and retry logic
 actor APIClient: APIClientProtocol {
     private let baseURL: URL
     private let authService: any AuthServiceProtocol
     private let session: URLSession
     private let decoder: JSONDecoder
+    private let maxRetries: Int
+    private let baseRetryDelay: TimeInterval
+    private let networkMonitor: NetworkMonitor
 
     init(
         baseURL: URL = AppConfig.apiBaseURL,
         authService: any AuthServiceProtocol,
-        session: URLSession = .shared
+        networkMonitor: NetworkMonitor,
+        session: URLSession = .shared,
+        maxRetries: Int = 3,
+        baseRetryDelay: TimeInterval = 1.0
     ) {
         self.baseURL = baseURL
         self.authService = authService
+        self.networkMonitor = networkMonitor
         self.session = session
+        self.maxRetries = maxRetries
+        self.baseRetryDelay = baseRetryDelay
 
         self.decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -50,7 +59,7 @@ actor APIClient: APIClientProtocol {
             throw APIError.invalidURL
         }
 
-        return try await performRequest(url: url)
+        return try await performRequestWithRetry(url: url)
     }
 
     func getDocument(key: String) async throws -> Document {
@@ -59,7 +68,7 @@ actor APIClient: APIClientProtocol {
         }
 
         let url = baseURL.appendingPathComponent("documents/\(encodedKey)")
-        return try await performRequest(url: url)
+        return try await performRequestWithRetry(url: url)
     }
 
     func search(query: String, limit: Int) async throws -> [Document] {
@@ -77,19 +86,19 @@ actor APIClient: APIClientProtocol {
             throw APIError.invalidURL
         }
 
-        let response: SearchResponse = try await performRequest(url: url)
+        let response: SearchResponse = try await performRequestWithRetry(url: url)
         return response.results
     }
 
     func listTags() async throws -> [Tag] {
         let url = baseURL.appendingPathComponent("tags")
-        let response: TagListResponse = try await performRequest(url: url)
+        let response: TagListResponse = try await performRequestWithRetry(url: url)
         return response.tags
     }
 
     func listClassifications() async throws -> [ClassificationCount] {
         let url = baseURL.appendingPathComponent("classifications")
-        let response: ClassificationListResponse = try await performRequest(url: url)
+        let response: ClassificationListResponse = try await performRequestWithRetry(url: url)
         return response.classifications
     }
 
@@ -107,7 +116,7 @@ actor APIClient: APIClientProtocol {
             throw APIError.invalidURL
         }
 
-        let response: SummaryListResponse = try await performRequest(url: url)
+        let response: SummaryListResponse = try await performRequestWithRetry(url: url)
         return response.summaries
     }
 
@@ -125,7 +134,7 @@ actor APIClient: APIClientProtocol {
             throw APIError.invalidURL
         }
 
-        let response: ReportListResponse = try await performRequest(url: url)
+        let response: ReportListResponse = try await performRequestWithRetry(url: url)
         return response.reports
     }
 
@@ -148,11 +157,40 @@ actor APIClient: APIClientProtocol {
             throw APIError.invalidURL
         }
 
-        let response: DocumentsByTagResponse = try await performRequest(url: url)
+        let response: DocumentsByTagResponse = try await performRequestWithRetry(url: url)
         return response.documents
     }
 
     // MARK: - Private
+
+    private func performRequestWithRetry<T: Decodable>(url: URL) async throws -> T {
+        // Fail fast if offline
+        guard await networkMonitor.isConnected else {
+            throw APIError.networkError
+        }
+
+        var lastError: Error = APIError.networkError
+
+        for attempt in 0...maxRetries {
+            do {
+                let result: T = try await performRequest(url: url)
+                return result
+            } catch let error as APIError where error.isRetryable && attempt < maxRetries {
+                lastError = error
+                // Don't retry if we've gone offline
+                guard await networkMonitor.isConnected else {
+                    throw APIError.networkError
+                }
+                let delay = baseRetryDelay * pow(2.0, Double(attempt))
+                try await Task.sleep(for: .seconds(delay))
+                continue
+            } catch {
+                throw error
+            }
+        }
+
+        throw lastError
+    }
 
     private func performRequest<T: Decodable>(url: URL) async throws -> T {
         let token = try await authService.getAccessToken()

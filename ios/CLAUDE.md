@@ -104,6 +104,51 @@ To add new source files:
 1. Create the file in the appropriate directory
 2. Run `mise run generate` - XcodeGen auto-discovers files
 
+## Local Builds & Testing
+
+### Simulator Selection
+
+The available simulators depend on the installed Xcode and iOS SDK versions. Do **not** hardcode simulator names or OS versions — always check what's available first:
+
+```bash
+xcodebuild -scheme PKMReader -showdestinations 2>/dev/null | grep "iOS Simulator"
+```
+
+### Building
+
+```bash
+# Build for testing (compiles app + test targets)
+xcodebuild build-for-testing -scheme PKMReader \
+  -destination 'platform=iOS Simulator,name=<SIMULATOR>,OS=<VERSION>' -quiet
+
+# Build release
+xcodebuild build -scheme PKMReader -configuration Release \
+  -destination 'platform=iOS Simulator,name=<SIMULATOR>,OS=<VERSION>' -quiet
+```
+
+### Running Tests
+
+```bash
+# Run unit tests only (fastest)
+xcodebuild test-without-building -scheme PKMReader \
+  -destination 'platform=iOS Simulator,name=<SIMULATOR>,OS=<VERSION>' \
+  -only-testing:PKMReaderTests -quiet
+
+# Run all tests (unit + UI)
+xcodebuild test-without-building -scheme PKMReader \
+  -destination 'platform=iOS Simulator,name=<SIMULATOR>,OS=<VERSION>' -quiet
+```
+
+### Adding New Source Files
+
+After creating new `.swift` files, you **must** regenerate the Xcode project so XcodeGen picks them up:
+
+```bash
+mise run generate
+```
+
+Without this step, builds will fail with "cannot find type in scope" errors for types defined in the new files.
+
 ## CI/CD
 
 - **PR checks**: `.github/workflows/ios-test.yml` - lint, build, test, coverage

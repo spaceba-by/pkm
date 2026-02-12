@@ -32,8 +32,8 @@ struct SearchView: View {
                         message: "No documents match your search"
                     )
 
-                case .error(let errorMessage):
-                    ErrorView(error: GenericError(message: errorMessage)) {
+                case .error(let error):
+                    ErrorView(error: error) {
                         Task { await viewModel.search() }
                     }
                 }
@@ -65,10 +65,4 @@ struct SearchView: View {
         }
         .accessibilityIdentifier("SearchResultsList")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }

@@ -8,7 +8,7 @@ final class TagsViewModel: ObservableObject {
         case loading
         case loaded([Tag])
         case empty
-        case error(String)
+        case error(Error)
 
         static func == (lhs: State, rhs: State) -> Bool {
             switch (lhs, rhs) {
@@ -18,8 +18,8 @@ final class TagsViewModel: ObservableObject {
                 lhsTags == rhsTags
             case (.empty, .empty):
                 true
-            case let (.error(lhsMsg), .error(rhsMsg)):
-                lhsMsg == rhsMsg
+            case let (.error(lhsErr), .error(rhsErr)):
+                lhsErr.localizedDescription == rhsErr.localizedDescription
             default:
                 false
             }
@@ -48,7 +48,7 @@ final class TagsViewModel: ObservableObject {
                 state = .loaded(sorted)
             }
         } catch {
-            state = .error(error.localizedDescription)
+            state = .error(error)
         }
     }
 

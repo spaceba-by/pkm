@@ -25,8 +25,8 @@ struct TagsView: View {
                         message: "No tags found in your vault"
                     )
 
-                case .error(let errorMessage):
-                    ErrorView(error: GenericError(message: errorMessage)) {
+                case .error(let error):
+                    ErrorView(error: error) {
                         Task { await viewModel.loadTags() }
                     }
                 }
@@ -56,16 +56,14 @@ struct TagsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                    "\(tag.name), \(tag.documentCount) \(tag.documentCount == 1 ? "document" : "documents")"
+                )
                 .accessibilityIdentifier("TagRow_\(tag.name)")
             }
         }
         .listStyle(.plain)
         .accessibilityIdentifier("TagsList")
     }
-}
-
-/// Simple error wrapper for displaying error messages
-private struct GenericError: Error, LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 /// Root view that handles auth state and navigation
 struct RootView: View {
     @StateObject private var authService = AuthService.shared
+    @StateObject private var networkMonitor = NetworkMonitor.shared
     @State private var isInitialized = false
     @State private var configurationError: Error?
 
@@ -31,7 +32,8 @@ struct RootView: View {
                 // UI testing mode: show main tab with mock data, skip auth
                 MainTabView(
                     apiClient: UITestAPIClient(),
-                    authService: UITestAuthService()
+                    authService: UITestAuthService(),
+                    networkMonitor: networkMonitor
                 )
             } else if isLoggedOutTestMode {
                 // UI testing mode: show login screen directly
@@ -44,14 +46,16 @@ struct RootView: View {
             #endif
         }
         .task {
-            // Skip initialization in test modes
+            // Start network monitoring
+            networkMonitor.start()
+
+            // Skip auth initialization in test modes
             guard !isLoggedOutTestMode && !isMockAPIMode else { return }
 
             do {
                 try await authService.configure()
                 isInitialized = true
             } catch {
-                print("Failed to initialize auth: \(error)")
                 configurationError = error
                 isInitialized = true
             }
@@ -73,8 +77,9 @@ struct RootView: View {
 
             case .signedIn:
                 MainTabView(
-                    apiClient: APIClient(authService: authService),
-                    authService: authService
+                    apiClient: APIClient(authService: authService, networkMonitor: networkMonitor),
+                    authService: authService,
+                    networkMonitor: networkMonitor
                 )
             }
         }
