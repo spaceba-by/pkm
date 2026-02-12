@@ -47,7 +47,7 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
 - [x] Retry logic with exponential backoff for network requests
 - [x] Offline mode indicators when network is unavailable
 - [ ] Full accessibility support (VoiceOver, Dynamic Type)
-- [ ] Snapshot tests for key screens
+- [x] Snapshot tests for key screens
 - [ ] Performance benchmarks meet targets
 - [ ] App Store submission package prepared
 - [ ] All UI flows covered by UI tests
@@ -72,7 +72,12 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
   - Added semantic grouping with accessibilityElement(children: .combine) and descriptive labels for SummaryListView, ReportListView, and TagsView rows
   - Added @ScaledMetric for Dynamic Type scaling in OfflineBanner, ClassificationBadge, TagChip, and DocumentRowView padding
   - Added .accessibilityAddTraits(.updatesFrequently) to OfflineBanner for live region announcements
-- [ ] Step 3: Create snapshot tests for key screens
+- [x] Step 3: Create snapshot tests for key screens
+  - Added swift-snapshot-testing (pointfreeco) v1.17+ as SPM dependency on PKMReaderTests target
+  - Created SnapshotTestCase base class with `@MainActor`, `assertDeviceSnapshot`, `assertComponentSnapshot`, and `assertDeviceSnapshotAfterTask` helpers (iPhone 13 config, light mode, `.missing` record strategy)
+  - Component snapshot tests (9 snapshots): ErrorView (network, generic, no-retry), EmptyStateView (documents, search), LoadingView (with/without message), ClassificationBadge (all 5 types), TagChip (3 tags)
+  - Screen snapshot tests (9 snapshots): LoginView (empty form), DocumentListView (loaded, empty, error), SearchView (idle), TagsView (loaded, empty), InsightsView (summaries tab), SettingsView (default)
+  - 18 total reference PNG snapshots committed (~1.4MB), all tests passing
 - [ ] Step 4: Run performance profiling and optimize bottlenecks
 - [ ] Step 5: Prepare App Store assets (screenshots, description, metadata)
 - [ ] Step 6: Configure code signing for distribution
