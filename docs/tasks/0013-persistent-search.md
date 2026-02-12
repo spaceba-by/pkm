@@ -19,19 +19,25 @@ Add a persistent search feature that allows users to define search monitors — 
 1. EventBridge scheduled rule triggers `persistent_search_execute` Lambda at a fixed interval (e.g., every 6 hours)
 2. The execute Lambda queries DynamoDB for active monitors whose next execution time has passed
 3. For each due monitor, it calls an external web search API (Brave Search) for each search term, collecting results
-4. Raw search results (title, URL, snippet, date) are stored in DynamoDB as a search snapshot
+4. Raw search results are stored in DynamoDB as a bounded search snapshot (top 10 results per search term, essential fields only: title, URL, snippet, date). If payloads exceed DynamoDB's 400KB item limit, overflow is stored in S3 with a DynamoDB pointer.
 5. The execute Lambda asynchronously invokes `persistent_search_summarize`
 6. The summarize Lambda retrieves the latest snapshot and the previous summary for the monitor
 7. Bedrock (Sonnet) generates a new summary from the search results and produces a novelty score by comparing against the previous summary
 8. If the novelty score exceeds the monitor's threshold, the snapshot is flagged as having significant updates
 9. The summary, novelty score, and flag are stored in DynamoDB
-10. Flagged results are written to `_agent/searches/{monitor-name}/{date}.md` in S3 for vault sync
+10. Flagged results are written to `_agent/searches/{monitor-id}/{date}.md` in S3 for vault sync (using monitor ID, not name, to avoid special character issues and orphaned objects on rename)
 
 **DynamoDB Key Design** (extending the existing single-table):
-- Search monitors: `PK = "search_monitor#<monitor-id>"`, `SK = "CONFIG"`
-- Search snapshots: `PK = "search_monitor#<monitor-id>"`, `SK = "snapshot#<timestamp>"`
-- Search summaries: `PK = "search_monitor#<monitor-id>"`, `SK = "summary#<timestamp>"`
-- GSI: `search-schedule-index` on `monitor_status` (hash) + `next_execution` (range) for efficient polling of due monitors
+- Search monitors: `PK = "user#<user-sub>"`, `SK = "search_monitor#<monitor-id>#CONFIG"`
+- Search snapshots: `PK = "user#<user-sub>"`, `SK = "search_monitor#<monitor-id>#snapshot#<timestamp>"`
+- Search summaries: `PK = "user#<user-sub>"`, `SK = "search_monitor#<monitor-id>#summary#<timestamp>"`
+- Notification events: `PK = "user#<user-sub>"`, `SK = "notification#pending#<timestamp>#<notification-id>"`
+- GSI: `search-schedule-index` on `monitor_status` (hash) + `next_execution` (range) for efficient polling of due monitors. Projects base table keys (`PK`, `SK`) so the execute Lambda can identify both user and monitor ID. Note: low-cardinality `monitor_status` partition key is acceptable at current expected scale (dozens to low hundreds of monitors); if hot partitions become an issue, shard the key (e.g., `active#<bucket>`)
+
+This user-scoped key design enables efficient queries for:
+- `GET /searches` — Query `PK = "user#<sub>"` with `begins_with(SK, "search_monitor#")` and `ends_with` filter on `#CONFIG`
+- `GET /searches/{id}/summaries` — Query `PK = "user#<sub>"` with `begins_with(SK, "search_monitor#<id>#summary#")`
+- Listing pending notifications — Query `PK = "user#<sub>"` with `begins_with(SK, "notification#pending#")`
 
 **Web Search Provider:**
 Brave Search API is the initial provider due to its generous free tier and simple REST API. The search client will be abstracted behind a provider interface to allow swapping providers in the future.
@@ -47,7 +53,7 @@ Uses Bedrock Sonnet to:
 Each monitor has a configurable threshold (default 0.3). When the novelty score exceeds the threshold, the system:
 - Flags the snapshot record in DynamoDB (`significant_update = true`)
 - Writes a summary document to S3 `_agent/searches/` for vault sync
-- Stores a notification event record (`PK = "notification#<id>"`, `SK = "pending"`) for future consumption by push notification or SNS integration
+- Stores a notification event record (using the user-scoped key design above) for future consumption by push notification or SNS integration
 
 ### API Endpoints (new)
 - `POST /searches` — Create a new search monitor
@@ -98,7 +104,7 @@ Each monitor has a configurable threshold (default 0.3). When the novelty score 
 - [ ] AI agent summarizes search results using Bedrock Sonnet
 - [ ] Agent compares new summary against previous summary and produces a novelty score
 - [ ] Novelty score threshold is configurable per monitor (default 0.3)
-- [ ] Significant updates are flagged in DynamoDB and written to S3 `_agent/searches/`
+- [ ] Significant updates are flagged in DynamoDB and written to S3 `_agent/searches/{monitor-id}/`
 - [ ] Notification event records are created when threshold is exceeded
 - [ ] Search provider is abstracted to allow future provider changes
 - [ ] API endpoints are JWT-protected and scoped to the authenticated user
