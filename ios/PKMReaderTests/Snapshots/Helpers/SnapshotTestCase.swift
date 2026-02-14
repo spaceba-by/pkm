@@ -98,7 +98,7 @@ class SnapshotTestCase: XCTestCase {
     /// Assert a SwiftUI view matches its snapshot after allowing async `.task` modifiers to settle
     func assertDeviceSnapshotAfterTask<V: View>(
         of view: V,
-        settleDuration: TimeInterval = 0.5,
+        settleDuration: TimeInterval = 1.0,
         named name: String? = nil,
         file: StaticString = #filePath,
         testName: String = #function,
@@ -112,12 +112,9 @@ class SnapshotTestCase: XCTestCase {
         window.rootViewController = controller
         window.makeKeyAndVisible()
 
-        // Allow async `.task` to complete and SwiftUI to update
-        let settled = expectation(description: "UI settles")
-        DispatchQueue.main.asyncAfter(deadline: .now() + settleDuration) {
-            settled.fulfill()
-        }
-        wait(for: [settled], timeout: settleDuration + 2)
+        // Spin the run loop to let `.task` modifiers fire and SwiftUI update
+        // RunLoop.run is more reliable than DispatchQueue.main.asyncAfter on CI
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: settleDuration))
 
         assertSnapshot(
             of: controller,
