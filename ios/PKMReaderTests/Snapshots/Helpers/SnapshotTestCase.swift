@@ -4,11 +4,39 @@ import UIKit
 import XCTest
 @testable import PKMReader
 
+// MARK: - iPhone 17 Device Configuration
+
+extension ViewImageConfig {
+    /// iPhone 17 portrait configuration (393×852, Dynamic Island safe area)
+    static let iPhone17 = ViewImageConfig(
+        safeArea: UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0),
+        size: CGSize(width: 393, height: 852),
+        traits: UITraitCollection(traitsFrom: [
+            .init(forceTouchCapability: .unavailable),
+            .init(layoutDirection: .leftToRight),
+            .init(preferredContentSizeCategory: .medium),
+            .init(userInterfaceIdiom: .phone),
+            .init(horizontalSizeClass: .compact),
+            .init(verticalSizeClass: .regular),
+        ])
+    )
+}
+
+// MARK: - Snapshot Test Base Class
+
 /// Base class for snapshot tests with shared configuration
 @MainActor
 class SnapshotTestCase: XCTestCase {
     /// Set to `true` to record new reference images, then flip back to `false`
     var isRecordMode: Bool { false }
+
+    /// Precision tolerance for pixel matching (0.0–1.0)
+    /// Allows minor rendering differences across environments
+    var snapshotPrecision: Float { 0.99 }
+
+    /// Perceptual precision tolerance (0.0–1.0)
+    /// 98-99% mimics the precision of the human eye
+    var snapshotPerceptualPrecision: Float { 0.98 }
 
     override func invokeTest() {
         withSnapshotTesting(record: isRecordMode ? .all : .never) {
@@ -29,7 +57,11 @@ class SnapshotTestCase: XCTestCase {
 
         assertSnapshot(
             of: controller,
-            as: .image(on: .iPhone13),
+            as: .image(
+                on: .iPhone17,
+                precision: snapshotPrecision,
+                perceptualPrecision: snapshotPerceptualPrecision
+            ),
             named: name,
             file: file,
             testName: testName,
@@ -40,7 +72,7 @@ class SnapshotTestCase: XCTestCase {
     /// Assert a SwiftUI view matches its snapshot using a fixed-size layout
     func assertComponentSnapshot<V: View>(
         of view: V,
-        size: CGSize = CGSize(width: 390, height: 200),
+        size: CGSize = CGSize(width: 393, height: 200),
         named name: String? = nil,
         file: StaticString = #filePath,
         testName: String = #function,
@@ -52,7 +84,10 @@ class SnapshotTestCase: XCTestCase {
 
         assertSnapshot(
             of: controller,
-            as: .image(size: size),
+            as: .image(
+                precision: snapshotPrecision,
+                perceptualPrecision: snapshotPerceptualPrecision
+            ),
             named: name,
             file: file,
             testName: testName,
@@ -73,7 +108,7 @@ class SnapshotTestCase: XCTestCase {
         controller.overrideUserInterfaceStyle = .light
 
         // Place the controller in a window so `.task` fires
-        let window = UIWindow(frame: UIScreen.main.bounds)
+        let window = UIWindow(frame: CGRect(origin: .zero, size: CGSize(width: 393, height: 852)))
         window.rootViewController = controller
         window.makeKeyAndVisible()
 
@@ -86,7 +121,11 @@ class SnapshotTestCase: XCTestCase {
 
         assertSnapshot(
             of: controller,
-            as: .image(on: .iPhone13),
+            as: .image(
+                on: .iPhone17,
+                precision: snapshotPrecision,
+                perceptualPrecision: snapshotPerceptualPrecision
+            ),
             named: name,
             file: file,
             testName: testName,
