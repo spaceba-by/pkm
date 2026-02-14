@@ -80,6 +80,7 @@ targets:
       - path: PKMReaderTests
         excludes:
           - "**/.DS_Store"
+          - "**/__Snapshots__/**"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: by.spaceba.pkm.reader.tests

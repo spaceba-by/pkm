@@ -1,5 +1,6 @@
 import SnapshotTesting
 import SwiftUI
+import UIKit
 import XCTest
 @testable import PKMReader
 
@@ -10,7 +11,7 @@ class SnapshotTestCase: XCTestCase {
     var isRecordMode: Bool { false }
 
     override func invokeTest() {
-        withSnapshotTesting(record: isRecordMode ? .all : .missing) {
+        withSnapshotTesting(record: isRecordMode ? .all : .never) {
             super.invokeTest()
         }
     }
@@ -62,6 +63,7 @@ class SnapshotTestCase: XCTestCase {
     /// Assert a SwiftUI view matches its snapshot after allowing async `.task` modifiers to settle
     func assertDeviceSnapshotAfterTask<V: View>(
         of view: V,
+        settleDuration: TimeInterval = 0.5,
         named name: String? = nil,
         file: StaticString = #filePath,
         testName: String = #function,
@@ -77,10 +79,10 @@ class SnapshotTestCase: XCTestCase {
 
         // Allow async `.task` to complete and SwiftUI to update
         let settled = expectation(description: "UI settles")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + settleDuration) {
             settled.fulfill()
         }
-        wait(for: [settled], timeout: 2)
+        wait(for: [settled], timeout: settleDuration + 2)
 
         assertSnapshot(
             of: controller,
@@ -91,6 +93,7 @@ class SnapshotTestCase: XCTestCase {
             line: line
         )
 
+        window.rootViewController = nil
         window.isHidden = true
     }
 }
