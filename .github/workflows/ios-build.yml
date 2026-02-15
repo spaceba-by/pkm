@@ -127,6 +127,8 @@ jobs:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           MATCH_KEYCHAIN_NAME: build.keychain
           MATCH_KEYCHAIN_PASSWORD: ""
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 30
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 6
         run: bundle exec fastlane build_release
 
       # Unsigned simulator build (fallback when secrets are not configured)
