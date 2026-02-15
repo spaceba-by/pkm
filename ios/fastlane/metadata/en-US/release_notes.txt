@@ -1,4 +1,4 @@
-Initial release of PKM Reader.
+PKM Reader v1.0.0 - Initial Beta
 
 - Browse and search your personal knowledge base on the go
 - AI-powered document classification into meetings, ideas, references, journals, and projects
@@ -6,3 +6,4 @@ Initial release of PKM Reader.
 - Tag browsing with drill-down navigation
 - Offline support with local caching
 - Secure authentication via AWS Cognito
+- Full accessibility support (VoiceOver, Dynamic Type)

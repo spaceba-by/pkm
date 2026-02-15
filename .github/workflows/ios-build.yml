@@ -122,6 +122,11 @@ jobs:
         working-directory: ios
         env:
           BUILD_NUMBER: ${{ github.run_number }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_KEYCHAIN_NAME: build.keychain
+          MATCH_KEYCHAIN_PASSWORD: ""
         run: bundle exec fastlane build_release
 
       # Unsigned simulator build (fallback when secrets are not configured)
