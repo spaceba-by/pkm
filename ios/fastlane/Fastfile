@@ -122,22 +122,23 @@ platform :ios do
     )
 
     # Sync signing certificates (only when not skipping)
-    profile_name = nil
     unless ENV['SKIP_CODESIGNING']
       sync_code_signing(
         type: "appstore",
         readonly: is_ci
       )
-      profile_name = ENV['sigh_by.spaceba.pkm.reader_appstore_profile-name']
-    end
 
-    # Build the app
-    # CI uses manual signing with the Match profile; CODE_SIGN_STYLE=Manual
-    # is required because project.yml sets Automatic for local dev.
-    signing_args = "CODE_SIGN_STYLE=Manual"
-    if profile_name
-      signing_args += " PROVISIONING_PROFILE_SPECIFIER='#{profile_name}'"
-      signing_args += " CODE_SIGN_IDENTITY='Apple Distribution'"
+      # Switch the main target to manual signing with the Match profile.
+      # This only modifies PKMReader target — SPM packages keep automatic
+      # signing and won't fail with "requires a development team".
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "PKMReader.xcodeproj",
+        team_id: "TPXD65QGEQ",
+        profile_name: ENV['sigh_by.spaceba.pkm.reader_appstore_profile-name'],
+        code_sign_identity: "Apple Distribution",
+        targets: ["PKMReader"]
+      )
     end
 
     build_app(
@@ -147,8 +148,7 @@ platform :ios do
       export_method: "app-store",
       output_directory: "build",
       output_name: "PKMReader.ipa",
-      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true',
-      xcargs: signing_args
+      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true'
     )
   end
 
