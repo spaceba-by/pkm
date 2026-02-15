@@ -12,11 +12,21 @@
 (def valid-classifications
   #{"meeting" "idea" "reference" "journal" "project"})
 
+(defn- strip-markdown-fences
+  "Strip markdown code fences from LLM response text"
+  [text]
+  (-> text
+      str/trim
+      (str/replace #"^```(?:json)?\s*\n?" "")
+      (str/replace #"\n?\s*```$" "")
+      str/trim))
+
 (defn parse-classification-response
   "Parse classification JSON response, matching bedrock/classify-document logic"
   [text]
   (try
-    (let [parsed (json/parse-string text true)
+    (let [cleaned (strip-markdown-fences text)
+          parsed (json/parse-string cleaned true)
           classification (some-> (:classification parsed)
                                  str/trim
                                  str/lower-case)
@@ -27,9 +37,8 @@
         {:classification "reference"
          :confidence 0.0}))
     (catch Exception _
-      (let [raw (some-> text str/trim str/lower-case (str/replace #"[^a-z]" ""))]
-        {:classification (if (valid-classifications raw) raw "reference")
-         :confidence 0.0}))))
+      {:classification "reference"
+       :confidence 0.0})))
 
 (deftest parse-classification-response-test
   (testing "Parses valid JSON response"
@@ -62,10 +71,17 @@
       (is (= "idea" (:classification result)))
       (is (= 0.0 (:confidence result)))))
 
-  (testing "Falls back to raw text parsing on invalid JSON"
-    (let [result (parse-classification-response "meeting")]
+  (testing "Parses JSON wrapped in markdown code fences"
+    (let [result (parse-classification-response
+                   "```json\n{\"classification\": \"meeting\", \"confidence\": 0.85}\n```")]
       (is (= "meeting" (:classification result)))
-      (is (= 0.0 (:confidence result)))))
+      (is (= 0.85 (:confidence result)))))
+
+  (testing "Parses JSON wrapped in plain code fences"
+    (let [result (parse-classification-response
+                   "```\n{\"classification\": \"idea\", \"confidence\": 0.7}\n```")]
+      (is (= "idea" (:classification result)))
+      (is (= 0.7 (:confidence result)))))
 
   (testing "Falls back to reference on completely invalid input"
     (let [result (parse-classification-response "nonsense text here")]
