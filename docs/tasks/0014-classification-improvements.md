@@ -30,7 +30,7 @@ Improve the classification system to produce more accurate results. The current 
 - [x] Classification prompt includes system prompt, category descriptions, metadata signals
 - [x] Classification returns JSON with confidence score
 - [x] Confidence stored in DynamoDB alongside classification
-- [x] PUT /documents/{key+}/classification API endpoint for manual overrides
+- [x] PUT /documents/classification/{key+} API endpoint for manual overrides
 - [x] Override flag prevents automatic reclassification
 - [x] Bulk reclassification Lambda with dry-run and filtering
 - [x] POST /admin/reclassify API endpoint triggers bulk work async
@@ -55,14 +55,14 @@ Improve the classification system to produce more accurate results. The current 
 ### Backend (Lambda/Clojure)
 - **bedrock.clj**: Rewrote `classify-document` with detailed system prompt describing each category with signals, enriched user prompt with tags/frontmatter-type/wikilink-count, returns `{:classification :confidence}` map with JSON parsing
 - **classify_document/handler.clj**: Consumes new `{:classification :confidence}` format, stores `classification_confidence` in DynamoDB, checks for `classification_override` before reclassifying (skips with graceful 200), removed per-document index trigger
-- **api_update_classification/handler.clj**: New Lambda for `PUT /documents/{key+}/classification` — validates input, sets `classification_override: true` and `classification_overridden_at` in DynamoDB
+- **api_update_classification/handler.clj**: New Lambda for `PUT /documents/classification/{key+}` — validates input, sets `classification_override: true` and `classification_overridden_at` in DynamoDB
 - **bulk_reclassify/handler.clj**: New Lambda that scans all METADATA items, filters out overrides and optionally by classification, invokes classify_document async for each; supports `dry_run` mode
 - **api_bulk_reclassify/handler.clj**: New API Lambda for `POST /admin/reclassify` — invokes bulk_reclassify sync for dry-run, async for actual reclassification
 - **build.clj / bb.edn**: Registered 3 new functions
 
 ### Infrastructure (Terraform)
 - **api_lambda.tf**: Added `api_update_classification` and `api_bulk_reclassify` Lambda resources
-- **api_gateway.tf**: Added `PUT /documents/{key+}/classification` and `POST /admin/reclassify` routes with JWT auth, plus Lambda permissions
+- **api_gateway.tf**: Added `PUT /documents/classification/{key+}` and `POST /admin/reclassify` routes with JWT auth, plus Lambda permissions
 - **lambda.tf**: Added `bulk_reclassify` Lambda (300s timeout), removed `UPDATE_INDEX_LAMBDA` env var from classify_document, added `bulk-reclassify` to log group list
 - **eventbridge.tf**: Added `rate(6 hours)` schedule for `update_classification_index` Lambda
 
