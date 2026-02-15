@@ -4,7 +4,8 @@
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.string :as str]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -22,6 +23,77 @@
    ;; Skip .obsidian directory
    (.startsWith object-key ".obsidian/")
    (re-find #"/\.obsidian/" object-key)))
+
+;; Frontmatter signal rules: map of classification to sets of matching values
+;; for tags, frontmatter type, and path segments
+(def ^:private tag-signals
+  {"journal"   #{"daily-notes" "daily-note" "daily" "journal" "diary"}
+   "meeting"   #{"meeting" "meetings" "meeting-notes" "meeting-note"
+                 "standup" "1on1" "1-on-1" "retro" "retrospective"}
+   "project"   #{"project" "project-plan" "roadmap" "sprint"}
+   "idea"      #{"idea" "ideas" "brainstorm" "concept" "proposal"}
+   "reference" #{"reference" "howto" "how-to" "guide" "cheatsheet"
+                 "cheat-sheet" "documentation" "docs"}})
+
+(def ^:private type-signals
+  {"journal"   #{"daily" "journal" "daily-note" "daily-notes"}
+   "meeting"   #{"meeting" "meetings"}
+   "project"   #{"project"}
+   "idea"      #{"idea"}
+   "reference" #{"reference" "howto" "guide"}})
+
+(def ^:private path-signals
+  {"journal"   #{"daily notes" "daily" "journal"}
+   "meeting"   #{"meetings" "meeting notes"}
+   "project"   #{"projects"}})
+
+(defn detect-classification-from-frontmatter
+  "Detect classification from frontmatter signals and file path.
+   Returns {:classification string :confidence 1.0 :signal string} if a
+   strong signal is found, nil otherwise."
+  [metadata object-key]
+  (let [tags (->> (get metadata :tags [])
+                  (map (comp str/lower-case str/trim str)))
+        fm-type (some-> (get metadata :type) str str/trim str/lower-case)
+        cssclass (some-> (get metadata :cssclass) str str/trim str/lower-case)
+        cssclasses (->> (get metadata :cssclasses [])
+                        (map (comp str/lower-case str/trim str)))
+        all-classes (cond-> #{}
+                      cssclass (conj cssclass)
+                      (seq cssclasses) (into cssclasses))
+        path-lower (str/lower-case (or object-key ""))]
+
+    ;; Check tags first (strongest signal)
+    (or (some (fn [[classification signal-tags]]
+                (when-let [match (first (filter signal-tags tags))]
+                  {:classification classification
+                   :confidence 1.0
+                   :signal (str "tag:" match)}))
+              tag-signals)
+
+        ;; Check frontmatter type field
+        (some (fn [[classification signal-types]]
+                (when (and fm-type (signal-types fm-type))
+                  {:classification classification
+                   :confidence 1.0
+                   :signal (str "type:" fm-type)}))
+              type-signals)
+
+        ;; Check cssclass/cssclasses
+        (some (fn [[classification signal-tags]]
+                (when-let [match (first (filter signal-tags all-classes))]
+                  {:classification classification
+                   :confidence 1.0
+                   :signal (str "cssclass:" match)}))
+              tag-signals)
+
+        ;; Check file path segments
+        (some (fn [[classification path-parts]]
+                (when-let [match (first (filter #(str/includes? path-lower (str % "/")) path-parts))]
+                  {:classification classification
+                   :confidence 0.9
+                   :signal (str "path:" match "/")}))
+              path-signals))))
 
 (defn classify-document
   "Classify a markdown document using Bedrock"
@@ -54,8 +126,16 @@
     ;; Parse metadata
     (let [metadata (md/parse-markdown-metadata content)
 
-          ;; Classify document using Bedrock
-          result (bedrock/classify-document bedrock-model content metadata)
+          ;; Check for deterministic frontmatter signals before calling Bedrock
+          fm-signal (detect-classification-from-frontmatter metadata object-key)
+
+          result (if fm-signal
+                   (do (println "Frontmatter signal detected for" object-key
+                                ":" (:signal fm-signal)
+                                "→" (:classification fm-signal))
+                       fm-signal)
+                   (bedrock/classify-document bedrock-model content metadata))
+
           classification (:classification result)
           confidence (:confidence result)
 
