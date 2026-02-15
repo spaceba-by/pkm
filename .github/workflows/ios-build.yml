@@ -23,13 +23,28 @@ jobs:
       - name: Check signing secrets
         id: check-secrets
         run: |
-          if [ -n "$MATCH_GIT_URL" ]; then
-            echo "has_signing=true" >> "$GITHUB_OUTPUT"
-          else
+          has_url="${MATCH_GIT_URL:+1}"
+          has_pass="${MATCH_PASSWORD:+1}"
+          has_auth="${MATCH_GIT_BASIC_AUTHORIZATION:+1}"
+
+          if [ -z "$has_url" ] && [ -z "$has_pass" ] && [ -z "$has_auth" ]; then
+            echo "No code signing secrets detected; building unsigned."
             echo "has_signing=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          if [ -n "$has_url" ] && [ -n "$has_pass" ] && [ -n "$has_auth" ]; then
+            echo "All code signing secrets detected; building signed."
+            echo "has_signing=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "::error::Partial code signing secrets detected. Set all or none of: MATCH_GIT_URL, MATCH_PASSWORD, MATCH_GIT_BASIC_AUTHORIZATION"
+          exit 1
         env:
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -166,11 +181,14 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
-      - name: Install Fastlane
+      - name: Validate IPA artifact
         working-directory: ios
         run: |
-          gem install bundler
-          bundle install
+          if [ ! -f "build/PKMReader.ipa" ]; then
+            echo "::error::IPA not found at build/PKMReader.ipa"
+            ls -R build/ || true
+            exit 1
+          fi
 
       - name: Upload to TestFlight
         working-directory: ios
