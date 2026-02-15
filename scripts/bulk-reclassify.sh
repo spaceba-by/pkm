@@ -42,12 +42,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Build payload
-PAYLOAD="{\"body\": \"{\\\"dry_run\\\": $DRY_RUN"
-if [ -n "$CLASSIFICATION" ]; then
-  PAYLOAD="$PAYLOAD, \\\"classification\\\": \\\"$CLASSIFICATION\\\""
-fi
-PAYLOAD="$PAYLOAD}\"}"
+# Build payload using jq for safe JSON construction
+INNER_BODY=$(jq -n \
+  --argjson dry_run "$DRY_RUN" \
+  --arg classification "$CLASSIFICATION" \
+  '({dry_run: $dry_run} + (if $classification != "" then {classification: $classification} else {} end))')
+
+PAYLOAD=$(jq -n --arg body "$INNER_BODY" '{body: $body}')
 
 if [ "$DRY_RUN" = true ]; then
   echo "=== DRY RUN ==="

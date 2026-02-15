@@ -9,13 +9,11 @@
 
 (defn get-all-metadata-items
   "Scan for all METADATA items in DynamoDB.
-   Uses pagination to handle large vaults."
+   Uses paginated scan to handle large vaults."
   [table-name]
-  ;; Use a large limit for each scan page
-  (ddb/scan table-name
-            :filter-expr "SK = :sk"
-            :expr-attr-values {":sk" "METADATA"}
-            :limit 10000))
+  (ddb/scan-all table-name
+               :filter-expr "SK = :sk"
+               :expr-attr-values {":sk" "METADATA"}))
 
 (defn should-reclassify?
   "Check if a document should be reclassified based on filters"

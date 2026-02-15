@@ -147,6 +147,30 @@
                      (check-error "Scan"))]
     (mapv unmarshall-item (:Items response))))
 
+(defn scan-all
+  "Scans entire DynamoDB table with pagination, handling LastEvaluatedKey.
+   Returns all matching items across all pages."
+  [table-name & {:keys [filter-expr expr-attr-values]}]
+  (loop [acc []
+         exclusive-start-key nil]
+    (let [request (cond-> {:TableName table-name}
+                    filter-expr (assoc :FilterExpression filter-expr)
+                    expr-attr-values (assoc :ExpressionAttributeValues
+                                           (marshall-item expr-attr-values))
+                    exclusive-start-key (assoc :ExclusiveStartKey
+                                              (marshall-item exclusive-start-key)))
+          response (-> (aws/invoke @ddb-client
+                                   {:op :Scan
+                                    :request request})
+                       (check-error "Scan"))
+          items (mapv unmarshall-item (:Items response))
+          new-acc (into acc items)
+          last-key (when-let [lek (:LastEvaluatedKey response)]
+                     (unmarshall-item lek))]
+      (if last-key
+        (recur new-acc last-key)
+        new-acc))))
+
 (defn update-item
   "Updates item in DynamoDB table"
   [table-name key update-expr expr-attr-values]

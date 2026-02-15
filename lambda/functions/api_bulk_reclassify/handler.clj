@@ -7,7 +7,9 @@
 (def bulk-reclassify-lambda (System/getenv "BULK_RECLASSIFY_LAMBDA"))
 
 (defn handler
-  "Lambda handler for POST /admin/reclassify"
+  "Lambda handler for POST /admin/reclassify.
+   Both dry-run and execute modes invoke bulk_reclassify asynchronously
+   to avoid API Gateway timeout (30s) on large vaults."
   [request]
   (try
     (let [event (json/parse-string (:body request) true)
@@ -24,25 +26,21 @@
           _ (println "User" user-sub "triggering bulk reclassify"
                      "classification:" classification "dry_run:" dry-run)]
 
-      (if dry-run
-        ;; For dry run, invoke synchronously to return counts
-        (let [result (lambda/invoke-sync
-                       bulk-reclassify-lambda
-                       {:body (json/generate-string
-                               {:classification classification
-                                :dry_run true})})]
-          (r/ok-no-cache (json/parse-string (:body result) true)))
+      ;; Always invoke async to avoid timeout on large vaults.
+      ;; For dry-run, check results in CloudWatch logs or invoke
+      ;; the bulk_reclassify Lambda directly via CLI.
+      (lambda/invoke-async
+        bulk-reclassify-lambda
+        {:body (json/generate-string
+                {:classification classification
+                 :dry_run dry-run})})
 
-        ;; For actual reclassification, invoke async and return immediately
-        (do
-          (lambda/invoke-async
-            bulk-reclassify-lambda
-            {:body (json/generate-string
-                    {:classification classification
-                     :dry_run false})})
-          (r/ok-no-cache {:status "triggered"
-                          :message "Bulk reclassification started"
-                          :classification_filter classification}))))
+      (r/ok-no-cache {:status "triggered"
+                      :message (if dry-run
+                                 "Bulk reclassification dry-run started"
+                                 "Bulk reclassification started")
+                      :dry_run dry-run
+                      :classification_filter classification}))
 
     (catch Exception e
       (println "Error triggering bulk reclassify:" (.getMessage e))
