@@ -12,11 +12,21 @@
 (def valid-classifications
   #{"meeting" "idea" "reference" "journal" "project"})
 
+(defn- strip-markdown-fences
+  "Strip markdown code fences from LLM response text"
+  [text]
+  (-> text
+      str/trim
+      (str/replace #"^```[a-z]*\s*\n?" "")
+      (str/replace #"\n?\s*```$" "")
+      str/trim))
+
 (defn parse-classification-response
   "Parse classification JSON response, matching bedrock/classify-document logic"
   [text]
   (try
-    (let [parsed (json/parse-string text true)
+    (let [cleaned (strip-markdown-fences text)
+          parsed (json/parse-string cleaned true)
           classification (some-> (:classification parsed)
                                  str/trim
                                  str/lower-case)
@@ -27,9 +37,8 @@
         {:classification "reference"
          :confidence 0.0}))
     (catch Exception _
-      (let [raw (some-> text str/trim str/lower-case (str/replace #"[^a-z]" ""))]
-        {:classification (if (valid-classifications raw) raw "reference")
-         :confidence 0.0}))))
+      {:classification "reference"
+       :confidence 0.0})))
 
 (deftest parse-classification-response-test
   (testing "Parses valid JSON response"
@@ -62,10 +71,17 @@
       (is (= "idea" (:classification result)))
       (is (= 0.0 (:confidence result)))))
 
-  (testing "Falls back to raw text parsing on invalid JSON"
-    (let [result (parse-classification-response "meeting")]
+  (testing "Parses JSON wrapped in markdown code fences"
+    (let [result (parse-classification-response
+                   "```json\n{\"classification\": \"meeting\", \"confidence\": 0.85}\n```")]
       (is (= "meeting" (:classification result)))
-      (is (= 0.0 (:confidence result)))))
+      (is (= 0.85 (:confidence result)))))
+
+  (testing "Parses JSON wrapped in plain code fences"
+    (let [result (parse-classification-response
+                   "```\n{\"classification\": \"idea\", \"confidence\": 0.7}\n```")]
+      (is (= "idea" (:classification result)))
+      (is (= 0.7 (:confidence result)))))
 
   (testing "Falls back to reference on completely invalid input"
     (let [result (parse-classification-response "nonsense text here")]
@@ -166,3 +182,37 @@
     (doseq [cls ["note" "task" ""]]
       (is (not (contains? valid-classifications (-> cls str/trim str/lower-case)))
           (str (pr-str cls) " should be rejected")))))
+
+;; =============================================================================
+;; Markdown fence stripping tests (covers both classify and entity extraction)
+;; =============================================================================
+
+(deftest strip-markdown-fences-test
+  (testing "Strips ```json fences"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "```json\n{\"key\": \"value\"}\n```"))))
+
+  (testing "Strips plain ``` fences"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "```\n{\"key\": \"value\"}\n```"))))
+
+  (testing "Strips fences with other language identifiers"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "```text\n{\"key\": \"value\"}\n```"))))
+
+  (testing "Passes through plain JSON unchanged"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "{\"key\": \"value\"}"))))
+
+  (testing "Trims surrounding whitespace"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "  {\"key\": \"value\"}  "))))
+
+  (testing "Entity extraction JSON parses after fence stripping"
+    (let [fenced "```json\n{\"people\": [\"John\"], \"organizations\": [\"Acme\"], \"concepts\": [\"AI\"], \"locations\": [\"NYC\"]}\n```"
+          cleaned (strip-markdown-fences fenced)
+          parsed (json/parse-string cleaned true)]
+      (is (= ["John"] (:people parsed)))
+      (is (= ["Acme"] (:organizations parsed)))
+      (is (= ["AI"] (:concepts parsed)))
+      (is (= ["NYC"] (:locations parsed))))))

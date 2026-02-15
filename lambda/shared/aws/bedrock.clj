@@ -47,6 +47,15 @@
   [response]
   (-> response :content first :text))
 
+(defn- strip-markdown-fences
+  "Strip markdown code fences from LLM response text"
+  [text]
+  (-> text
+      str/trim
+      (str/replace #"^```[a-z]*\s*\n?" "")
+      (str/replace #"\n?\s*```$" "")
+      str/trim))
+
 (def ^:private valid-classifications
   #{"meeting" "idea" "reference" "journal" "project"})
 
@@ -87,7 +96,8 @@ Return ONLY valid JSON, no additional text.")
                                 :system classification-system-prompt})
         text (extract-text response)]
     (try
-      (let [parsed (json/parse-string text true)
+      (let [cleaned (strip-markdown-fences text)
+            parsed (json/parse-string cleaned true)
             classification (some-> (:classification parsed)
                                    str/trim
                                    str/lower-case)
@@ -99,9 +109,8 @@ Return ONLY valid JSON, no additional text.")
            :confidence 0.0}))
       (catch Exception e
         (println "Error parsing classification response:" (ex-message e) "raw:" text)
-        (let [raw (some-> text str/trim str/lower-case (str/replace #"[^a-z]" ""))]
-          {:classification (if (valid-classifications raw) raw "reference")
-           :confidence 0.0})))))
+        {:classification "reference"
+         :confidence 0.0})))))
 
 (defn extract-entities
   "Extracts named entities (people, organizations, concepts, locations)"
@@ -116,7 +125,7 @@ Return ONLY valid JSON, no additional text.")
                    "Text:\n" content)
         response (invoke-model model-id prompt {:max-tokens 1000 :temperature 0.5})]
     (try
-      (json/parse-string (extract-text response) true)
+      (json/parse-string (strip-markdown-fences (extract-text response)) true)
       (catch Exception e
         (println "Error parsing entities response:" (ex-message e))
         {:people [] :organizations [] :concepts [] :locations []}))))
