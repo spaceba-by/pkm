@@ -117,6 +117,13 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 ### Planned
 
+- **Task 0016: Backfill Pre-Existing Documents**
+
+  - See: [0016-backfill-existing-documents](tasks/0016-backfill-existing-documents.md)
+  - Babashka CLI script to detect unprocessed S3 documents missing from DynamoDB
+  - Triggers extract_metadata, classify_document, extract_entities for each
+  - Supports dry-run, prefix filtering, rate limiting
+
 - **Task 0015: Document Deletion Cleanup**
 
   - See: [0015-document-deletion-cleanup](tasks/0015-document-deletion-cleanup.md)

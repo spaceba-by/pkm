@@ -110,7 +110,7 @@ Return ONLY valid JSON, no additional text.")
       (catch Exception e
         (println "Error parsing classification response:" (ex-message e) "raw:" text)
         {:classification "reference"
-         :confidence 0.0})))))
+         :confidence 0.0}))))
 
 (defn extract-entities
   "Extracts named entities (people, organizations, concepts, locations)"
