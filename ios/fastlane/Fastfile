@@ -137,7 +137,8 @@ platform :ios do
       export_method: "app-store",
       output_directory: "build",
       output_name: "PKMReader.ipa",
-      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true'
+      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true',
+      xcargs: "CODE_SIGN_STYLE=Manual"
     )
   end
 
