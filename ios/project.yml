@@ -20,6 +20,9 @@ packages:
   Amplify:
     url: https://github.com/aws-amplify/amplify-swift
     from: "2.40.0"
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    from: "1.17.0"
 
 settings:
   base:
@@ -77,6 +80,7 @@ targets:
       - path: PKMReaderTests
         excludes:
           - "**/.DS_Store"
+          - "**/__Snapshots__/**"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: by.spaceba.pkm.reader.tests
@@ -86,6 +90,7 @@ targets:
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @loader_path/Frameworks"
     dependencies:
       - target: PKMReader
+      - package: SnapshotTesting
 
   PKMReaderUITests:
     type: bundle.ui-testing

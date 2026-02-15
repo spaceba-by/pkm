@@ -21,6 +21,7 @@ final class InsightsScreenTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        app?.terminate()
         app = nil
         insightsPage = nil
     }
