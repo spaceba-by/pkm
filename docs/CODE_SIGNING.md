@@ -62,10 +62,44 @@ Configure these secrets in the GitHub repository settings under Settings > Secre
 | `ASC_ISSUER_ID` | App Store Connect API Issuer ID |
 | `ASC_KEY` | App Store Connect API private key contents (p8) |
 
-To generate `MATCH_GIT_BASIC_AUTHORIZATION`:
-```bash
-echo -n "github-username:github-personal-access-token" | base64
-```
+#### Generating `MATCH_GIT_BASIC_AUTHORIZATION`
+
+This value is a base64-encoded `username:token` string using a GitHub fine-grained PAT. The token expires after 1 year and must be regenerated.
+
+1. Go to https://github.com/settings/tokens?type=beta (fine-grained tokens)
+2. Click **Generate new token**
+3. **Resource owner**: select `spaceba-by` (the org, not your personal account)
+4. **Repository access**: "Only select repositories" → select the certificates repo
+5. **Permissions** → Repository permissions → **Contents**: Read and write
+6. Generate the token
+7. If the org requires approval, an org admin must approve at `https://github.com/organizations/spaceba-by/settings/personal-access-tokens/active`
+8. Base64-encode using your **personal GitHub username** (not the org name):
+   ```bash
+   echo -n "your-github-username:github_pat_xxxxx" | base64
+   ```
+
+#### Generating App Store Connect API key secrets
+
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY` all come from the same API key:
+
+1. Go to https://appstoreconnect.apple.com/access/integrations/api
+2. Click **Generate API Key**
+3. Name it (e.g., "CI TestFlight"), set role to **App Manager**
+4. After creation:
+   - **`ASC_KEY_ID`**: the Key ID shown in the table
+   - **`ASC_ISSUER_ID`**: shown at the top of the API Keys page
+   - **`ASC_KEY`**: download the `.p8` file (one-time download), then base64-encode it:
+     ```bash
+     base64 < AuthKey_XXXXXXXXXX.p8
+     ```
+
+#### Secret rotation schedule
+
+| Secret | Rotation | How to regenerate |
+|--------|----------|-------------------|
+| `MATCH_GIT_BASIC_AUTHORIZATION` | Annually (PAT expiry) | Repeat steps above with a new fine-grained PAT |
+| `MATCH_PASSWORD` | Only if compromised | Re-run `fastlane match` with new passphrase, update all developers |
+| `ASC_KEY` | Does not expire | Only regenerate if key is revoked |
 
 ## New Developer Onboarding
 
@@ -120,15 +154,16 @@ If certificates expire or are revoked:
 
 ## CI/CD Code Signing
 
-The `ios-build.yml` workflow includes commented-out code signing steps. To enable them:
+The `ios-build.yml` workflow automatically detects whether signing secrets are configured:
+
+- **Without secrets**: builds an unsigned simulator binary (safe default)
+- **With secrets**: builds a signed archive and uploads to TestFlight
+
+To enable signed builds and TestFlight deployment:
 
 1. Set up all required GitHub Secrets listed above.
-2. Uncomment the code signing steps in `.github/workflows/ios-build.yml`.
-3. The workflow will:
-   - Set up a temporary Keychain for CI
-   - Download certificates via Match (readonly)
-   - Build a signed archive
-   - Optionally upload to TestFlight
+2. Optionally create a `testflight` GitHub Environment (Settings → Environments) for deployment protection rules.
+3. Push a change to `ios/` on `main` to trigger the workflow.
 
 See the `build_release` lane in `ios/fastlane/Fastfile` for the signing logic. The lane:
 - Increments the build number
