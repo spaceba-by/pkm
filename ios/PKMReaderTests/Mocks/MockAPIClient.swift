@@ -31,6 +31,9 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Result to return from documentsByTag
     var documentsByTagResult: Result<[Document], Error> = .success([])
 
+    /// Result to return from updateClassification
+    var updateClassificationResult: Result<Void, Error> = .success(())
+
     // MARK: - Call Tracking
 
     /// Number of times listDocuments was called
@@ -71,6 +74,15 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     /// Last limit passed to documentsByTag
     private(set) var lastDocumentsByTagLimit: Int?
+
+    /// Number of times updateClassification was called
+    private(set) var updateClassificationCallCount = 0
+
+    /// Last document ID passed to updateClassification
+    private(set) var lastUpdateClassificationDocumentId: String?
+
+    /// Last classification passed to updateClassification
+    private(set) var lastUpdateClassificationValue: DocumentClassification?
 
     // MARK: - APIClientProtocol
 
@@ -127,6 +139,16 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         return try documentsByTagResult.get()
     }
 
+    func updateClassification(
+        documentId: String,
+        classification: DocumentClassification
+    ) async throws {
+        updateClassificationCallCount += 1
+        lastUpdateClassificationDocumentId = documentId
+        lastUpdateClassificationValue = classification
+        try updateClassificationResult.get()
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -144,5 +166,8 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         documentsByTagCallCount = 0
         lastDocumentsByTagTag = nil
         lastDocumentsByTagLimit = nil
+        updateClassificationCallCount = 0
+        lastUpdateClassificationDocumentId = nil
+        lastUpdateClassificationValue = nil
     }
 }

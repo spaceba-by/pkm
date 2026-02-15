@@ -50,4 +50,10 @@ protocol APIClientProtocol: Sendable {
     ///   - limit: Maximum number of documents to return
     /// - Returns: List of documents with the specified tag
     func documentsByTag(tag: String, limit: Int) async throws -> [Document]
+
+    /// Update a document's classification (manual override)
+    /// - Parameters:
+    ///   - documentId: The document's S3 key
+    ///   - classification: The new classification to apply
+    func updateClassification(documentId: String, classification: DocumentClassification) async throws
 }

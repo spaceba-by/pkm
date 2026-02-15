@@ -21,7 +21,8 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
     "extract-metadata",
     "generate-daily-summary",
     "generate-weekly-report",
-    "update-classification-index"
+    "update-classification-index",
+    "bulk-reclassify"
   ])
 
   name              = "/aws/lambda/${var.project_name}-${each.key}"
@@ -64,7 +65,6 @@ resource "aws_lambda_function" "classify_document" {
       S3_BUCKET_NAME      = aws_s3_bucket.vault.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
       BEDROCK_MODEL_ID    = var.bedrock_haiku_model_id
-      UPDATE_INDEX_LAMBDA = "${var.project_name}-update-classification-index"
     }
   }
 
@@ -297,5 +297,47 @@ resource "aws_lambda_function" "update_classification_index" {
 
   tags = {
     Name = "${var.project_name}-update-classification-index"
+  }
+}
+
+# 7. bulk-reclassify Lambda (Babashka)
+resource "aws_lambda_function" "bulk_reclassify" {
+  function_name = "${var.project_name}-bulk-reclassify"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 300
+  memory_size   = 512
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/bulk_reclassify.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/bulk_reclassify.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/bulk_reclassify.zip" : null
+
+  environment {
+    variables = {
+      S3_BUCKET_NAME           = aws_s3_bucket.vault.id
+      DYNAMODB_TABLE_NAME      = aws_dynamodb_table.metadata.name
+      CLASSIFY_DOCUMENT_LAMBDA = aws_lambda_function.classify_document.function_name
+    }
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.lambda_logs
+  ]
+
+  tags = {
+    Name = "${var.project_name}-bulk-reclassify"
   }
 }

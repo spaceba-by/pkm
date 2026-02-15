@@ -26,6 +26,15 @@ final class DocumentDetailViewModel: ObservableObject {
     /// Current state of content loading
     @Published private(set) var contentState: ContentState = .loading
 
+    /// Current classification (may be updated by user)
+    @Published private(set) var classification: DocumentClassification
+
+    /// Whether a classification update is in progress
+    @Published private(set) var isUpdatingClassification = false
+
+    /// Error from the last classification update attempt
+    @Published var classificationUpdateError: Error?
+
     /// The document being displayed
     let document: Document
 
@@ -34,6 +43,7 @@ final class DocumentDetailViewModel: ObservableObject {
     init(document: Document, apiClient: any APIClientProtocol) {
         self.document = document
         self.apiClient = apiClient
+        self.classification = document.metadata.classification
 
         // If content already loaded, use it
         if let content = document.content {
@@ -60,5 +70,25 @@ final class DocumentDetailViewModel: ObservableObject {
         } catch {
             contentState = .error(error)
         }
+    }
+
+    /// Update the document's classification
+    func updateClassification(to newClassification: DocumentClassification) async {
+        guard newClassification != classification else { return }
+
+        isUpdatingClassification = true
+        classificationUpdateError = nil
+
+        do {
+            try await apiClient.updateClassification(
+                documentId: document.id,
+                classification: newClassification
+            )
+            classification = newClassification
+        } catch {
+            classificationUpdateError = error
+        }
+
+        isUpdatingClassification = false
     }
 }

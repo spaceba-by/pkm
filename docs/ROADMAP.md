@@ -98,6 +98,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - 16 UI tests enabled across Search, Tags, Insights, Settings
   - Code coverage above 60%
 
+- **Task 0014: Classification System Improvements** ✅
+
+  - See: [0014-classification-improvements](tasks/0014-classification-improvements.md)
+  - Enhanced classification prompt with system prompt, category descriptions, metadata signals, JSON confidence response
+  - Classification feedback/correction API (PUT /documents/{key+}/classification) with override flag
+  - Bulk reclassification Lambda with dry-run mode, classification filtering, override respect
+  - Classification index optimization: scheduled every 6 hours instead of per-document
+  - iOS: tappable ClassificationBadge with picker to change classification
+
 ### In Progress
 
 - **Task 0008: iOS Polish & Release** 🔄

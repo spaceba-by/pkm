@@ -185,5 +185,9 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] {
         fixtureDocuments.filter { $0.metadata.tags.contains(tag) }
     }
+
+    func updateClassification(documentId: String, classification: DocumentClassification) async throws {
+        // No-op for UI tests
+    }
 }
 #endif

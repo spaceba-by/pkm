@@ -100,7 +100,10 @@
    "api_documents_by_tag"        "handler/handler"
    "api_list_classifications"    "handler/handler"
    "api_list_summaries"          "handler/handler"
-   "api_list_reports"            "handler/handler"})
+   "api_list_reports"            "handler/handler"
+   "api_update_classification"   "handler/handler"
+   "api_bulk_reclassify"         "handler/handler"
+   "bulk_reclassify"             "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

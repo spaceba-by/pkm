@@ -41,8 +41,8 @@ struct DocumentDetailView: View {
 
     private var metadataSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Classification badge
-            ClassificationBadge(classification: document.metadata.classification)
+            // Classification badge with picker
+            classificationBadgeWithPicker
 
             // Tags
             if !document.metadata.tags.isEmpty {
@@ -74,6 +74,41 @@ struct DocumentDetailView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private var classificationBadgeWithPicker: some View {
+        Menu {
+            ForEach(DocumentClassification.allCases, id: \.self) { type in
+                Button {
+                    Task {
+                        await viewModel.updateClassification(to: type)
+                    }
+                } label: {
+                    Label(type.displayName, systemImage: type.icon)
+                }
+                .disabled(type == viewModel.classification)
+            }
+        } label: {
+            HStack(spacing: 4) {
+                ClassificationBadge(classification: viewModel.classification)
+                if viewModel.isUpdatingClassification {
+                    ProgressView()
+                        .controlSize(.mini)
+                }
+            }
+        }
+        .accessibilityLabel("Change classification, currently \(viewModel.classification.displayName)")
+        .alert(
+            "Classification Update Failed",
+            isPresented: Binding(
+                get: { viewModel.classificationUpdateError != nil },
+                set: { if !$0 { viewModel.classificationUpdateError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Could not update the classification. Please try again.")
         }
     }
 
@@ -186,4 +221,5 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listSummaries(limit: Int) async throws -> [Summary] { [] }
     func listReports(limit: Int) async throws -> [Report] { [] }
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] { [] }
+    func updateClassification(documentId: String, classification: DocumentClassification) async throws {}
 }

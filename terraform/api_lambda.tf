@@ -11,7 +11,9 @@ locals {
     "api-documents-by-tag",
     "api-list-classifications",
     "api-list-summaries",
-    "api-list-reports"
+    "api-list-reports",
+    "api-update-classification",
+    "api-bulk-reclassify"
   ] : []
 
   api_lambda_environment = {
@@ -373,5 +375,93 @@ resource "aws_lambda_function" "api_list_reports" {
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-api-list-reports"
+  })
+}
+
+# =============================================================================
+# API Update Classification Lambda
+# =============================================================================
+
+resource "aws_lambda_function" "api_update_classification" {
+  for_each = local.mobile_api
+
+  function_name = "${var.project_name}-api-update-classification"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/api_update_classification.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/api_update_classification.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_update_classification.zip" : null
+
+  environment {
+    variables = local.api_lambda_environment
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.api_lambda_logs
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-api-update-classification"
+  })
+}
+
+# =============================================================================
+# API Bulk Reclassify Lambda
+# =============================================================================
+
+resource "aws_lambda_function" "api_bulk_reclassify" {
+  for_each = local.mobile_api
+
+  function_name = "${var.project_name}-api-bulk-reclassify"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/api_bulk_reclassify.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/api_bulk_reclassify.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_bulk_reclassify.zip" : null
+
+  environment {
+    variables = merge(local.api_lambda_environment, {
+      BULK_RECLASSIFY_LAMBDA = "${var.project_name}-bulk-reclassify"
+    })
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.api_lambda_logs
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-api-bulk-reclassify"
   })
 }
