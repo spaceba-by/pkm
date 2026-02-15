@@ -44,10 +44,10 @@
                                           :classifications classification-counts})}))))
 
     (catch Exception e
-      (println "Error updating classification index:" (.getMessage e))
+      (println "Error updating classification index:" (ex-message e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
 (defn -main [& args]

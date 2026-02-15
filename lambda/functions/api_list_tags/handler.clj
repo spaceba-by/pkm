@@ -43,6 +43,6 @@
              :count (count tags)}))
 
     (catch Exception e
-      (println "Error listing tags:" (.getMessage e))
+      (println "Error listing tags:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to list tags"))))

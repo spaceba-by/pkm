@@ -44,6 +44,6 @@
       (r/ok {:classifications classification-counts}))
 
     (catch Exception e
-      (println "Error listing classifications:" (.getMessage e))
+      (println "Error listing classifications:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to list classifications"))))

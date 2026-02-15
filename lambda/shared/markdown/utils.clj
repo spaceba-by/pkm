@@ -21,7 +21,7 @@
               frontmatter (yaml/parse-string frontmatter-str)]
           [frontmatter body])
         (catch Exception e
-          (println "Error parsing YAML frontmatter:" (.getMessage e))
+          (println "Error parsing YAML frontmatter:" (ex-message e))
           [nil content]))
       [nil content])))
 

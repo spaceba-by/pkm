@@ -19,7 +19,7 @@
   (try
     (s3/list-objects s3-bucket summaries-prefix)
     (catch Exception e
-      (println "Error listing summaries:" (.getMessage e))
+      (println "Error listing summaries:" (ex-message e))
       [])))
 
 (defn parse-summary-key
@@ -60,6 +60,6 @@
              :count (count summaries)}))
 
     (catch Exception e
-      (println "Error listing summaries:" (.getMessage e))
+      (println "Error listing summaries:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to list summaries"))))

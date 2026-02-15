@@ -64,6 +64,6 @@
                               :updated_at now}))))))
 
     (catch Exception e
-      (println "Error updating classification:" (.getMessage e))
+      (println "Error updating classification:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to update classification"))))

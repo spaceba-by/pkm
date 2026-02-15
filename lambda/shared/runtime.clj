@@ -36,6 +36,6 @@
           (let [response (handler-fn event nil)]
             (send-response runtime-api request-id response))
           (catch Exception e
-            (println "Handler error:" (.getMessage e))
-            (send-error runtime-api request-id (.getMessage e) (str (type e)))))
+            (println "Handler error:" (ex-message e))
+            (send-error runtime-api request-id (ex-message e) (str (type e)))))
         (recur)))))

@@ -43,6 +43,6 @@
                       :classification_filter classification}))
 
     (catch Exception e
-      (println "Error triggering bulk reclassify:" (.getMessage e))
+      (println "Error triggering bulk reclassify:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to trigger bulk reclassification"))))
