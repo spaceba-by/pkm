@@ -34,9 +34,12 @@
 (def project-name (or (System/getenv "PROJECT_NAME") "pkm-agent"))
 
 (def lambda-functions
-  {:extract-metadata  (str project-name "-extract-metadata")
-   :classify-document (str project-name "-classify-document")
-   :extract-entities  (str project-name "-extract-entities")})
+  "Ordered sequence of Lambda functions to invoke for each document.
+   Order matters: extract-metadata first (creates METADATA record via put-item),
+   then classify and extract-entities (both use update-item on existing record)."
+  [(str project-name "-extract-metadata")
+   (str project-name "-classify-document")
+   (str project-name "-extract-entities")])
 
 ;; --- S3 document discovery ---
 
@@ -76,11 +79,39 @@
   "Invoke all 3 processing Lambdas for a document with rate limiting"
   [bucket s3-key delay-ms]
   (let [event (make-event bucket s3-key)]
-    (doseq [[func-key func-name] lambda-functions]
+    (doseq [func-name lambda-functions]
       (lambda/invoke-async func-name event)
       (Thread/sleep (long (/ delay-ms 3))))))
 
 ;; --- CLI ---
+
+(def ^:private usage-text
+  "Usage: bb -cp shared ../scripts/backfill.clj [options]
+
+Options:
+  --dry-run        Show what would be processed (default)
+  --execute        Actually trigger Lambda processing
+  --prefix PREFIX  Only process files under this S3 prefix
+  --limit N        Process at most N documents
+  --delay MS       Delay between documents in ms (default: 600)")
+
+(defn- require-arg
+  "Validate that a flag has a following argument value"
+  [flag args]
+  (when-not (second args)
+    (println (str "ERROR: " flag " requires a value"))
+    (System/exit 1))
+  (second args))
+
+(defn- require-int-arg
+  "Validate that a flag has a following integer argument value"
+  [flag args]
+  (let [raw (require-arg flag args)
+        parsed (parse-long raw)]
+    (when-not parsed
+      (println (str "ERROR: " flag " requires an integer, got: " raw))
+      (System/exit 1))
+    parsed))
 
 (defn parse-args
   "Parse command-line arguments"
@@ -95,28 +126,12 @@
       (case (first args)
         "--dry-run"  (recur (rest args) (assoc opts :dry-run true))
         "--execute"  (recur (rest args) (assoc opts :dry-run false))
-        "--prefix"   (recur (drop 2 args) (assoc opts :prefix (second args)))
-        "--limit"    (recur (drop 2 args) (assoc opts :limit (parse-long (second args))))
-        "--delay"    (recur (drop 2 args) (assoc opts :delay (parse-long (second args))))
-        "-h"         (do (println "Usage: bb -cp shared ../scripts/backfill.clj [options]")
-                         (println "")
-                         (println "Options:")
-                         (println "  --dry-run        Show what would be processed (default)")
-                         (println "  --execute        Actually trigger Lambda processing")
-                         (println "  --prefix PREFIX  Only process files under this S3 prefix")
-                         (println "  --limit N        Process at most N documents")
-                         (println "  --delay MS       Delay between documents in ms (default: 600)")
-                         (System/exit 0))
-        "--help"     (do (println "Usage: bb -cp shared ../scripts/backfill.clj [options]")
-                         (println "")
-                         (println "Options:")
-                         (println "  --dry-run        Show what would be processed (default)")
-                         (println "  --execute        Actually trigger Lambda processing")
-                         (println "  --prefix PREFIX  Only process files under this S3 prefix")
-                         (println "  --limit N        Process at most N documents")
-                         (println "  --delay MS       Delay between documents in ms (default: 600)")
-                         (System/exit 0))
+        "--prefix"   (recur (drop 2 args) (assoc opts :prefix (require-arg "--prefix" args)))
+        "--limit"    (recur (drop 2 args) (assoc opts :limit (require-int-arg "--limit" args)))
+        "--delay"    (recur (drop 2 args) (assoc opts :delay (require-int-arg "--delay" args)))
+        ("-h" "--help") (do (println usage-text) (System/exit 0))
         (do (println "Unknown option:" (first args))
+            (println usage-text)
             (System/exit 1))))))
 
 (defn run!
@@ -172,7 +187,7 @@
                   errors (atom 0)]
               (println "")
               (println "Triggering processing for" (count missing) "documents...")
-              (println "Lambda functions:" (str/join ", " (vals lambda-functions)))
+              (println "Lambda functions:" (str/join ", " lambda-functions))
               (println "")
 
               (doseq [[idx s3-key] (map-indexed vector missing)]
