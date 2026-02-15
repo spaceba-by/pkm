@@ -63,7 +63,33 @@ jobs:
           gem install bundler
           bundle install
 
-      - name: Build archive (simulator only for Phase 0)
+      # ============================================================
+      # Code Signing Steps (uncomment when ready for App Store)
+      # Prerequisites: Configure these GitHub Secrets:
+      #   - MATCH_GIT_URL: Private Git repo URL for certificates
+      #   - MATCH_PASSWORD: Passphrase for Match encryption
+      #   - MATCH_GIT_BASIC_AUTHORIZATION: Base64 username:token
+      # See docs/CODE_SIGNING.md for full setup instructions.
+      # ============================================================
+      #
+      # - name: Setup signing keychain
+      #   run: |
+      #     security create-keychain -p "" build.keychain
+      #     security default-keychain -s build.keychain
+      #     security unlock-keychain -p "" build.keychain
+      #     security set-keychain-settings -t 3600 -u build.keychain
+      #
+      # - name: Sync code signing certificates
+      #   working-directory: ios
+      #   env:
+      #     MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      #     MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      #     MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      #     MATCH_KEYCHAIN_NAME: build.keychain
+      #     MATCH_KEYCHAIN_PASSWORD: ""
+      #   run: bundle exec fastlane match appstore --readonly
+
+      - name: Build (simulator only, unsigned)
         working-directory: ios
         run: |
           set -o pipefail
@@ -76,6 +102,15 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO 2>&1 \
             | xcbeautify --renderer github-actions
+
+      # Uncomment below and remove the unsigned build step above
+      # when code signing is configured:
+      #
+      # - name: Build signed archive
+      #   working-directory: ios
+      #   env:
+      #     BUILD_NUMBER: ${{ github.run_number }}
+      #   run: bundle exec fastlane build_release
 
       - name: Create build info
         run: |

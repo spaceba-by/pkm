@@ -11,7 +11,7 @@ cd "$IOS_DIR"
 
 # Default values
 SCHEME="PKMReader"
-DESTINATION='platform=iOS Simulator,name=iPhone 16,OS=18.0'
+DESTINATION='platform=iOS Simulator,name=iPhone 16,OS=26.0'
 TEST_TYPE="all"
 
 # Parse arguments

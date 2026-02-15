@@ -7,13 +7,14 @@ iOS mobile app for the PKM (Personal Knowledge Management) system. Reads markdow
 - **Phase 0** ✅ - Build & Test Automation Foundation
 - **Phase 1** ✅ - Backend API Infrastructure (Cognito + API Gateway + Lambda)
 - **Phase 2** ✅ - iOS App Core (Auth, APIClient, Views)
-- **Phase 3** 🚧 - Enhanced Features (Search, Tags, Insights, Settings) ← Current
+- **Phase 3** ✅ - Enhanced Features (Search, Tags, Insights, Settings)
+- **Phase 4** 🚧 - Polish & Release ← Current
 
 ## Requirements
 
 - macOS 14.0+
-- Xcode 16.0+
-- iOS 18.0+ deployment target
+- Xcode 26.0+
+- iOS 26.0+ deployment target
 - Homebrew (for dependencies)
 
 ## Quick Start
