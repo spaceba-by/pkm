@@ -152,7 +152,7 @@ Without this step, builds will fail with "cannot find type in scope" errors for 
 ## CI/CD
 
 - **PR checks**: `.github/workflows/ios-test.yml` - lint, build, test, coverage
-- **Main branch**: `.github/workflows/ios-build.yml` - build artifacts
+- **Main branch**: `.github/workflows/ios-build.yml` - signed build + TestFlight deployment (falls back to unsigned simulator build when signing secrets are not configured)
 
 Coverage threshold is 20% (enforced in CI).
 

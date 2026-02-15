@@ -168,6 +168,7 @@ To enable signed builds and TestFlight deployment:
 See the `build_release` lane in `ios/fastlane/Fastfile` for the signing logic. The lane:
 - Increments the build number
 - Syncs certificates via Match (readonly in CI)
+- Switches the PKMReader target to manual signing via `update_code_signing_settings` (SPM packages keep automatic signing)
 - Builds a signed IPA to `ios/build/PKMReader.ipa`
 
 ## Fastlane Configuration Files
