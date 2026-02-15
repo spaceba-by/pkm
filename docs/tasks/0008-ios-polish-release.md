@@ -1,6 +1,6 @@
 # Task 0008: iOS Polish & Release
 
-**Status**: In Progress
+**Status**: Complete
 
 ## Specifications
 
@@ -50,9 +50,9 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
 - [x] Snapshot tests for key screens
 - [x] Performance benchmarks meet targets
 - [x] App Store metadata prepared
-- [ ] TestFlight beta deployment
-- [ ] All UI flows covered by UI tests
-- [ ] Code coverage ≥80%
+- [x] TestFlight beta deployment
+- [x] All UI flows covered by UI tests
+- [x] Code coverage ≥80%
 - [x] User documentation complete
 
 ## Implementation Steps

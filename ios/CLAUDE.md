@@ -154,7 +154,7 @@ Without this step, builds will fail with "cannot find type in scope" errors for 
 - **PR checks**: `.github/workflows/ios-test.yml` - lint, build, test, coverage
 - **Main branch**: `.github/workflows/ios-build.yml` - build artifacts
 
-Coverage threshold is 20% (enforced in CI).
+Coverage threshold is 78% (enforced in CI).
 
 ## Implementation Plan Reference
 

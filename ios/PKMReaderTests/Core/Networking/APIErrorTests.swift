@@ -100,4 +100,29 @@ final class APIErrorTests: XCTestCase {
         let description = APIError.httpError(statusCode: 500).errorDescription ?? ""
         XCTAssertTrue(description.contains("server"))
     }
+
+    func test_invalidURL_hasDescription() {
+        let description = APIError.invalidURL.errorDescription ?? ""
+        XCTAssertTrue(description.contains("URL"))
+    }
+
+    func test_invalidResponse_hasDescription() {
+        let description = APIError.invalidResponse.errorDescription ?? ""
+        XCTAssertTrue(description.contains("unexpected"))
+    }
+
+    func test_decodingError_hasDescription() {
+        let description = APIError.decodingError.errorDescription ?? ""
+        XCTAssertTrue(description.contains("could not be read"))
+    }
+
+    func test_serverError_returnsMessage() {
+        let message = "Custom error message"
+        XCTAssertEqual(APIError.serverError(message).errorDescription, message)
+    }
+
+    func test_httpError403_hasGenericDescription() {
+        let description = APIError.httpError(statusCode: 403).errorDescription ?? ""
+        XCTAssertTrue(description.contains("403"))
+    }
 }

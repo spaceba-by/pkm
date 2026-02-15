@@ -56,6 +56,26 @@ final class SummariesViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - State Equality
+
+    func test_state_loaded_equality() {
+        let summaries = TestFixtures.sampleSummaries
+        XCTAssertEqual(
+            SummariesViewModel.State.loaded(summaries),
+            SummariesViewModel.State.loaded(summaries)
+        )
+    }
+
+    func test_state_error_equality() {
+        let state1 = SummariesViewModel.State.error(APIError.networkError)
+        let state2 = SummariesViewModel.State.error(APIError.networkError)
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_different_notEqual() {
+        XCTAssertNotEqual(SummariesViewModel.State.loading, SummariesViewModel.State.empty)
+    }
+
     // MARK: - Refresh
 
     func test_refresh_reloadsData() async {

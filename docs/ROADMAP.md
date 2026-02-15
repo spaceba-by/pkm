@@ -107,13 +107,13 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Classification index optimization: scheduled every 6 hours instead of per-document
   - iOS: tappable ClassificationBadge with picker to change classification
 
-### In Progress
-
-- **Task 0008: iOS Polish & Release** 🔄
+- **Task 0008: iOS Polish & Release** ✅
 
   - See: [0008-ios-polish-release](tasks/0008-ios-polish-release.md)
-  - Steps 1-6, 8 complete: Error handling, retry logic, offline support, accessibility, snapshot tests, performance profiling, App Store metadata, code signing docs, user documentation
-  - Remaining: Step 7 (TestFlight beta deployment), full UI test coverage, code coverage ≥80%
+  - Error handling, retry logic, offline support, accessibility, snapshot tests, performance profiling
+  - App Store metadata, code signing, TestFlight deployment, user documentation
+  - Full UI test coverage (DocumentList, DocumentDetail, Search, Tags, Insights, Settings)
+  - Code coverage 80%+ (267 unit tests, 39 UI tests, CI threshold 78%)
 
 ### Planned
 
