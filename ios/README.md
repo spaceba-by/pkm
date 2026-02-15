@@ -72,7 +72,8 @@ ios/
 │   │   ├── Auth/                 # Authentication
 │   │   ├── Cache/                # Caching
 │   │   ├── Configuration/        # Environment config
-│   │   └── Networking/           # API client
+│   │   ├── Networking/           # API client
+│   │   └── Testing/              # Mock services for UI tests
 │   ├── Features/                 # Feature modules
 │   │   ├── Auth/
 │   │   ├── DocumentDetail/
@@ -90,7 +91,9 @@ ios/
 │   ├── Features/
 │   ├── Fixtures/                 # Test data
 │   ├── Helpers/                  # Test utilities
-│   └── Mocks/                    # Mock implementations
+│   ├── Mocks/                    # Mock implementations
+│   ├── Performance/              # XCT performance benchmarks
+│   └── Snapshots/                # Snapshot tests (swift-snapshot-testing)
 │
 ├── PKMReaderUITests/             # UI tests
 │   ├── Helpers/

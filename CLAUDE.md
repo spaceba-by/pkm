@@ -102,8 +102,9 @@ scripts/                  # Deployment and testing
 
 ios/                      # iOS app (PKMReader)
 ├── PKMReader/            # SwiftUI app source
-├── PKMReaderTests/       # Unit tests
-├── PKMReaderUITests/     # UI tests
+│   └── Core/Testing/     # Mock services for UI tests
+├── PKMReaderTests/       # Unit tests, snapshots, performance benchmarks
+├── PKMReaderUITests/     # UI tests (Page Object pattern)
 ├── fastlane/             # Build automation
 └── project.yml           # XcodeGen project definition
 

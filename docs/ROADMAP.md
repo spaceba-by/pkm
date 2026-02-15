@@ -103,8 +103,8 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 - **Task 0008: iOS Polish & Release** 🔄
 
   - See: [0008-ios-polish-release](tasks/0008-ios-polish-release.md)
-  - Step 1 complete: Error handling, retry logic, offline support
-  - Remaining: Accessibility, snapshot tests, performance, App Store submission
+  - Steps 1-6, 8 complete: Error handling, retry logic, offline support, accessibility, snapshot tests, performance profiling, App Store metadata, code signing docs, user documentation
+  - Remaining: Step 7 (TestFlight beta deployment)
 
 ### Planned
 

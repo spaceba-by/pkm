@@ -73,6 +73,9 @@ cd scripts
 - **[Architecture](docs/architecture.md)** - Technical architecture and design
 - **[Sync Guide](docs/sync-guide.md)** - Vault synchronization setup
 - **[Prompts](docs/prompts.md)** - Bedrock prompt templates
+- **[User Guide](docs/USER_GUIDE.md)** - End-user documentation for the iOS app
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions
+- **[Code Signing](docs/CODE_SIGNING.md)** - iOS code signing and distribution setup
 - **[PRD](docs/prds/pkm-agent-system-prd.md)** - Complete product requirements
 
 ## Usage
@@ -367,8 +370,11 @@ terraform apply
 - [x] Classification index
 - [x] Mobile API (Cognito + API Gateway)
 - [x] iOS app foundation (Phase 0-2)
-- [ ] iOS enhanced features (Phase 3) — in progress
+- [x] iOS enhanced features (Search, Tags, Insights, Settings)
+- [x] iOS test coverage (unit tests, UI tests, mock API)
+- [ ] iOS polish & release (Phase 4) — in progress
 - [ ] Semantic search with OpenSearch
+- [ ] Persistent search monitors
 - [ ] Interactive chat interface
 - [ ] Task extraction and tracking
 - [ ] Knowledge graph visualization
