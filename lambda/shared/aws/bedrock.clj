@@ -47,22 +47,61 @@
   [response]
   (-> response :content first :text))
 
+(def ^:private valid-classifications
+  #{"meeting" "idea" "reference" "journal" "project"})
+
+(def ^:private classification-system-prompt
+  "You are a document classifier for a Personal Knowledge Management (PKM) system based on Obsidian markdown files.
+
+Your task is to classify documents into exactly one of these categories:
+
+- **meeting**: Meeting notes, agendas, minutes, standups, 1:1s, retrospectives. Signals: attendee names, dates/times, action items, agenda headings, phrases like \"discussed\", \"agreed\", \"follow-up\".
+- **idea**: Brainstorms, concepts, proposals, feature ideas, rough drafts of new thinking. Signals: speculative language (\"what if\", \"could we\", \"might be interesting\"), bullet-point lists of possibilities, no formal structure.
+- **reference**: Documentation, how-to guides, technical notes, bookmarks, saved articles, API references, cheat sheets. Signals: instructional tone, code blocks, step-by-step lists, links to external resources, factual/explanatory content.
+- **journal**: Daily logs, reflections, personal entries, stream-of-consciousness writing. Signals: first-person narrative, date in title or frontmatter, emotional/reflective language, daily routine mentions.
+- **project**: Project plans, task tracking, roadmaps, sprint plans, project status updates. Signals: task lists with checkboxes, milestones, deadlines, status indicators (done/in-progress/blocked), project-specific tags.
+
+Respond with a JSON object containing:
+- \"classification\": one of the category names above
+- \"confidence\": a number from 0.0 to 1.0 indicating how confident you are
+
+Return ONLY valid JSON, no additional text.")
+
 (defn classify-document
-  "Classifies document into one of: meeting, idea, reference, journal, project"
+  "Classifies document into one of: meeting, idea, reference, journal, project.
+   Returns map with :classification and :confidence keys."
   [model-id content metadata]
   (let [title (get metadata :title "Untitled")
-        prompt (str "Classify this document into exactly one of these categories: "
-                   "meeting, idea, reference, journal, project\n\n"
-                   "Title: " title "\n\n"
-                   "Content:\n" content "\n\n"
-                   "Return ONLY the classification category name, nothing else.")
-        response (invoke-model model-id prompt {:max-tokens 50 :temperature 0.3})
+        tags (get metadata :tags [])
+        frontmatter-type (get metadata :type)
+        wikilinks (get metadata :links_to [])
+        prompt (str "Classify this document.\n\n"
+                   "Title: " title "\n"
+                   (when (seq tags) (str "Tags: " (str/join ", " tags) "\n"))
+                   (when frontmatter-type (str "Frontmatter type: " frontmatter-type "\n"))
+                   (when (seq wikilinks) (str "Wikilink count: " (count wikilinks) "\n"))
+                   "\nContent:\n" content)
+        response (invoke-model model-id prompt
+                               {:max-tokens 100
+                                :temperature 0.2
+                                :system classification-system-prompt})
         text (extract-text response)]
-    (when text
-      (-> text
-          str/trim
-          str/lower-case
-          (str/replace #"[^a-z]" "")))))
+    (try
+      (let [parsed (json/parse-string text true)
+            classification (some-> (:classification parsed)
+                                   str/trim
+                                   str/lower-case)
+            confidence (or (:confidence parsed) 0.0)]
+        (if (valid-classifications classification)
+          {:classification classification
+           :confidence (double confidence)}
+          {:classification "reference"
+           :confidence 0.0}))
+      (catch Exception e
+        (println "Error parsing classification response:" (.getMessage e) "raw:" text)
+        (let [raw (some-> text str/trim str/lower-case (str/replace #"[^a-z]" ""))]
+          {:classification (if (valid-classifications raw) raw "reference")
+           :confidence 0.0})))))
 
 (defn extract-entities
   "Extracts named entities (people, organizations, concepts, locations)"

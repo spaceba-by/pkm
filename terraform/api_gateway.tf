@@ -270,6 +270,54 @@ resource "aws_apigatewayv2_route" "list_reports" {
 }
 
 # =============================================================================
+# API Routes - Update Classification
+# =============================================================================
+
+resource "aws_apigatewayv2_integration" "update_classification" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_update_classification["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "update_classification" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "PUT /documents/{key+}/classification"
+  target             = "integrations/${aws_apigatewayv2_integration.update_classification["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# =============================================================================
+# API Routes - Bulk Reclassify
+# =============================================================================
+
+resource "aws_apigatewayv2_integration" "bulk_reclassify" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_bulk_reclassify["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "bulk_reclassify" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "POST /admin/reclassify"
+  target             = "integrations/${aws_apigatewayv2_integration.bulk_reclassify["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# =============================================================================
 # Lambda Permissions for API Gateway
 # =============================================================================
 
@@ -349,6 +397,26 @@ resource "aws_lambda_permission" "api_list_reports" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_list_reports["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_update_classification" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_update_classification["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_bulk_reclassify" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_bulk_reclassify["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }

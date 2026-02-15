@@ -11,7 +11,10 @@
          "functions/api_documents_by_tag"
          "functions/api_list_classifications"
          "functions/api_list_summaries"
-         "functions/api_list_reports"]
+         "functions/api_list_reports"
+         "functions/api_update_classification"
+         "functions/api_bulk_reclassify"
+         "functions/bulk_reclassify"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}

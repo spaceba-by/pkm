@@ -138,6 +138,21 @@ actor APIClient: APIClientProtocol {
         return response.reports
     }
 
+    func updateClassification(
+        documentId: String,
+        classification: DocumentClassification
+    ) async throws {
+        guard let encodedKey = documentId.addingPercentEncoding(
+            withAllowedCharacters: .urlPathAllowed
+        ) else {
+            throw APIError.invalidURL
+        }
+
+        let url = baseURL.appendingPathComponent("documents/\(encodedKey)/classification")
+        let body = ["classification": classification.rawValue]
+        try await performPutRequestWithRetry(url: url, body: body)
+    }
+
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] {
         let tagDocumentsURL = baseURL
             .appendingPathComponent("tags")
@@ -162,6 +177,79 @@ actor APIClient: APIClientProtocol {
     }
 
     // MARK: - Private
+
+    private func performPutRequestWithRetry(url: URL, body: [String: String]) async throws {
+        guard await networkMonitor.isConnected else {
+            throw APIError.networkError
+        }
+
+        var lastError: Error = APIError.networkError
+
+        for attempt in 0...maxRetries {
+            do {
+                try await performPutRequest(url: url, body: body)
+                return
+            } catch let error as APIError where error.isRetryable && attempt < maxRetries {
+                lastError = error
+                guard await networkMonitor.isConnected else {
+                    throw APIError.networkError
+                }
+                let delay = baseRetryDelay * pow(2.0, Double(attempt))
+                try await Task.sleep(for: .seconds(delay))
+                continue
+            } catch {
+                throw error
+            }
+        }
+
+        throw lastError
+    }
+
+    private func performPutRequest(url: URL, body: [String: String]) async throws {
+        let token = try await authService.getAccessToken()
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 30
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let urlError as URLError {
+            switch urlError.code {
+            case .timedOut:
+                throw APIError.timeout
+            case .notConnectedToInternet,
+                 .networkConnectionLost,
+                 .cannotConnectToHost,
+                 .cannotFindHost,
+                 .dnsLookupFailed:
+                throw APIError.networkError
+            default:
+                throw APIError.networkError
+            }
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            return
+        case 401:
+            throw APIError.unauthorized
+        case 404:
+            throw APIError.httpError(statusCode: 404)
+        default:
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+    }
 
     private func performRequestWithRetry<T: Decodable>(url: URL) async throws -> T {
         // Fail fast if offline

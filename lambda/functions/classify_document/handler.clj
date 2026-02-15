@@ -2,7 +2,6 @@
   "Lambda function to classify markdown documents using Bedrock"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
-            [aws.lambda :as lambda]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
             [cheshire.core :as json]))
@@ -10,7 +9,6 @@
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def bedrock-model (System/getenv "BEDROCK_MODEL_ID"))
-(def update-index-lambda (System/getenv "UPDATE_INDEX_LAMBDA"))
 
 (defn should-skip?
   "Check if file should be skipped"
@@ -30,6 +28,15 @@
   [bucket-name object-key]
   (println "Processing document:" object-key)
 
+  ;; Check for classification override before reclassifying
+  (let [existing (ddb/get-item ddb-table {:PK object-key :SK "METADATA"})]
+    (when (:classification_override existing)
+      (println "Skipping" object-key "- classification override is set")
+      (throw (ex-info "Classification override set"
+                      {:object-key object-key
+                       :classification (:classification existing)
+                       :skipped true}))))
+
   ;; Get document content
   (let [content (s3/get-object bucket-name object-key)]
 
@@ -41,13 +48,17 @@
     (let [metadata (md/parse-markdown-metadata content)
 
           ;; Classify document using Bedrock
-          classification (bedrock/classify-document bedrock-model content metadata)
+          result (bedrock/classify-document bedrock-model content metadata)
+          classification (:classification result)
+          confidence (:confidence result)
 
-          _ (println "Classified" object-key "as:" classification)
+          _ (println "Classified" object-key "as:" classification
+                     "confidence:" confidence)
 
-          ;; Add classification and timestamp to metadata
+          ;; Add classification, confidence, and timestamp to metadata
           metadata (assoc metadata
                          :classification classification
+                         :classification_confidence confidence
                          :modified (str (java.time.Instant/now))
                          :s3_key object-key)]
 
@@ -58,14 +69,8 @@
                            :SK "METADATA"
                            :document_path object-key))
 
-      ;; Invoke update-classification-index Lambda asynchronously
-      (when update-index-lambda
-        (lambda/invoke-async update-index-lambda
-                            {:classification classification
-                             :document-path object-key})
-        (println "Triggered classification index update"))
-
       {:classification classification
+       :confidence confidence
        :title (:title metadata)})))
 
 (defn handler
@@ -98,13 +103,21 @@
           (let [result (classify-document bucket-name object-key)]
             {:statusCode 200
              :body (json/generate-string {:document object-key
-                                          :classification (:classification result)})}))))
+                                          :classification (:classification result)
+                                          :confidence (:confidence result)})}))))
 
     (catch Exception e
-      (println "Error processing document:" (.getMessage e))
-      (.printStackTrace e)
-      {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+      (if (:skipped (ex-data e))
+        ;; Override skip is not an error
+        {:statusCode 200
+         :body (json/generate-string {:document (get (ex-data e) :object-key)
+                                      :classification (get (ex-data e) :classification)
+                                      :skipped true})}
+        (do
+          (println "Error processing document:" (.getMessage e))
+          (.printStackTrace e)
+          {:statusCode 500
+           :body (json/generate-string {:error (.getMessage e)})})))))
 
 ;; For local testing
 (defn -main [& args]
