@@ -32,6 +32,15 @@ This document tracks known limitations, technical debt, and planned enhancements
 - **Solution**: Implement continuation token pagination if needed
 - **Priority**: Low - will not be an issue for years
 
+### Test Stability
+
+#### InsightsViewSnapshotTests.test_summariesTab() flaky in CI
+- **Issue**: `InsightsViewSnapshotTests.test_summariesTab()` snapshot test fails intermittently in CI
+- **Location**: `ios/PKMReaderTests/Snapshots/Screens/InsightsViewSnapshotTests.swift`
+- **Impact**: CI pipeline produces false-negative test failures, requiring manual re-runs
+- **Likely Cause**: The test calls `assertDeviceSnapshotAfterTask` which waits for async tasks to complete before capturing a snapshot. Timing differences in CI (slower runners, resource contention) may cause the view to be captured before the mock data has fully rendered.
+- **Priority**: Medium - reduces confidence in CI results
+
 ### Security
 
 #### Admin Routes Authorization
