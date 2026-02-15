@@ -3,7 +3,6 @@ import XCTest
 
 /// Performance benchmarks for critical operations in PKMReader
 final class PerformanceTests: XCTestCase {
-
     // MARK: - JSON Decoding Performance
 
     func test_documentListDecoding_performance() throws {
@@ -226,7 +225,7 @@ extension PerformanceTests {
 
     static func makeDocument(index: Int) -> Document {
         let allClassifications = DocumentClassification.allCases
-        Document(
+        return Document(
             id: "docs/document-\(index).md",
             title: "Document \(index) - Performance Test",
             content: nil,
