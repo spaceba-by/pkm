@@ -148,7 +148,7 @@ actor APIClient: APIClientProtocol {
             throw APIError.invalidURL
         }
 
-        let url = baseURL.appendingPathComponent("documents/\(encodedKey)/classification")
+        let url = baseURL.appendingPathComponent("documents/classification/\(encodedKey)")
         let body = ["classification": classification.rawValue]
         try await performPutRequestWithRetry(url: url, body: body)
     }

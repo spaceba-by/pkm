@@ -287,7 +287,7 @@ resource "aws_apigatewayv2_route" "update_classification" {
   for_each = local.mobile_api
 
   api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
-  route_key          = "PUT /documents/{key+}/classification"
+  route_key          = "PUT /documents/classification/{key+}"
   target             = "integrations/${aws_apigatewayv2_integration.update_classification["enabled"].id}"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id

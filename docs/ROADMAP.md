@@ -102,7 +102,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
   - See: [0014-classification-improvements](tasks/0014-classification-improvements.md)
   - Enhanced classification prompt with system prompt, category descriptions, metadata signals, JSON confidence response
-  - Classification feedback/correction API (PUT /documents/{key+}/classification) with override flag
+  - Classification feedback/correction API (PUT /documents/classification/{key+}) with override flag
   - Bulk reclassification Lambda with dry-run mode, classification filtering, override respect
   - Classification index optimization: scheduled every 6 hours instead of per-document
   - iOS: tappable ClassificationBadge with picker to change classification

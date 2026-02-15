@@ -10,7 +10,7 @@
   #{"meeting" "idea" "reference" "journal" "project"})
 
 (defn handler
-  "Lambda handler for PUT /documents/{key+}/classification"
+  "Lambda handler for PUT /documents/classification/{key+}"
   [request]
   (try
     (let [event (json/parse-string (:body request) true)
