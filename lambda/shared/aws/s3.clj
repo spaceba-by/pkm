@@ -45,13 +45,11 @@
 (defn object-exists?
   "Check if S3 object exists"
   [bucket key]
-  (try
-    (aws/invoke @s3-client
-                {:op :HeadObject
-                 :request {:Bucket bucket
-                          :Key key}})
-    true
-    (catch Exception _ false)))
+  (let [response (aws/invoke @s3-client
+                              {:op :HeadObject
+                               :request {:Bucket bucket
+                                        :Key key}})]
+    (not (contains? response :cognitect.anomalies/category))))
 
 (defn delete-object
   "Deletes object from S3 bucket"
