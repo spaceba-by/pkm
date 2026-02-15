@@ -89,7 +89,7 @@ jobs:
       #     MATCH_KEYCHAIN_PASSWORD: ""
       #   run: bundle exec fastlane match appstore --readonly
 
-      - name: Build archive (simulator only, unsigned)
+      - name: Build (simulator only, unsigned)
         working-directory: ios
         run: |
           set -o pipefail

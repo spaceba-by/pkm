@@ -10,7 +10,7 @@ PKM Reader ("the App") is a mobile application that provides read access to your
 
 ### Data You Provide
 
-- **Authentication credentials**: Your email and password are used to authenticate with AWS Cognito. Credentials are stored securely in the iOS Keychain and are never transmitted to any party other than the authentication service.
+- **Authentication credentials**: Your email and password are used to authenticate with AWS Cognito. The App does not store your password. After authentication, Cognito session tokens are stored securely in the iOS Keychain and are never transmitted to any party other than the authentication service.
 
 ### Data Processed Automatically
 
@@ -26,7 +26,7 @@ PKM Reader ("the App") is a mobile application that provides read access to your
 
 ## Data Storage
 
-- **On-device**: Cached documents and authentication tokens are stored locally using iOS Keychain and the app sandbox. Data is encrypted at rest by iOS Data Protection.
+- **On-device**: Cached documents are stored in the app sandbox and protected by iOS Data Protection encryption at rest. Authentication tokens are stored securely in the iOS Keychain.
 - **Server-side**: Your documents and metadata are stored in AWS S3 and DynamoDB within your own AWS account. All data is encrypted at rest and in transit.
 
 ## Data Retention

@@ -167,7 +167,7 @@ platform :ios do
 
   desc "Validate App Store metadata and prepare submission"
   lane :prepare_submission do
-    metadata_dir = "../fastlane/metadata/en-US"
+    metadata_dir = "metadata/en-US"
     required_files = %w[name.txt subtitle.txt description.txt keywords.txt release_notes.txt support_url.txt privacy_url.txt]
 
     required_files.each do |file|
@@ -187,7 +187,7 @@ platform :ios do
 
     UI.success("All metadata files validated successfully")
 
-    screenshots_dir = "../fastlane/screenshots/en-US"
+    screenshots_dir = "screenshots/en-US"
     if Dir.exist?(screenshots_dir) && !Dir.glob(File.join(screenshots_dir, "*.png")).empty?
       UI.success("Screenshots found in #{screenshots_dir}")
     else

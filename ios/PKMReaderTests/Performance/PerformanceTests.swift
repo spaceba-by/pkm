@@ -17,9 +17,13 @@ final class PerformanceTests: XCTestCase {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
+        // Validate decoding works before measuring
+        let initial = try decoder.decode(DocumentListResponse.self, from: jsonData)
+        XCTAssertEqual(initial.documents.count, 200)
+
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {
             for _ in 0..<10 {
-                _ = try? decoder.decode(DocumentListResponse.self, from: jsonData)
+                _ = try! decoder.decode(DocumentListResponse.self, from: jsonData) // swiftlint:disable:this force_try
             }
         }
     }
@@ -30,9 +34,13 @@ final class PerformanceTests: XCTestCase {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
+        // Validate decoding works before measuring
+        let initial = try decoder.decode(Document.self, from: jsonData)
+        XCTAssertEqual(initial.id, "docs/document-0.md")
+
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {
             for _ in 0..<100 {
-                _ = try? decoder.decode(Document.self, from: jsonData)
+                _ = try! decoder.decode(Document.self, from: jsonData) // swiftlint:disable:this force_try
             }
         }
     }
@@ -46,9 +54,13 @@ final class PerformanceTests: XCTestCase {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
 
+        // Validate encoding works before measuring
+        let initialData = try encoder.encode(documents)
+        XCTAssertFalse(initialData.isEmpty)
+
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {
             for _ in 0..<10 {
-                _ = try? encoder.encode(documents)
+                _ = try! encoder.encode(documents) // swiftlint:disable:this force_try
             }
         }
     }
@@ -151,9 +163,13 @@ final class PerformanceTests: XCTestCase {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
+        // Validate decoding works before measuring
+        let initial = try! decoder.decode(Document.self, from: jsonData) // swiftlint:disable:this force_try
+        XCTAssertEqual(initial.id, "docs/large-document.md")
+
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {
             for _ in 0..<50 {
-                _ = try? decoder.decode(Document.self, from: jsonData)
+                _ = try! decoder.decode(Document.self, from: jsonData) // swiftlint:disable:this force_try
             }
         }
     }
