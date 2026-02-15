@@ -1,0 +1,1 @@
+PKM,knowledge,notes,markdown,obsidian,AI,summary,documents,search,tags

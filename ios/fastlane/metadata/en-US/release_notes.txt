@@ -1,0 +1,8 @@
+Initial release of PKM Reader.
+
+- Browse and search your personal knowledge base on the go
+- AI-powered document classification into meetings, ideas, references, journals, and projects
+- Daily summaries and weekly reports generated automatically
+- Tag browsing with drill-down navigation
+- Offline support with local caching
+- Secure authentication via AWS Cognito

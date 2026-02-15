@@ -53,6 +53,19 @@ platform :ios do
     )
   end
 
+  desc "Run performance tests only"
+  lane :performance_tests do
+    run_tests(
+      project: "PKMReader.xcodeproj",
+      scheme: "PKMReader",
+      devices: ["iPhone 16"],
+      only_testing: ["PKMReaderTests/PerformanceTests"],
+      result_bundle: true,
+      output_directory: "TestResults/performance",
+      xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
+    )
+  end
+
   # ================================
   # Code Quality Lanes
   # ================================
@@ -146,6 +159,42 @@ platform :ios do
       skip_waiting_for_build_processing: true,
       changelog: last_git_commit[:message]
     )
+  end
+
+  # ================================
+  # Submission Lanes
+  # ================================
+
+  desc "Validate App Store metadata and prepare submission"
+  lane :prepare_submission do
+    metadata_dir = "../fastlane/metadata/en-US"
+    required_files = %w[name.txt subtitle.txt description.txt keywords.txt release_notes.txt support_url.txt privacy_url.txt]
+
+    required_files.each do |file|
+      path = File.join(metadata_dir, file)
+      UI.user_error!("Missing metadata file: #{file}") unless File.exist?(path)
+      UI.user_error!("Empty metadata file: #{file}") if File.read(path).strip.empty?
+    end
+
+    keywords = File.read(File.join(metadata_dir, "keywords.txt")).strip
+    UI.user_error!("Keywords exceed 100 characters (#{keywords.length})") if keywords.length > 100
+
+    name = File.read(File.join(metadata_dir, "name.txt")).strip
+    UI.user_error!("App name exceeds 30 characters (#{name.length})") if name.length > 30
+
+    subtitle = File.read(File.join(metadata_dir, "subtitle.txt")).strip
+    UI.user_error!("Subtitle exceeds 30 characters (#{subtitle.length})") if subtitle.length > 30
+
+    UI.success("All metadata files validated successfully")
+
+    screenshots_dir = "../fastlane/screenshots/en-US"
+    if Dir.exist?(screenshots_dir) && !Dir.glob(File.join(screenshots_dir, "*.png")).empty?
+      UI.success("Screenshots found in #{screenshots_dir}")
+    else
+      UI.important("No screenshots found. Run `fastlane snapshot` to capture them.")
+    end
+
+    UI.success("Submission preparation complete. Review metadata before uploading.")
   end
 
   # ================================

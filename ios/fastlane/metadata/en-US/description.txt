@@ -1,0 +1,21 @@
+PKM Reader brings your personal knowledge base to your pocket. Designed for Obsidian vault users who want mobile access to their notes with AI-powered organization.
+
+SMART CLASSIFICATION
+Your documents are automatically classified into five categories -- meetings, ideas, references, journals, and projects -- using AI analysis. Filter and browse by classification to find what you need quickly.
+
+AI-GENERATED INSIGHTS
+Receive daily summaries of your vault activity and weekly analytical reports. Stay on top of your knowledge base without reading every document.
+
+POWERFUL SEARCH
+Full-text search across all your documents with instant results. Find any note by title, content, or path.
+
+TAG BROWSING
+Explore your knowledge base through tags. See tag counts at a glance and drill down into documents sharing the same tag.
+
+OFFLINE SUPPORT
+Documents are cached locally so you can read them without a network connection. An offline indicator lets you know when you are working from cache.
+
+SECURE BY DESIGN
+Authentication is handled through AWS Cognito. Your data stays private and is transmitted securely.
+
+PKM Reader connects to your existing PKM backend powered by AWS. Documents sync automatically from your Obsidian vault via S3, with AI processing handled by Amazon Bedrock.

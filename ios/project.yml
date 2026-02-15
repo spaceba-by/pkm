@@ -6,8 +6,8 @@ name: PKMReader
 options:
   bundleIdPrefix: by.spaceba.pkm
   deploymentTarget:
-    iOS: "18.0"
-  xcodeVersion: "16.0"
+    iOS: "26.0"
+  xcodeVersion: "26.0"
   developmentLanguage: en
   usesTabs: false
   indentWidth: 4
