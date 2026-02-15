@@ -24,33 +24,33 @@
    (.startsWith object-key ".obsidian/")
    (re-find #"/\.obsidian/" object-key)))
 
-;; Frontmatter signal rules: map of classification to sets of matching values
-;; for tags, frontmatter type, and path segments
+;; Frontmatter signal rules: vectors of [classification signal-set] pairs.
+;; Order defines priority when a document matches multiple classifications.
 (def ^:private tag-signals
-  {"journal"   #{"daily-notes" "daily-note" "daily" "journal" "diary"}
-   "meeting"   #{"meeting" "meetings" "meeting-notes" "meeting-note"
-                 "standup" "1on1" "1-on-1" "retro" "retrospective"}
-   "project"   #{"project" "project-plan" "roadmap" "sprint"}
-   "idea"      #{"idea" "ideas" "brainstorm" "concept" "proposal"}
-   "reference" #{"reference" "howto" "how-to" "guide" "cheatsheet"
-                 "cheat-sheet" "documentation" "docs"}})
+  [["journal"   #{"daily-notes" "daily-note" "daily" "journal" "diary"}]
+   ["meeting"   #{"meeting" "meetings" "meeting-notes" "meeting-note"
+                  "standup" "1on1" "1-on-1" "retro" "retrospective"}]
+   ["project"   #{"project" "project-plan" "roadmap" "sprint"}]
+   ["idea"      #{"idea" "ideas" "brainstorm" "concept" "proposal"}]
+   ["reference" #{"reference" "howto" "how-to" "guide" "cheatsheet"
+                  "cheat-sheet" "documentation" "docs"}]])
 
 (def ^:private type-signals
-  {"journal"   #{"daily" "journal" "daily-note" "daily-notes"}
-   "meeting"   #{"meeting" "meetings"}
-   "project"   #{"project"}
-   "idea"      #{"idea"}
-   "reference" #{"reference" "howto" "guide"}})
+  [["journal"   #{"daily" "journal" "daily-note" "daily-notes"}]
+   ["meeting"   #{"meeting" "meetings"}]
+   ["project"   #{"project"}]
+   ["idea"      #{"idea"}]
+   ["reference" #{"reference" "howto" "guide"}]])
 
 (def ^:private path-signals
-  {"journal"   #{"daily notes" "daily" "journal"}
-   "meeting"   #{"meetings" "meeting notes"}
-   "project"   #{"projects"}})
+  [["journal"   #{"daily notes" "daily" "journal"}]
+   ["meeting"   #{"meetings" "meeting notes"}]
+   ["project"   #{"projects"}]])
 
 (defn detect-classification-from-frontmatter
   "Detect classification from frontmatter signals and file path.
-   Returns {:classification string :confidence 1.0 :signal string} if a
-   strong signal is found, nil otherwise."
+   Returns {:classification string :confidence number :signal string} if a
+   strong signal is found (1.0 for tag/type/cssclass, 0.9 for path), nil otherwise."
   [metadata object-key]
   (let [tags (->> (get metadata :tags [])
                   (map (comp str/lower-case str/trim str)))
@@ -87,9 +87,9 @@
                    :signal (str "cssclass:" match)}))
               tag-signals)
 
-        ;; Check file path segments
+        ;; Check file path segments (match at start or after /)
         (some (fn [[classification path-parts]]
-                (when-let [match (first (filter #(str/includes? path-lower (str % "/")) path-parts))]
+                (when-let [match (first (filter #(re-find (re-pattern (str "(?:^|/)" (java.util.regex.Pattern/quote %) "/")) path-lower) path-parts))]
                   {:classification classification
                    :confidence 0.9
                    :signal (str "path:" match "/")}))
