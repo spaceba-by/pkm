@@ -52,7 +52,7 @@
   [text]
   (-> text
       str/trim
-      (str/replace #"^```(?:json)?\s*\n?" "")
+      (str/replace #"^```[a-z]*\s*\n?" "")
       (str/replace #"\n?\s*```$" "")
       str/trim))
 

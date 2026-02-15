@@ -17,7 +17,7 @@
   [text]
   (-> text
       str/trim
-      (str/replace #"^```(?:json)?\s*\n?" "")
+      (str/replace #"^```[a-z]*\s*\n?" "")
       (str/replace #"\n?\s*```$" "")
       str/trim))
 
@@ -182,3 +182,37 @@
     (doseq [cls ["note" "task" ""]]
       (is (not (contains? valid-classifications (-> cls str/trim str/lower-case)))
           (str (pr-str cls) " should be rejected")))))
+
+;; =============================================================================
+;; Markdown fence stripping tests (covers both classify and entity extraction)
+;; =============================================================================
+
+(deftest strip-markdown-fences-test
+  (testing "Strips ```json fences"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "```json\n{\"key\": \"value\"}\n```"))))
+
+  (testing "Strips plain ``` fences"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "```\n{\"key\": \"value\"}\n```"))))
+
+  (testing "Strips fences with other language identifiers"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "```text\n{\"key\": \"value\"}\n```"))))
+
+  (testing "Passes through plain JSON unchanged"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "{\"key\": \"value\"}"))))
+
+  (testing "Trims surrounding whitespace"
+    (is (= "{\"key\": \"value\"}"
+           (strip-markdown-fences "  {\"key\": \"value\"}  "))))
+
+  (testing "Entity extraction JSON parses after fence stripping"
+    (let [fenced "```json\n{\"people\": [\"John\"], \"organizations\": [\"Acme\"], \"concepts\": [\"AI\"], \"locations\": [\"NYC\"]}\n```"
+          cleaned (strip-markdown-fences fenced)
+          parsed (json/parse-string cleaned true)]
+      (is (= ["John"] (:people parsed)))
+      (is (= ["Acme"] (:organizations parsed)))
+      (is (= ["AI"] (:concepts parsed)))
+      (is (= ["NYC"] (:locations parsed))))))
