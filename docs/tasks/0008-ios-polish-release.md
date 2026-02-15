@@ -49,7 +49,8 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
 - [x] Full accessibility support (VoiceOver, Dynamic Type)
 - [x] Snapshot tests for key screens
 - [x] Performance benchmarks meet targets
-- [x] App Store submission package prepared
+- [x] App Store metadata prepared
+- [ ] TestFlight beta deployment
 - [ ] All UI flows covered by UI tests
 - [ ] Code coverage ≥80%
 - [x] User documentation complete
@@ -92,7 +93,7 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
   - Created `docs/CODE_SIGNING.md` with Match Git repo setup, environment variables, new developer onboarding, certificate regeneration, CI/CD configuration, and troubleshooting
   - Added commented-out code signing steps to `.github/workflows/ios-build.yml` (keychain setup, Match sync, signed archive build) ready to enable when GitHub Secrets are configured
   - Verified Fastfile `build_release` lane, Matchfile, and Appfile are consistent
-- [ ] Step 7: Submit to App Store review
+- [ ] Step 7: Deploy to TestFlight for beta testing
 - [x] Step 8: Write user documentation
   - Created `docs/USER_GUIDE.md` covering all 5 tabs, document filtering, search, tags, insights (daily summaries/weekly reports), settings, offline mode, and troubleshooting
   - Created `docs/FAQ.md` with 15 questions covering accounts, document sync, AI classification, entities, offline behavior, and common troubleshooting
