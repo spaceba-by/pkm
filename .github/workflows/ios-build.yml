@@ -20,6 +20,17 @@ jobs:
       SCHEME: PKMReader
 
     steps:
+      - name: Check signing secrets
+        id: check-secrets
+        run: |
+          if [ -n "$MATCH_GIT_URL" ]; then
+            echo "has_signing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_signing=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -64,58 +75,60 @@ jobs:
           bundle install
 
       # ============================================================
-      # Code Signing Steps (uncomment when ready for App Store)
+      # Code Signing (only when secrets are configured)
       # Prerequisites: Configure these GitHub Secrets:
       #   - MATCH_GIT_URL: Private Git repo URL for certificates
       #   - MATCH_PASSWORD: Passphrase for Match encryption
       #   - MATCH_GIT_BASIC_AUTHORIZATION: Base64 username:token
       # See docs/CODE_SIGNING.md for full setup instructions.
       # ============================================================
-      #
-      # - name: Setup signing keychain
-      #   run: |
-      #     security create-keychain -p "" build.keychain
-      #     security default-keychain -s build.keychain
-      #     security unlock-keychain -p "" build.keychain
-      #     security set-keychain-settings -t 3600 -u build.keychain
-      #
-      # - name: Sync code signing certificates
-      #   working-directory: ios
-      #   env:
-      #     MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-      #     MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      #     MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-      #     MATCH_KEYCHAIN_NAME: build.keychain
-      #     MATCH_KEYCHAIN_PASSWORD: ""
-      #   run: bundle exec fastlane match appstore --readonly
 
+      - name: Setup signing keychain
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        run: |
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+
+      - name: Sync code signing certificates
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        working-directory: ios
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_KEYCHAIN_NAME: build.keychain
+          MATCH_KEYCHAIN_PASSWORD: ""
+        run: bundle exec fastlane match appstore --readonly
+
+      - name: Build signed archive
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        working-directory: ios
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: bundle exec fastlane build_release
+
+      # Unsigned simulator build (fallback when secrets are not configured)
       - name: Build (simulator only, unsigned)
+        if: steps.check-secrets.outputs.has_signing != 'true'
         working-directory: ios
         run: |
           set -o pipefail
           NSUnbufferedIO=YES \
           xcodebuild build \
             -project PKMReader.xcodeproj \
-            -scheme $SCHEME \
+            -scheme "$SCHEME" \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO 2>&1 \
             | xcbeautify --renderer github-actions
 
-      # Uncomment below and remove the unsigned build step above
-      # when code signing is configured:
-      #
-      # - name: Build signed archive
-      #   working-directory: ios
-      #   env:
-      #     BUILD_NUMBER: ${{ github.run_number }}
-      #   run: bundle exec fastlane build_release
-
       - name: Create build info
         run: |
           mkdir -p ios/build
-          echo "{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > ios/build/build-info.json
+          echo "{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"signed\": ${{ steps.check-secrets.outputs.has_signing }}}" > ios/build/build-info.json
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -127,38 +140,42 @@ jobs:
 
     outputs:
       build_number: ${{ github.run_number }}
+      has_signing: ${{ steps.check-secrets.outputs.has_signing }}
 
-  # TestFlight deployment (commented out until Phase 4)
-  # Uncomment and configure secrets when ready for App Store deployment
-  #
-  # deploy-testflight:
-  #   name: Deploy to TestFlight
-  #   needs: build
-  #   runs-on: macos-14
-  #   environment: testflight
-  #   if: github.ref == 'refs/heads/main'
-  #
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Download build artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: PKMReader-${{ github.sha }}
-  #         path: ios/build/
-  #
-  #     - name: Setup Ruby
-  #       uses: ruby/setup-ruby@v1
-  #       with:
-  #         ruby-version: '3.2'
-  #         bundler-cache: true
-  #         working-directory: ios
-  #
-  #     - name: Upload to TestFlight
-  #       working-directory: ios
-  #       env:
-  #         APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-  #         APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-  #         APP_STORE_CONNECT_API_KEY: ${{ secrets.ASC_KEY }}
-  #       run: bundle exec fastlane upload_testflight
+  deploy-testflight:
+    name: Deploy to TestFlight
+    needs: build
+    runs-on: macos-26
+    environment: testflight
+    if: github.ref == 'refs/heads/main' && needs.build.outputs.has_signing == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PKMReader-${{ github.sha }}
+          path: ios/build/
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install Fastlane
+        working-directory: ios
+        run: |
+          gem install bundler
+          bundle install
+
+      - name: Upload to TestFlight
+        working-directory: ios
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.ASC_KEY }}
+        run: bundle exec fastlane upload_testflight
