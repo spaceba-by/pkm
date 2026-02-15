@@ -69,6 +69,6 @@
              :nextCursor nil}))
 
     (catch Exception e
-      (println "Error listing documents:" (.getMessage e))
+      (println "Error listing documents:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to list documents"))))

@@ -2,6 +2,7 @@
   "Lambda function for bulk reclassification of documents"
   (:require [aws.dynamodb :as ddb]
             [aws.lambda :as lambda]
+            [aws.s3 :as s3]
             [cheshire.core :as json]))
 
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -61,30 +62,41 @@
                  :classification_filter classification})}
 
         ;; Actually reclassify - invoke classify_document for each
-        (do
+        (let [bucket-name (System/getenv "S3_BUCKET_NAME")
+              triggered (atom 0)
+              skipped-missing (atom 0)]
           (doseq [doc eligible]
             (let [s3-key (or (:s3_key doc) (:document_path doc) (:PK doc))]
               (when (and s3-key classify-lambda)
-                (println "Triggering reclassification for:" s3-key)
-                (lambda/invoke-async
-                  classify-lambda
-                  {:detail {:bucket {:name (System/getenv "S3_BUCKET_NAME")}
-                            :object {:key s3-key}}}))))
+                (if (s3/object-exists? bucket-name s3-key)
+                  (do
+                    (println "Triggering reclassification for:" s3-key)
+                    (lambda/invoke-async
+                      classify-lambda
+                      {:detail {:bucket {:name bucket-name}
+                                :object {:key s3-key}}})
+                    (swap! triggered inc)
+                    ;; Throttle to avoid overwhelming Bedrock rate limits
+                    (Thread/sleep 200))
+                  (do
+                    (println "Skipping missing S3 object:" s3-key)
+                    (swap! skipped-missing inc))))))
 
           {:statusCode 200
            :body (json/generate-string
                   {:dry_run false
-                   :triggered eligible-count
+                   :triggered @triggered
+                   :skipped_missing @skipped-missing
                    :skipped_override (count (filter :classification_override all-docs))
                    :classification_filter classification})})))
 
     (catch Exception e
-      (println "Error in bulk reclassify:" (.getMessage e))
+      (println "Error in bulk reclassify:" (ex-message e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (println "Running bulk reclassify")
   (println "Result:" (handler {:body "{}"})))

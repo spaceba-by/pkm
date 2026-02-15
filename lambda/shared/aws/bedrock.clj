@@ -98,7 +98,7 @@ Return ONLY valid JSON, no additional text.")
           {:classification "reference"
            :confidence 0.0}))
       (catch Exception e
-        (println "Error parsing classification response:" (.getMessage e) "raw:" text)
+        (println "Error parsing classification response:" (ex-message e) "raw:" text)
         (let [raw (some-> text str/trim str/lower-case (str/replace #"[^a-z]" ""))]
           {:classification (if (valid-classifications raw) raw "reference")
            :confidence 0.0})))))
@@ -118,7 +118,7 @@ Return ONLY valid JSON, no additional text.")
     (try
       (json/parse-string (extract-text response) true)
       (catch Exception e
-        (println "Error parsing entities response:" (.getMessage e))
+        (println "Error parsing entities response:" (ex-message e))
         {:people [] :organizations [] :concepts [] :locations []}))))
 
 (defn generate-summary

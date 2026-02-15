@@ -37,6 +37,13 @@
                        :classification (:classification existing)
                        :skipped true}))))
 
+  ;; Check if document still exists in S3
+  (when-not (s3/object-exists? bucket-name object-key)
+    (println "Document no longer exists in S3:" object-key)
+    (throw (ex-info "Document not found in S3"
+                    {:object-key object-key
+                     :not-found true})))
+
   ;; Get document content
   (let [content (s3/get-object bucket-name object-key)]
 
@@ -107,20 +114,31 @@
                                           :confidence (:confidence result)})}))))
 
     (catch Exception e
-      (if (:skipped (ex-data e))
-        ;; Override skip is not an error
-        {:statusCode 200
-         :body (json/generate-string {:document (get (ex-data e) :object-key)
-                                      :classification (get (ex-data e) :classification)
-                                      :skipped true})}
-        (do
-          (println "Error processing document:" (.getMessage e))
-          (.printStackTrace e)
-          {:statusCode 500
-           :body (json/generate-string {:error (.getMessage e)})})))))
+      (let [data (ex-data e)]
+        (cond
+          ;; Override skip is not an error
+          (:skipped data)
+          {:statusCode 200
+           :body (json/generate-string {:document (:object-key data)
+                                        :classification (:classification data)
+                                        :skipped true})}
+
+          ;; Document deleted from S3 - not an error
+          (:not-found data)
+          {:statusCode 200
+           :body (json/generate-string {:document (:object-key data)
+                                        :not_found true
+                                        :message "Document no longer exists in S3"})}
+
+          :else
+          (do
+            (println "Error processing document:" (ex-message e))
+            (.printStackTrace e)
+            {:statusCode 500
+             :body (json/generate-string {:error (ex-message e)})}))))))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (let [test-event {:detail {:bucket {:name s3-bucket}
                              :object {:key "test.md"}}}]
     (println "Running test with event:" test-event)

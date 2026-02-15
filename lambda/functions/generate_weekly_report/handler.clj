@@ -163,10 +163,10 @@
                                      :daily-summaries-count (count daily-summaries)})}))
 
     (catch Exception e
-      (println "Error generating weekly report:" (.getMessage e))
+      (println "Error generating weekly report:" (ex-message e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
 (defn -main [& args]
