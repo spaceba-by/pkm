@@ -75,4 +75,49 @@ final class TagDocumentsViewModelTests: XCTestCase {
             XCTFail("Expected loaded state, got \(sut.state)")
         }
     }
+
+    func test_refresh_keepsExistingDataVisible() async {
+        // Given: loaded state
+        mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
+        await sut.loadDocuments()
+
+        // When: refresh is called
+        mockAPIClient.documentsByTagResult = .success([TestFixtures.sampleDocument])
+        await sut.refresh()
+
+        // Then: state should never have been .loading (it stays loaded)
+        if case .loaded(let documents) = sut.state {
+            XCTAssertEqual(documents.count, 1)
+        } else {
+            XCTFail("Expected loaded state, got \(sut.state)")
+        }
+    }
+
+    // MARK: - CancellationError Handling
+
+    func test_loadDocuments_cancellationError_doesNotSetErrorState() async {
+        mockAPIClient.documentsByTagResult = .failure(CancellationError())
+        await sut.loadDocuments()
+
+        if case .error = sut.state {
+            XCTFail("CancellationError should not produce error state")
+        }
+    }
+
+    func test_refresh_cancellationError_keepsExistingState() async {
+        // Given: loaded state
+        mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
+        await sut.loadDocuments()
+
+        // When: refresh throws CancellationError
+        mockAPIClient.documentsByTagResult = .failure(CancellationError())
+        await sut.refresh()
+
+        // Then: state remains loaded (not error)
+        if case .loaded(let documents) = sut.state {
+            XCTAssertEqual(documents.count, 3)
+        } else {
+            XCTFail("Expected loaded state preserved, got \(sut.state)")
+        }
+    }
 }

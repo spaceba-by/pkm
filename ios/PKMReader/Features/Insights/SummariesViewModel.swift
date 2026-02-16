@@ -38,7 +38,15 @@ final class SummariesViewModel: ObservableObject {
     /// Load daily summaries
     func loadSummaries() async {
         state = .loading
+        await fetchSummaries()
+    }
 
+    /// Refresh the summaries list (keeps existing data visible)
+    func refresh() async {
+        await fetchSummaries()
+    }
+
+    private func fetchSummaries() async {
         do {
             let summaries = try await apiClient.listSummaries(limit: 30)
             if summaries.isEmpty {
@@ -46,13 +54,10 @@ final class SummariesViewModel: ObservableObject {
             } else {
                 state = .loaded(summaries)
             }
+        } catch is CancellationError {
+            return
         } catch {
             state = .error(error)
         }
-    }
-
-    /// Refresh the summaries list
-    func refresh() async {
-        await loadSummaries()
     }
 }

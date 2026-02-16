@@ -38,7 +38,15 @@ final class ReportsViewModel: ObservableObject {
     /// Load weekly reports
     func loadReports() async {
         state = .loading
+        await fetchReports()
+    }
 
+    /// Refresh the reports list (keeps existing data visible)
+    func refresh() async {
+        await fetchReports()
+    }
+
+    private func fetchReports() async {
         do {
             let reports = try await apiClient.listReports(limit: 20)
             if reports.isEmpty {
@@ -46,13 +54,10 @@ final class ReportsViewModel: ObservableObject {
             } else {
                 state = .loaded(reports)
             }
+        } catch is CancellationError {
+            return
         } catch {
             state = .error(error)
         }
-    }
-
-    /// Refresh the reports list
-    func refresh() async {
-        await loadReports()
     }
 }

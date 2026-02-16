@@ -54,25 +54,7 @@ final class DocumentListViewModel: ObservableObject {
     func loadDocuments() async {
         state = .loading
         nextCursor = nil
-
-        do {
-            let response = try await apiClient.listDocuments(
-                classification: selectedClassification,
-                limit: 50,
-                cursor: nil
-            )
-
-            hasMorePages = response.nextCursor != nil
-            nextCursor = response.nextCursor
-
-            if response.documents.isEmpty {
-                state = .empty
-            } else {
-                state = .loaded(response.documents)
-            }
-        } catch {
-            state = .error(error)
-        }
+        await fetchDocuments()
     }
 
     /// Load the next page of documents
@@ -93,14 +75,42 @@ final class DocumentListViewModel: ObservableObject {
                 currentDocs.append(contentsOf: response.documents)
                 state = .loaded(currentDocs)
             }
+        } catch is CancellationError {
+            return
         } catch {
-            // Keep existing documents on pagination error
-            // Could optionally show a toast/alert here
+            // Keep existing documents on pagination error,
+            // but stop further pagination attempts after a failure.
+            hasMorePages = false
+            nextCursor = nil
         }
     }
 
-    /// Refresh the document list
+    /// Refresh the document list (keeps existing data visible)
     func refresh() async {
-        await loadDocuments()
+        nextCursor = nil
+        await fetchDocuments()
+    }
+
+    private func fetchDocuments() async {
+        do {
+            let response = try await apiClient.listDocuments(
+                classification: selectedClassification,
+                limit: 50,
+                cursor: nil
+            )
+
+            hasMorePages = response.nextCursor != nil
+            nextCursor = response.nextCursor
+
+            if response.documents.isEmpty {
+                state = .empty
+            } else {
+                state = .loaded(response.documents)
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            state = .error(error)
+        }
     }
 }

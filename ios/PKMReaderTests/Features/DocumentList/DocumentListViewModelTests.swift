@@ -247,4 +247,77 @@ final class DocumentListViewModelTests: XCTestCase {
             XCTFail("Expected loaded state")
         }
     }
+
+    // MARK: - CancellationError Handling
+
+    func test_loadDocuments_cancellationError_doesNotSetErrorState() async {
+        mockAPIClient.listDocumentsResult = .failure(CancellationError())
+        await sut.loadDocuments()
+
+        if case .error = sut.state {
+            XCTFail("CancellationError should not produce error state")
+        }
+    }
+
+    func test_refresh_cancellationError_keepsExistingState() async {
+        // Given: loaded state
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
+        )
+        await sut.loadDocuments()
+
+        // When: refresh throws CancellationError
+        mockAPIClient.listDocumentsResult = .failure(CancellationError())
+        await sut.refresh()
+
+        // Then: state remains loaded
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs.count, TestFixtures.sampleDocuments.count)
+        } else {
+            XCTFail("Expected loaded state preserved, got \(sut.state)")
+        }
+    }
+
+    // MARK: - Pagination Error Handling
+
+    func test_loadNextPage_error_stopsPageination() async {
+        // Given: first page loaded with more pages
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: "page2")
+        )
+        await sut.loadDocuments()
+        XCTAssertTrue(sut.hasMorePages)
+
+        // When: next page fails
+        mockAPIClient.listDocumentsResult = .failure(APIError.networkError)
+        await sut.loadNextPage()
+
+        // Then: pagination stops, existing docs preserved
+        XCTAssertFalse(sut.hasMorePages)
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs.count, 1)
+        } else {
+            XCTFail("Expected loaded state preserved")
+        }
+    }
+
+    func test_loadNextPage_cancellationError_doesNotStopPagination() async {
+        // Given: first page loaded with more pages
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: "page2")
+        )
+        await sut.loadDocuments()
+
+        // When: next page is cancelled
+        mockAPIClient.listDocumentsResult = .failure(CancellationError())
+        await sut.loadNextPage()
+
+        // Then: hasMorePages unchanged, existing docs preserved
+        XCTAssertTrue(sut.hasMorePages)
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs.count, 1)
+        } else {
+            XCTFail("Expected loaded state preserved")
+        }
+    }
 }
