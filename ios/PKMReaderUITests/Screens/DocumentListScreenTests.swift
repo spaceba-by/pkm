@@ -33,9 +33,9 @@ final class DocumentListScreenTests: XCTestCase {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
 
-        // Mock data has 3 documents
-        let firstCell = list.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "No document cells found")
+        // Mock data has 3 documents - verify all are present
+        let cells = list.cells
+        XCTAssertEqual(cells.count, 3, "Expected 3 document cells from mock data")
     }
 
     func test_documentList_showsDocumentTitles() throws {
@@ -83,6 +83,17 @@ final class DocumentListScreenTests: XCTestCase {
         // Filter sheet should dismiss
         let filterNavBar = app.navigationBars["Filter"]
         XCTAssertFalse(filterNavBar.waitForExistence(timeout: 2), "Filter sheet should have dismissed")
+
+        // Verify the meeting filter was applied - only meeting documents should show
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed after filter")
+
+        let meetingTitle = app.staticTexts["Team Meeting Notes"]
+        XCTAssertTrue(meetingTitle.waitForExistence(timeout: 5), "Meeting document not shown after filter")
+
+        // Non-meeting documents should not appear
+        let ideaTitle = app.staticTexts["App Redesign Ideas"]
+        XCTAssertFalse(ideaTitle.exists, "Non-meeting document should be filtered out")
     }
 
     // MARK: - Navigation to Detail

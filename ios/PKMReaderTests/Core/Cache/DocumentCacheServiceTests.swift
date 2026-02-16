@@ -97,14 +97,16 @@ final class DocumentCacheServiceTests: XCTestCase {
 
     // MARK: - Clear Stale Cache
 
-    func test_clearStaleCache_removesOldDocuments() {
-        // Cache a document
+    func test_clearStaleCache_doesNotRemoveFreshDocuments() {
+        // Cache a document (it's fresh since we just cached it)
         sut.cacheDocuments([TestFixtures.sampleDocument])
         XCTAssertNotNil(sut.getCachedDocuments(classification: nil))
 
-        // clearStaleCache should not remove fresh documents
+        // clearStaleCache should not remove freshly cached documents
         sut.clearStaleCache()
-        XCTAssertNotNil(sut.getCachedDocuments(classification: nil))
+        let cached = sut.getCachedDocuments(classification: nil)
+        XCTAssertNotNil(cached)
+        XCTAssertEqual(cached?.count, 1)
     }
 
     // MARK: - Document Conversion
