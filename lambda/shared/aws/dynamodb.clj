@@ -171,6 +171,34 @@
         (recur new-acc last-key)
         new-acc))))
 
+(defn query-all
+  "Queries DynamoDB table with pagination, handling LastEvaluatedKey.
+   Returns all matching items across all pages.
+   Options:
+     :index-name - Name of GSI to query
+     :key-condition-expr - Key condition expression
+     :expr-attr-values - Expression attribute values map"
+  [table-name & {:keys [index-name key-condition-expr expr-attr-values]}]
+  (loop [acc []
+         exclusive-start-key nil]
+    (let [request (cond-> {:TableName table-name
+                           :KeyConditionExpression key-condition-expr
+                           :ExpressionAttributeValues (marshall-item expr-attr-values)}
+                    index-name (assoc :IndexName index-name)
+                    exclusive-start-key (assoc :ExclusiveStartKey
+                                              (marshall-item exclusive-start-key)))
+          response (-> (aws/invoke @ddb-client
+                                   {:op :Query
+                                    :request request})
+                       (check-error "Query"))
+          items (mapv unmarshall-item (:Items response))
+          new-acc (into acc items)
+          last-key (when-let [lek (:LastEvaluatedKey response)]
+                     (unmarshall-item lek))]
+      (if last-key
+        (recur new-acc last-key)
+        new-acc))))
+
 (defn update-item
   "Updates item in DynamoDB table"
   [table-name key update-expr expr-attr-values]
@@ -186,12 +214,12 @@
       (unmarshall-item attrs))))
 
 (defn query-by-classification
-  "Queries documents by classification type"
+  "Queries all documents by classification type with full pagination"
   [table-name classification]
-  (query table-name
-         :index-name "classification-index"
-         :key-condition-expr "classification = :class"
-         :expr-attr-values {":class" classification}))
+  (query-all table-name
+             :index-name "classification-index"
+             :key-condition-expr "classification = :class"
+             :expr-attr-values {":class" classification}))
 
 (defn query-by-tag
   "Queries documents by tag"
