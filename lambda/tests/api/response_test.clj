@@ -123,7 +123,16 @@
 
   (testing "Passes through default timestamp"
     (is (= "1970-01-01T00:00:00Z"
-           (r/truncate-timestamp "1970-01-01T00:00:00Z")))))
+           (r/truncate-timestamp "1970-01-01T00:00:00Z"))))
+
+  (testing "Converts numeric epoch timestamp to ISO string"
+    (is (= "1970-01-01T00:00:00Z"
+           (r/truncate-timestamp 0)))
+    (is (= "2024-02-15T00:00:00Z"
+           (r/truncate-timestamp 1707955200))))
+
+  (testing "Handles non-string non-numeric values via str"
+    (is (some? (r/truncate-timestamp true)))))
 
 (deftest get-user-sub-test
   (testing "Extracts user sub from JWT claims (keyword keys)"

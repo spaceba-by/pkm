@@ -67,11 +67,17 @@
     default-val))
 
 (defn truncate-timestamp
-  "Truncate ISO 8601 timestamp to second precision for iOS compatibility"
+  "Truncate ISO 8601 timestamp to second precision for iOS compatibility.
+   Handles numeric (epoch) timestamps by converting to ISO 8601 string."
   [ts]
-  (if (and ts (re-find #"\.\d+" ts))
-    (str/replace ts #"\.\d+(Z|[+-].*)$" "$1")
-    ts))
+  (cond
+    (nil? ts) nil
+    (number? ts) (let [instant (java.time.Instant/ofEpochSecond (long ts))]
+                   (str instant))
+    (string? ts) (if (re-find #"\.\d+" ts)
+                   (str/replace ts #"\.\d+(Z|[+-].*)$" "$1")
+                   ts)
+    :else (str ts)))
 
 (defn get-user-sub
   "Extract user sub (Cognito user ID) from JWT claims in API Gateway v2 format"

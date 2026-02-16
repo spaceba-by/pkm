@@ -24,12 +24,13 @@ bb build.clj extract_metadata     # Build single function
 ```
 Output ZIPs are placed in `lambda/target/`.
 
-Deploy infrastructure:
-```bash
-cd terraform
-terraform plan       # Preview changes
-terraform apply      # Deploy
-```
+## Deployment
+
+Deployments happen automatically via CI/CD after PRs are merged to `main`. Do NOT build or deploy manually. Instead:
+1. Run tests locally (`bb test` in `lambda/`)
+2. Commit to a feature branch and open a PR
+3. CI runs tests and Terraform plan on the PR
+4. After merge to `main`, CI builds, applies Terraform, and deploys
 
 View Lambda logs (specify function name):
 ```bash
