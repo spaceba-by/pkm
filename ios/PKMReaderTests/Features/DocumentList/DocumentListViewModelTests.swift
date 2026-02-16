@@ -197,6 +197,32 @@ final class DocumentListViewModelTests: XCTestCase {
 
     // MARK: - Refresh Tests
 
+    // MARK: - State Equality
+
+    func test_state_loaded_equality() {
+        let docs = TestFixtures.sampleDocuments
+        XCTAssertEqual(
+            DocumentListViewModel.State.loaded(docs),
+            DocumentListViewModel.State.loaded(docs)
+        )
+    }
+
+    func test_state_error_equality() {
+        let state1 = DocumentListViewModel.State.error(APIError.networkError)
+        let state2 = DocumentListViewModel.State.error(APIError.networkError)
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_different_notEqual() {
+        XCTAssertNotEqual(DocumentListViewModel.State.loading, DocumentListViewModel.State.empty)
+        XCTAssertNotEqual(
+            DocumentListViewModel.State.loaded(TestFixtures.sampleDocuments),
+            DocumentListViewModel.State.empty
+        )
+    }
+
+    // MARK: - Refresh
+
     func test_refresh_reloadsDocuments() async {
         // Given
         let initialDocs = [TestFixtures.sampleDocument]

@@ -110,4 +110,23 @@ final class SearchViewModelTests: XCTestCase {
         await sut.search()
         XCTAssertEqual(sut.state, .idle)
     }
+
+    // MARK: - State Equality
+
+    func test_state_loaded_equality() {
+        let docs = TestFixtures.sampleDocuments
+        XCTAssertEqual(SearchViewModel.State.loaded(docs), SearchViewModel.State.loaded(docs))
+    }
+
+    func test_state_error_equality() {
+        let state1 = SearchViewModel.State.error(APIError.networkError)
+        let state2 = SearchViewModel.State.error(APIError.networkError)
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_different_notEqual() {
+        XCTAssertNotEqual(SearchViewModel.State.idle, SearchViewModel.State.loading)
+        XCTAssertNotEqual(SearchViewModel.State.idle, SearchViewModel.State.empty)
+        XCTAssertNotEqual(SearchViewModel.State.loading, SearchViewModel.State.empty)
+    }
 }

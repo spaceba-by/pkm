@@ -1,13 +1,6 @@
 import XCTest
 
-/// Document list screen tests
-///
-/// Note: These tests require either:
-/// - Mock API infrastructure to bypass authentication (Phase 3)
-/// - A `--mock-authenticated` launch argument that simulates logged-in state
-///
-/// For Phase 2, these tests are skipped. Full document list testing will be
-/// implemented in Phase 3 when mock API support is added.
+/// Document list screen tests using mock API infrastructure
 final class DocumentListScreenTests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional
     private var app: XCUIApplication!
@@ -15,7 +8,11 @@ final class DocumentListScreenTests: XCTestCase {
     // swiftlint:enable implicitly_unwrapped_optional
 
     override func setUpWithError() throws {
-        throw XCTSkip("Deferred to Phase 3: Requires mock API infrastructure")
+        continueAfterFailure = false
+
+        app = XCUIApplication()
+        app.launchWithMockData()
+        documentListPage = DocumentListPage(app: app)
     }
 
     override func tearDownWithError() throws {
@@ -23,19 +20,107 @@ final class DocumentListScreenTests: XCTestCase {
         documentListPage = nil
     }
 
-    // MARK: - Navigation Tests (Deferred to Phase 3)
+    // MARK: - Navigation Tests
 
     func test_navigationTitle_displays() throws {
-        // Skip: Requires mock authenticated state (Phase 3)
-        // The app shows login screen without authentication
-        throw XCTSkip("Deferred to Phase 3: Requires mock API infrastructure")
+        let navBar = app.navigationBars["Documents"]
+        XCTAssertTrue(navBar.waitForExistence(timeout: 5), "Documents navigation bar not displayed")
     }
 
-    // MARK: - UI Element Tests (Deferred to Phase 3)
+    // MARK: - Document List Tests
+
+    func test_documentList_displaysDocuments() throws {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
+
+        // Mock data has 3 documents - verify all are present
+        let cells = list.cells
+        XCTAssertEqual(cells.count, 3, "Expected 3 document cells from mock data")
+    }
+
+    func test_documentList_showsDocumentTitles() throws {
+        // Verify fixture document titles appear
+        let meetingTitle = app.staticTexts["Team Meeting Notes"]
+        XCTAssertTrue(meetingTitle.waitForExistence(timeout: 5), "Meeting document title not found")
+    }
+
+    // MARK: - Filter Tests
 
     func test_filterButton_exists() throws {
-        // Skip: Requires mock authenticated state (Phase 3)
-        // The app shows login screen without authentication
-        throw XCTSkip("Deferred to Phase 3: Requires mock API infrastructure")
+        let filterButton = app.buttons["FilterButton"]
+        XCTAssertTrue(filterButton.waitForExistence(timeout: 5), "Filter button not found")
+    }
+
+    func test_filterButton_opensFilterSheet() throws {
+        let filterButton = app.buttons["FilterButton"]
+        XCTAssertTrue(filterButton.waitForExistence(timeout: 5), "Filter button not found")
+        filterButton.tap()
+
+        // Verify filter sheet appeared
+        let filterNavBar = app.navigationBars["Filter"]
+        XCTAssertTrue(filterNavBar.waitForExistence(timeout: 5), "Filter sheet not displayed")
+
+        // Verify "All Documents" option exists
+        let allFilter = app.buttons["Filter_All"]
+        XCTAssertTrue(allFilter.waitForExistence(timeout: 5), "All Documents filter not found")
+    }
+
+    func test_filterSheet_selectClassification_andApply() throws {
+        let filterButton = app.buttons["FilterButton"]
+        XCTAssertTrue(filterButton.waitForExistence(timeout: 5))
+        filterButton.tap()
+
+        // Select meeting filter
+        let meetingFilter = app.buttons["Filter_meeting"]
+        XCTAssertTrue(meetingFilter.waitForExistence(timeout: 5), "Meeting filter not found")
+        meetingFilter.tap()
+
+        // Tap Apply
+        let applyButton = app.buttons["ApplyFilterButton"]
+        XCTAssertTrue(applyButton.waitForExistence(timeout: 5), "Apply button not found")
+        applyButton.tap()
+
+        // Filter sheet should dismiss
+        let filterNavBar = app.navigationBars["Filter"]
+        XCTAssertFalse(filterNavBar.waitForExistence(timeout: 2), "Filter sheet should have dismissed")
+
+        // Verify the meeting filter was applied - only meeting documents should show
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed after filter")
+
+        let meetingTitle = app.staticTexts["Team Meeting Notes"]
+        XCTAssertTrue(meetingTitle.waitForExistence(timeout: 5), "Meeting document not shown after filter")
+
+        // Non-meeting documents should not appear
+        let ideaTitle = app.staticTexts["App Redesign Ideas"]
+        XCTAssertFalse(ideaTitle.exists, "Non-meeting document should be filtered out")
+    }
+
+    // MARK: - Navigation to Detail
+
+    func test_tapDocument_navigatesToDetail() throws {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
+
+        let firstCell = list.cells.firstMatch
+        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Document cell not found")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        // Verify navigation to detail view via back button presence
+        let backButton = app.navigationBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Document detail not displayed")
+    }
+
+    // MARK: - Pull to Refresh
+
+    func test_pullToRefresh_reloadsDocuments() throws {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
+
+        // Swipe down to trigger refresh
+        list.swipeDown()
+
+        // List should still be displayed after refresh
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed after refresh")
     }
 }
