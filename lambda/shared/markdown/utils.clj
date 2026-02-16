@@ -132,7 +132,8 @@
                      :tags ["index" "agent-generated"]}
         classification-order ["meeting" "idea" "reference" "journal" "project"]
         sections (for [classification classification-order
-                       :let [docs (get classifications classification)]
+                       :let [docs (->> (get classifications classification)
+                                       (filter #(and (some? %) (not (str/blank? %)))))]
                        :when (seq docs)]
                    (let [doc-links (str/join "\n"
                                             (map #(str "- [[" % "]]")

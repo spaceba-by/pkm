@@ -45,7 +45,8 @@
       (ddb/put-item ddb-table
                     (assoc metadata
                            :PK object-key
-                           :SK "METADATA"))
+                           :SK "METADATA"
+                           :document_path object-key))
 
       ;; Store tag index entries
       (when-let [tags (:tags metadata)]

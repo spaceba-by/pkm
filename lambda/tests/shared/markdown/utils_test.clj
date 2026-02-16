@@ -141,4 +141,29 @@
       (is (.contains index "## Meeting"))
       (is (.contains index "[[doc1.md]]"))
       (is (.contains index "## Idea"))
-      (is (not (.contains index "## Project")))))) ;; Empty should be excluded
+      (is (not (.contains index "## Project"))))) ;; Empty should be excluded
+
+  (testing "Filters nil paths from classifications"
+    (let [classifications {"journal" ["daily/2026-02-13.md" nil "daily/2026-02-14.md"]
+                          "meeting" [nil nil]
+                          "idea" ["thoughts/cool.md"]}
+          index (md/create-classification-index classifications)]
+      (is (.contains index "## Journal"))
+      (is (.contains index "[[daily/2026-02-13.md]]"))
+      (is (.contains index "[[daily/2026-02-14.md]]"))
+      (is (not (.contains index "[[]]")))
+      (is (not (.contains index "## Meeting"))) ;; All nil paths filtered = empty = excluded
+      (is (.contains index "## Idea"))))
+
+  (testing "Filters blank paths from classifications"
+    (let [classifications {"reference" ["doc.md" "" "  " "other.md"]}
+          index (md/create-classification-index classifications)]
+      (is (.contains index "[[doc.md]]"))
+      (is (.contains index "[[other.md]]"))
+      (is (not (.contains index "[[]]")))
+      (is (not (.contains index "[[  ]]")))))
+
+  (testing "Section excluded when all paths are nil or blank"
+    (let [classifications {"project" [nil "" "  "]}
+          index (md/create-classification-index classifications)]
+      (is (not (.contains index "## Project"))))))
