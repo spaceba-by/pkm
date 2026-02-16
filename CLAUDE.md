@@ -52,17 +52,18 @@ Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock
                               _agent/ outputs ← rclone ←─┘
 ```
 
-**14 Lambda Functions** (all Babashka/Clojure):
+**17 Lambda Functions** (all Babashka/Clojure):
 
-Processing (6):
+Processing (7):
 - `extract_metadata` - Parse frontmatter, tags, links
 - `classify_document` - AI classification (meeting/idea/reference/journal/project)
 - `extract_entities` - Named entity extraction (people, orgs, concepts, locations)
 - `generate_daily_summary` - Daily activity summaries (6 AM UTC)
 - `generate_weekly_report` - Weekly analysis (8 PM UTC Sunday)
-- `update_classification_index` - Maintain classification index
+- `update_classification_index` - Maintain classification index (scheduled every 6 hours)
+- `bulk_reclassify` - Bulk reclassification with dry-run mode and filtering
 
-Mobile API (8):
+Mobile API (10):
 - `api_list_documents` - List documents with optional classification filter
 - `api_get_document` - Get document with content
 - `api_search` - Search by title, path, tags
@@ -71,6 +72,8 @@ Mobile API (8):
 - `api_list_classifications` - List classification types with counts
 - `api_list_summaries` - List daily AI summaries
 - `api_list_reports` - List weekly AI reports
+- `api_update_classification` - Classification feedback/correction (PUT)
+- `api_bulk_reclassify` - Trigger bulk reclassification (POST)
 
 **Bedrock Models** (defined in `terraform/variables.tf`):
 - Haiku 4.5: Fast classification and extraction
@@ -83,8 +86,8 @@ lambda/
 ├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj)
 ├── shared/api/           # API response utilities (response.clj)
 ├── shared/markdown/      # Markdown parsing utilities
-├── functions/            # 14 Lambda function implementations
-└── tests/                # Unit tests (27 tests, 185 assertions)
+├── functions/            # 17 Lambda function implementations
+└── tests/                # Unit tests (38 tests, 298 assertions)
 
 terraform/                # All AWS infrastructure
 ├── lambda.tf             # Processing Lambda functions
@@ -98,7 +101,9 @@ scripts/                  # Deployment and testing
 ├── test-api.sh           # API integration tests
 ├── create-cognito-user.sh # Create test users
 ├── configure-ios.sh      # iOS app configuration
-└── cleanup-old-builds.sh # Remove old Lambda build artifacts
+├── cleanup-old-builds.sh # Remove old Lambda build artifacts
+├── backfill.clj          # Backfill unprocessed S3 documents
+└── bulk-reclassify.sh    # CLI for bulk reclassification
 
 ios/                      # iOS app (PKMReader)
 ├── PKMReader/            # SwiftUI app source
@@ -112,7 +117,8 @@ ios/                      # iOS app (PKMReader)
 ├── build.yml             # Lambda build pipeline
 ├── test.yml              # Lambda test pipeline
 ├── ios-build.yml         # iOS build pipeline
-└── ios-test.yml          # iOS test pipeline
+├── ios-test.yml          # iOS test pipeline
+└── claude.yml            # Claude Code automation
 ```
 
 ## Key Patterns

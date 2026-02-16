@@ -32,7 +32,10 @@ lambda/
 │   ├── api_documents_by_tag/
 │   ├── api_list_classifications/
 │   ├── api_list_summaries/
-│   └── api_list_reports/
+│   ├── api_list_reports/
+│   ├── api_update_classification/
+│   ├── api_bulk_reclassify/
+│   └── bulk_reclassify/
 └── tests/                # Unit tests
 
 ```
@@ -79,18 +82,19 @@ Output ZIPs are placed in `target/`.
 
 ## Lambda Functions
 
-### Processing (6)
+### Processing (7)
 
 | Function | Description |
 |----------|-------------|
 | extract-metadata | Parses markdown metadata, tags, and links |
 | classify-document | AI-powered document classification |
 | extract-entities | Named entity extraction |
-| update-classification-index | Maintains classification index |
+| update-classification-index | Maintains classification index (scheduled every 6 hours) |
 | generate-daily-summary | Daily activity summaries |
 | generate-weekly-report | Weekly analysis reports |
+| bulk-reclassify | Bulk reclassification with dry-run mode and filtering |
 
-### Mobile API (8)
+### Mobile API (10)
 
 | Function | Description |
 |----------|-------------|
@@ -102,6 +106,8 @@ Output ZIPs are placed in `target/`.
 | api-list-classifications | List classification types with counts |
 | api-list-summaries | List daily AI summaries |
 | api-list-reports | List weekly AI reports |
+| api-update-classification | Classification feedback/correction (PUT) |
+| api-bulk-reclassify | Trigger bulk reclassification (POST) |
 
 ## Advantages over Python
 
