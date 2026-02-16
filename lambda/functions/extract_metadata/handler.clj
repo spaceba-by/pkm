@@ -41,12 +41,11 @@
 
       (println "Extracted metadata from" object-key ":" (:title metadata))
 
-      ;; Store metadata in DynamoDB
-      (ddb/put-item ddb-table
-                    (assoc metadata
-                           :PK object-key
-                           :SK "METADATA"
-                           :document_path object-key))
+      ;; Store metadata in DynamoDB (update-item-attrs to avoid clobbering
+      ;; classification/entity fields written by other Lambdas)
+      (ddb/update-item-attrs ddb-table
+                             {:PK object-key :SK "METADATA"}
+                             (assoc metadata :document_path object-key))
 
       ;; Store tag index entries
       (when-let [tags (:tags metadata)]
