@@ -44,20 +44,13 @@
 
 (def default-timestamp "1970-01-01T00:00:00Z")
 
-(defn truncate-timestamp
-  "Truncate ISO 8601 timestamp to second precision for iOS compatibility"
-  [ts]
-  (if (and ts (re-find #"\.\d+" ts))
-    (str/replace ts #"\.\d+(Z|[+-].*)$" "$1")
-    ts))
-
 (defn format-search-result
   "Format document for search results.
    Returns nested metadata structure matching iOS Document model.
    Defaults non-optional fields to prevent iOS decoding failures."
   [doc]
-  (let [modified (truncate-timestamp (or (:modified doc) default-timestamp))
-        created (truncate-timestamp (or (:created doc) modified))]
+  (let [modified (r/truncate-timestamp (or (:modified doc) default-timestamp))
+        created (r/truncate-timestamp (or (:created doc) modified))]
     {:id (:PK doc)
      :title (or (:title doc) "Untitled")
      :metadata {:classification (or (:classification doc) "reference")

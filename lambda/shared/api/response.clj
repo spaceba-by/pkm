@@ -1,6 +1,7 @@
 (ns api.response
   "Utilities for API Gateway Lambda responses"
-  (:require [cheshire.core :as json]))
+  (:require [cheshire.core :as json]
+            [clojure.string :as str]))
 
 (defn ok
   "Create a 200 OK response with caching"
@@ -64,6 +65,13 @@
     (try (Integer/parseInt (str val))
          (catch NumberFormatException _ default-val))
     default-val))
+
+(defn truncate-timestamp
+  "Truncate ISO 8601 timestamp to second precision for iOS compatibility"
+  [ts]
+  (if (and ts (re-find #"\.\d+" ts))
+    (str/replace ts #"\.\d+(Z|[+-].*)$" "$1")
+    ts))
 
 (defn get-user-sub
   "Extract user sub (Cognito user ID) from JWT claims in API Gateway v2 format"
