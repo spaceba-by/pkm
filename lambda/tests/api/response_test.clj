@@ -123,7 +123,28 @@
 
   (testing "Passes through default timestamp"
     (is (= "1970-01-01T00:00:00Z"
-           (r/truncate-timestamp "1970-01-01T00:00:00Z")))))
+           (r/truncate-timestamp "1970-01-01T00:00:00Z"))))
+
+  (testing "Converts numeric epoch timestamp (seconds) to ISO string"
+    (is (= "1970-01-01T00:00:00Z"
+           (r/truncate-timestamp 0)))
+    (is (= "2024-02-15T00:00:00Z"
+           (r/truncate-timestamp 1707955200))))
+
+  (testing "Converts millisecond epoch timestamp to ISO string"
+    (is (= "2024-02-15T00:00:00Z"
+           (r/truncate-timestamp 1707955200000))))
+
+  (testing "Handles floating-point epoch seconds by truncating fractional part"
+    (is (= "2024-02-15T00:00:00Z"
+           (r/truncate-timestamp 1707955200.9))))
+
+  (testing "Handles negative epoch timestamps before 1970-01-01"
+    (is (= "1969-12-31T23:59:59Z"
+           (r/truncate-timestamp -1))))
+
+  (testing "Returns nil for non-string non-numeric values"
+    (is (nil? (r/truncate-timestamp true)))))
 
 (deftest get-user-sub-test
   (testing "Extracts user sub from JWT claims (keyword keys)"
