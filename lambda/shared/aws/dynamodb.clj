@@ -221,12 +221,16 @@
    Only sets the given fields, leaving other attributes untouched.
    Uses ExpressionAttributeNames to avoid DynamoDB reserved word conflicts."
   [table-name key attrs]
-  (let [indexed-fields (map-indexed vector attrs)
-        set-clauses (map (fn [[i _]] (str "#n" i " = :v" i)) indexed-fields)
-        update-expr (str "SET " (str/join ", " set-clauses))
-        attr-names (into {} (map (fn [[i [k _]]] [(str "#n" i) (name k)]) indexed-fields))
-        attr-values (into {} (map (fn [[i [_ v]]] [(str ":v" i) v]) indexed-fields))]
-    (update-item table-name key update-expr attr-values :expr-attr-names attr-names)))
+  (if (empty? attrs)
+    (throw (ex-info "update-item-attrs called with empty attrs; no attributes to update"
+                    {:table-name table-name
+                     :key key}))
+    (let [indexed-fields (map-indexed vector attrs)
+          set-clauses (map (fn [[i _]] (str "#n" i " = :v" i)) indexed-fields)
+          update-expr (str "SET " (str/join ", " set-clauses))
+          attr-names (into {} (map (fn [[i [k _]]] [(str "#n" i) (name k)]) indexed-fields))
+          attr-values (into {} (map (fn [[i [_ v]]] [(str ":v" i) v]) indexed-fields))]
+      (update-item table-name key update-expr attr-values :expr-attr-names attr-names))))
 
 (defn query-by-classification
   "Queries all documents by classification type with full pagination"
