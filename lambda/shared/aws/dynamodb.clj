@@ -200,18 +200,33 @@
         new-acc))))
 
 (defn update-item
-  "Updates item in DynamoDB table"
-  [table-name key update-expr expr-attr-values]
-  (let [response (-> (aws/invoke @ddb-client
+  "Updates item in DynamoDB table.
+   Optional :expr-attr-names for ExpressionAttributeNames (avoids reserved word conflicts)."
+  [table-name key update-expr expr-attr-values & {:keys [expr-attr-names]}]
+  (let [request (cond-> {:TableName table-name
+                         :Key (marshall-item key)
+                         :UpdateExpression update-expr
+                         :ExpressionAttributeValues (marshall-item expr-attr-values)
+                         :ReturnValues "ALL_NEW"}
+                  expr-attr-names (assoc :ExpressionAttributeNames expr-attr-names))
+        response (-> (aws/invoke @ddb-client
                                  {:op :UpdateItem
-                                  :request {:TableName table-name
-                                           :Key (marshall-item key)
-                                           :UpdateExpression update-expr
-                                           :ExpressionAttributeValues (marshall-item expr-attr-values)
-                                           :ReturnValues "ALL_NEW"}})
+                                  :request request})
                      (check-error "UpdateItem"))]
     (when-let [attrs (:Attributes response)]
       (unmarshall-item attrs))))
+
+(defn update-item-attrs
+  "Updates specific attributes of an item from a map of field->value.
+   Only sets the given fields, leaving other attributes untouched.
+   Uses ExpressionAttributeNames to avoid DynamoDB reserved word conflicts."
+  [table-name key attrs]
+  (let [indexed-fields (map-indexed vector attrs)
+        set-clauses (map (fn [[i _]] (str "#n" i " = :v" i)) indexed-fields)
+        update-expr (str "SET " (str/join ", " set-clauses))
+        attr-names (into {} (map (fn [[i [k _]]] [(str "#n" i) (name k)]) indexed-fields))
+        attr-values (into {} (map (fn [[i [_ v]]] [(str ":v" i) v]) indexed-fields))]
+    (update-item table-name key update-expr attr-values :expr-attr-names attr-names)))
 
 (defn query-by-classification
   "Queries all documents by classification type with full pagination"
