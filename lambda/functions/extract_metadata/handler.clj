@@ -33,7 +33,7 @@
 
     ;; Parse metadata (no AI needed - pure parsing)
     (let [metadata (md/parse-markdown-metadata content)
-          now (str (java.time.Instant/now))
+          now (md/now-iso)
           metadata (-> metadata
                        (assoc :s3_key object-key)
                        (assoc :modified now)

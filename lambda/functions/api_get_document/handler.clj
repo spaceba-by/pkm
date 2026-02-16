@@ -24,13 +24,20 @@
 
 (def default-timestamp "1970-01-01T00:00:00Z")
 
+(defn truncate-timestamp
+  "Truncate ISO 8601 timestamp to second precision for iOS compatibility"
+  [ts]
+  (if (and ts (re-find #"\.\d+" ts))
+    (clojure.string/replace ts #"\.\d+(Z|[+-].*)$" "$1")
+    ts))
+
 (defn format-document-detail
   "Format full document with content for API response.
    Returns nested metadata structure matching iOS Document model.
    Defaults non-optional fields to prevent iOS decoding failures."
   [metadata content]
-  (let [modified (or (:modified metadata) default-timestamp)
-        created (or (:created metadata) modified)]
+  (let [modified (truncate-timestamp (or (:modified metadata) default-timestamp))
+        created (truncate-timestamp (or (:created metadata) modified))]
     {:id (:PK metadata)
      :title (or (:title metadata) "Untitled")
      :content content

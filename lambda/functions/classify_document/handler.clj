@@ -146,7 +146,7 @@
           metadata (assoc metadata
                          :classification classification
                          :classification_confidence confidence
-                         :modified (str (java.time.Instant/now))
+                         :modified (md/now-iso)
                          :s3_key object-key)]
 
       ;; Store classification in DynamoDB

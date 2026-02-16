@@ -3,10 +3,10 @@
   (:require [clj-yaml.core :as yaml]
             [clojure.string :as str]))
 
-(defn- now-iso
-  "Get current timestamp as ISO string"
+(defn now-iso
+  "Get current timestamp as ISO 8601 string (second precision)"
   []
-  (str (java.time.Instant/now)))
+  (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS)))
 
 (defn extract-frontmatter
   "Extract YAML frontmatter from markdown content.
