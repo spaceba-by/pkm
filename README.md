@@ -29,7 +29,7 @@ iOS App → API Gateway (JWT) → Lambda → DynamoDB/S3
 **AWS Services Used:**
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
-- **Lambda:** 14 serverless functions (6 processing + 8 API)
+- **Lambda:** 17 serverless functions (7 processing + 10 API)
 - **Bedrock:** Claude Haiku 4.5 and Sonnet 4.5 for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
@@ -124,6 +124,8 @@ The system includes a REST API for iOS app access:
 | `GET /classifications` | List classification types with counts |
 | `GET /summaries` | List daily AI summaries |
 | `GET /reports` | List weekly AI reports |
+| `PUT /documents/classification/{key+}` | Update document classification |
+| `POST /admin/reclassify` | Trigger bulk reclassification |
 
 **Authentication:** Cognito User Pool with JWT tokens
 
@@ -196,7 +198,10 @@ pkm-agent-system/
 │   │   ├── api_documents_by_tag/
 │   │   ├── api_list_classifications/
 │   │   ├── api_list_summaries/
-│   │   └── api_list_reports/
+│   │   ├── api_list_reports/
+│   │   ├── api_update_classification/
+│   │   ├── api_bulk_reclassify/
+│   │   └── bulk_reclassify/
 │   └── tests/             # Unit tests
 ├── ios/                   # iOS app (SwiftUI)
 ├── scripts/               # Deployment and setup scripts
@@ -204,7 +209,9 @@ pkm-agent-system/
 │   ├── setup-sync.sh
 │   ├── test-workflow.sh
 │   ├── test-api.sh        # API integration tests
-│   └── create-cognito-user.sh
+│   ├── create-cognito-user.sh
+│   ├── backfill.clj       # Backfill unprocessed documents
+│   └── bulk-reclassify.sh # Bulk reclassification CLI
 └── sync/                  # Sync configuration
     └── README.md
 ```
@@ -372,6 +379,7 @@ terraform apply
 - [x] iOS app foundation (Phase 0-2)
 - [x] iOS enhanced features (Search, Tags, Insights, Settings)
 - [x] iOS test coverage (unit tests, UI tests, mock API)
+- [x] Classification system improvements (enhanced prompts, feedback API, bulk reclassify)
 - [ ] iOS polish & release (Phase 4) — in progress
 - [ ] Semantic search with OpenSearch
 - [ ] Persistent search monitors

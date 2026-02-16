@@ -28,7 +28,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │  │  • markdown-events  │       │    API Gateway (HTTP)    │  │
 │  │  • daily-schedule   │       │  • JWT Authorizer        │  │
 │  │  • weekly-schedule  │       │  • CORS enabled          │  │
-│  └───┬─────────────────┘       │  • 8 REST endpoints      │  │
+│  └───┬─────────────────┘       │  • 10 REST endpoints     │  │
 │      │                          └────────────┬─────────────┘  │
 │      ▼                                       │                │
 │  ┌────────────────────┐       ┌──────────────▼─────────────┐ │
@@ -39,8 +39,10 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │  │ • daily-summary    │       │ • api-list-tags            │ │
 │  │ • weekly-report    │       │ • api-documents-by-tag     │ │
 │  │ • update-index     │       │ • api-list-classifications │ │
-│  └─────────┬──────────┘       │ • api-list-summaries       │ │
-│            │                   │ • api-list-reports         │ │
+│  │ • bulk-reclassify  │       │ • api-list-summaries       │ │
+│  └─────────┬──────────┘       │ • api-list-reports         │ │
+│            │                   │ • api-update-classification│ │
+│            │                   │ • api-bulk-reclassify      │ │
 │            │                   └──────────────┬─────────────┘ │
 │            │                                  │                │
 │            ▼                                  ▼                │
@@ -106,7 +108,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 #### Lambda Functions
 
-**Processing Functions (6):**
+**Processing Functions (7):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
@@ -115,9 +117,10 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `extract-metadata` | Babashka | 256 MB | 10s | S3 PUT | Parse frontmatter, links, tags |
 | `generate-daily-summary` | Babashka | 1024 MB | 60s | Cron (6 AM) | Generate daily summary |
 | `generate-weekly-report` | Babashka | 2048 MB | 120s | Step Function | Generate weekly report |
-| `update-classification-index` | Babashka | 256 MB | 30s | Direct invoke | Update classification index |
+| `update-classification-index` | Babashka | 256 MB | 30s | Scheduled (every 6 hours) | Update classification index |
+| `bulk-reclassify` | Babashka | 512 MB | 300s | API invoke | Bulk reclassification with dry-run |
 
-**API Functions (8):**
+**API Functions (10):**
 
 | Function | Runtime | Memory | Timeout | Endpoint | Purpose |
 |----------|---------|--------|---------|----------|---------|
@@ -129,6 +132,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `api-list-classifications` | Babashka | 256 MB | 10s | GET /classifications | List classification counts |
 | `api-list-summaries` | Babashka | 256 MB | 10s | GET /summaries | List daily summaries |
 | `api-list-reports` | Babashka | 256 MB | 10s | GET /reports | List weekly reports |
+| `api-update-classification` | Babashka | 256 MB | 10s | PUT /documents/classification/{key+} | Update classification |
+| `api-bulk-reclassify` | Babashka | 256 MB | 10s | POST /admin/reclassify | Trigger bulk reclassification |
 
 **Shared Code:**
 - Common utilities in `lambda/shared/`: `aws/bedrock.clj`, `aws/dynamodb.clj`, `aws/s3.clj`, `markdown/utils.clj`
@@ -168,6 +173,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
   GET /classifications        - List classification types
   GET /summaries              - List daily summaries
   GET /reports                - List weekly reports
+  PUT /documents/classification/{key+} - Update classification
+  POST /admin/reclassify      - Trigger bulk reclassification
   ```
 
 ### 4. Event-Driven Processing
@@ -189,6 +196,11 @@ The PKM Agent System is a serverless AWS architecture that automatically process
    - Schedule: `cron(0 20 ? * SUN *)` (8 PM UTC Sundays)
    - Target: `generate-weekly-report-workflow` Step Function
    - Purpose: Generate comprehensive weekly review
+
+4. **classification-index-schedule:**
+   - Schedule: `rate(6 hours)`
+   - Target: `update-classification-index` Lambda
+   - Purpose: Rebuild classification index periodically
 
 ### 5. AI/ML Layer
 
