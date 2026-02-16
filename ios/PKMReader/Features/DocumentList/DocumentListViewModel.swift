@@ -78,7 +78,10 @@ final class DocumentListViewModel: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
-            // Keep existing documents on pagination error
+            // Keep existing documents on pagination error,
+            // but stop further pagination attempts after a failure.
+            hasMorePages = false
+            nextCursor = nil
         }
     }
 
