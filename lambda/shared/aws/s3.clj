@@ -45,13 +45,11 @@
 (defn object-exists?
   "Check if S3 object exists"
   [bucket key]
-  (try
-    (aws/invoke @s3-client
-                {:op :HeadObject
-                 :request {:Bucket bucket
-                          :Key key}})
-    true
-    (catch Exception _ false)))
+  (let [response (aws/invoke @s3-client
+                              {:op :HeadObject
+                               :request {:Bucket bucket
+                                        :Key key}})]
+    (not (contains? response :cognitect.anomalies/category))))
 
 (defn delete-object
   "Deletes object from S3 bucket"
@@ -71,6 +69,25 @@
                                            :Prefix prefix}})
                      (check-error "ListObjectsV2"))]
     (map :Key (:Contents response))))
+
+(defn list-all-objects
+  "Lists all objects with given prefix, handling pagination via ContinuationToken.
+   Returns all matching keys across all pages."
+  [bucket prefix]
+  (loop [acc []
+         continuation-token nil]
+    (let [request (cond-> {:Bucket bucket
+                           :Prefix prefix}
+                   continuation-token (assoc :ContinuationToken continuation-token))
+          response (-> (aws/invoke @s3-client
+                                   {:op :ListObjectsV2
+                                    :request request})
+                       (check-error "ListObjectsV2"))
+          keys (map :Key (:Contents response))
+          new-acc (into acc keys)]
+      (if (:IsTruncated response)
+        (recur new-acc (:NextContinuationToken response))
+        new-acc))))
 
 (defn get-object-metadata
   "Gets object metadata without downloading content"

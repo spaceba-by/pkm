@@ -109,10 +109,10 @@
                                           :entity-pages-created (:entity-pages-created result)})}))))
 
     (catch Exception e
-      (println "Error extracting entities:" (.getMessage e))
+      (println "Error extracting entities:" (ex-message e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
 (defn -main []

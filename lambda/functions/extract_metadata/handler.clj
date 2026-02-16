@@ -33,7 +33,7 @@
 
     ;; Parse metadata (no AI needed - pure parsing)
     (let [metadata (md/parse-markdown-metadata content)
-          now (str (java.time.Instant/now))
+          now (md/now-iso)
           metadata (-> metadata
                        (assoc :s3_key object-key)
                        (assoc :modified now)
@@ -58,7 +58,7 @@
                            :document_path object-key
                            :modified now})
             (catch Exception e
-              (println "Error storing tag index for" tag ":" (.getMessage e))))))
+              (println "Error storing tag index for" tag ":" (ex-message e))))))
 
       metadata)))
 
@@ -98,7 +98,7 @@
                                                      :links (count (:links_to metadata []))}})}))))
 
     (catch Exception e
-      (println "Error extracting metadata:" (.getMessage e))
+      (println "Error extracting metadata:" (ex-message e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (ex-message e)})})))

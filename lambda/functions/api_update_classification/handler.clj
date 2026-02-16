@@ -49,7 +49,7 @@
             (r/not-found (str "Document not found: " document-key))
 
             ;; Update classification with override flag
-            (let [now (str (java.time.Instant/now))
+            (let [now (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS))
                   updated (ddb/update-item
                             ddb-table
                             {:PK document-key :SK "METADATA"}
@@ -64,6 +64,6 @@
                               :updated_at now}))))))
 
     (catch Exception e
-      (println "Error updating classification:" (.getMessage e))
+      (println "Error updating classification:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to update classification"))))

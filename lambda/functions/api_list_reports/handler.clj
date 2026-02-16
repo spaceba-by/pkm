@@ -19,7 +19,7 @@
   (try
     (s3/list-objects s3-bucket reports-prefix)
     (catch Exception e
-      (println "Error listing reports:" (.getMessage e))
+      (println "Error listing reports:" (ex-message e))
       [])))
 
 (defn parse-report-key
@@ -60,6 +60,6 @@
              :count (count reports)}))
 
     (catch Exception e
-      (println "Error listing reports:" (.getMessage e))
+      (println "Error listing reports:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to list reports"))))

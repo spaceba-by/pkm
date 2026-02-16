@@ -91,7 +91,7 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
   - Added `prepare_submission` Fastlane lane that validates metadata files, keyword/name/subtitle lengths, and screenshot availability
 - [x] Step 6: Configure code signing for distribution
   - Created `docs/CODE_SIGNING.md` with Match Git repo setup, environment variables, new developer onboarding, certificate regeneration, CI/CD configuration, and troubleshooting
-  - Added commented-out code signing steps to `.github/workflows/ios-build.yml` (keychain setup, Match sync, signed archive build) ready to enable when GitHub Secrets are configured
+  - Configured code signing steps in `.github/workflows/ios-build.yml` (keychain setup, Match sync, signed archive build)
   - Verified Fastfile `build_release` lane, Matchfile, and Appfile are consistent
 - [x] Step 7: Deploy to TestFlight for beta testing
   - Activated code signing and TestFlight deployment in `.github/workflows/ios-build.yml`
@@ -99,6 +99,9 @@ iOS Phase 4: Polish the iOS app for production release. Includes comprehensive e
   - Added `deploy-testflight` job: downloads signed IPA artifact, uploads to TestFlight via Fastlane using App Store Connect API key
   - Deploy job gated on `github.ref == 'refs/heads/main'` and successful signed build
   - Uses `testflight` GitHub environment for optional deployment protection rules
+  - `build_release` lane uses `update_code_signing_settings` to switch only the PKMReader target to manual signing (SPM packages keep automatic signing)
+  - `upload_testflight` lane uses `is_key_content_base64: true` for the App Store Connect API key
+  - First successful TestFlight upload: run 22039536210
 - [x] Step 8: Write user documentation
   - Created `docs/USER_GUIDE.md` covering all 5 tabs, document filtering, search, tags, insights (daily summaries/weekly reports), settings, offline mode, and troubleshooting
   - Created `docs/FAQ.md` with 15 questions covering accounts, document sync, AI classification, entities, offline behavior, and common troubleshooting

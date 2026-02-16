@@ -79,7 +79,7 @@
                               :content (subs content 0 (min 2000 (count content)))
                               :title (or (:title doc) "Untitled")}))
                          (catch Exception e
-                           (println "Error retrieving" doc-path ":" (.getMessage e))
+                           (println "Error retrieving" doc-path ":" (ex-message e))
                            nil))]
             (recur (rest remaining)
                    (if result
@@ -158,10 +158,10 @@
                                                  :document-count (count documents)})}))))))))
 
     (catch Exception e
-      (println "Error generating daily summary:" (.getMessage e))
+      (println "Error generating daily summary:" (ex-message e))
       (.printStackTrace e)
       {:statusCode 500
-       :body (json/generate-string {:error (.getMessage e)})})))
+       :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
 (defn -main []

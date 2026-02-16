@@ -4,7 +4,8 @@
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
             [markdown.utils :as md]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.string :as str]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -23,6 +24,77 @@
    (.startsWith object-key ".obsidian/")
    (re-find #"/\.obsidian/" object-key)))
 
+;; Frontmatter signal rules: vectors of [classification signal-set] pairs.
+;; Order defines priority when a document matches multiple classifications.
+(def ^:private tag-signals
+  [["journal"   #{"daily-notes" "daily-note" "daily" "journal" "diary"}]
+   ["meeting"   #{"meeting" "meetings" "meeting-notes" "meeting-note"
+                  "standup" "1on1" "1-on-1" "retro" "retrospective"}]
+   ["project"   #{"project" "project-plan" "roadmap" "sprint"}]
+   ["idea"      #{"idea" "ideas" "brainstorm" "concept" "proposal"}]
+   ["reference" #{"reference" "howto" "how-to" "guide" "cheatsheet"
+                  "cheat-sheet" "documentation" "docs"}]])
+
+(def ^:private type-signals
+  [["journal"   #{"daily" "journal" "daily-note" "daily-notes"}]
+   ["meeting"   #{"meeting" "meetings"}]
+   ["project"   #{"project"}]
+   ["idea"      #{"idea"}]
+   ["reference" #{"reference" "howto" "guide"}]])
+
+(def ^:private path-signals
+  [["journal"   #{"daily notes" "daily" "journal"}]
+   ["meeting"   #{"meetings" "meeting notes"}]
+   ["project"   #{"projects"}]])
+
+(defn detect-classification-from-frontmatter
+  "Detect classification from frontmatter signals and file path.
+   Returns {:classification string :confidence number :signal string} if a
+   strong signal is found (1.0 for tag/type/cssclass, 0.9 for path), nil otherwise."
+  [metadata object-key]
+  (let [tags (->> (get metadata :tags [])
+                  (map (comp str/lower-case str/trim str)))
+        fm-type (some-> (get metadata :type) str str/trim str/lower-case)
+        cssclass (some-> (get metadata :cssclass) str str/trim str/lower-case)
+        cssclasses (->> (get metadata :cssclasses [])
+                        (map (comp str/lower-case str/trim str)))
+        all-classes (cond-> #{}
+                      cssclass (conj cssclass)
+                      (seq cssclasses) (into cssclasses))
+        path-lower (str/lower-case (or object-key ""))]
+
+    ;; Check tags first (strongest signal)
+    (or (some (fn [[classification signal-tags]]
+                (when-let [match (first (filter signal-tags tags))]
+                  {:classification classification
+                   :confidence 1.0
+                   :signal (str "tag:" match)}))
+              tag-signals)
+
+        ;; Check frontmatter type field
+        (some (fn [[classification signal-types]]
+                (when (and fm-type (signal-types fm-type))
+                  {:classification classification
+                   :confidence 1.0
+                   :signal (str "type:" fm-type)}))
+              type-signals)
+
+        ;; Check cssclass/cssclasses
+        (some (fn [[classification signal-tags]]
+                (when-let [match (first (filter signal-tags all-classes))]
+                  {:classification classification
+                   :confidence 1.0
+                   :signal (str "cssclass:" match)}))
+              tag-signals)
+
+        ;; Check file path segments (match at start or after /)
+        (some (fn [[classification path-parts]]
+                (when-let [match (first (filter #(re-find (re-pattern (str "(?:^|/)" (java.util.regex.Pattern/quote %) "/")) path-lower) path-parts))]
+                  {:classification classification
+                   :confidence 0.9
+                   :signal (str "path:" match "/")}))
+              path-signals))))
+
 (defn classify-document
   "Classify a markdown document using Bedrock"
   [bucket-name object-key]
@@ -37,6 +109,13 @@
                        :classification (:classification existing)
                        :skipped true}))))
 
+  ;; Check if document still exists in S3
+  (when-not (s3/object-exists? bucket-name object-key)
+    (println "Document no longer exists in S3:" object-key)
+    (throw (ex-info "Document not found in S3"
+                    {:object-key object-key
+                     :not-found true})))
+
   ;; Get document content
   (let [content (s3/get-object bucket-name object-key)]
 
@@ -47,8 +126,16 @@
     ;; Parse metadata
     (let [metadata (md/parse-markdown-metadata content)
 
-          ;; Classify document using Bedrock
-          result (bedrock/classify-document bedrock-model content metadata)
+          ;; Check for deterministic frontmatter signals before calling Bedrock
+          fm-signal (detect-classification-from-frontmatter metadata object-key)
+
+          result (if fm-signal
+                   (do (println "Frontmatter signal detected for" object-key
+                                ":" (:signal fm-signal)
+                                "→" (:classification fm-signal))
+                       fm-signal)
+                   (bedrock/classify-document bedrock-model content metadata))
+
           classification (:classification result)
           confidence (:confidence result)
 
@@ -59,7 +146,7 @@
           metadata (assoc metadata
                          :classification classification
                          :classification_confidence confidence
-                         :modified (str (java.time.Instant/now))
+                         :modified (md/now-iso)
                          :s3_key object-key)]
 
       ;; Store classification in DynamoDB
@@ -107,20 +194,31 @@
                                           :confidence (:confidence result)})}))))
 
     (catch Exception e
-      (if (:skipped (ex-data e))
-        ;; Override skip is not an error
-        {:statusCode 200
-         :body (json/generate-string {:document (get (ex-data e) :object-key)
-                                      :classification (get (ex-data e) :classification)
-                                      :skipped true})}
-        (do
-          (println "Error processing document:" (.getMessage e))
-          (.printStackTrace e)
-          {:statusCode 500
-           :body (json/generate-string {:error (.getMessage e)})})))))
+      (let [data (ex-data e)]
+        (cond
+          ;; Override skip is not an error
+          (:skipped data)
+          {:statusCode 200
+           :body (json/generate-string {:document (:object-key data)
+                                        :classification (:classification data)
+                                        :skipped true})}
+
+          ;; Document deleted from S3 - not an error
+          (:not-found data)
+          {:statusCode 200
+           :body (json/generate-string {:document (:object-key data)
+                                        :not_found true
+                                        :message "Document no longer exists in S3"})}
+
+          :else
+          (do
+            (println "Error processing document:" (ex-message e))
+            (.printStackTrace e)
+            {:statusCode 500
+             :body (json/generate-string {:error (ex-message e)})}))))))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (let [test-event {:detail {:bucket {:name s3-bucket}
                              :object {:key "test.md"}}}]
     (println "Running test with event:" test-event)

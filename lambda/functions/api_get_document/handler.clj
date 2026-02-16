@@ -19,7 +19,7 @@
   (try
     (s3/get-object s3-bucket document-key)
     (catch Exception e
-      (println "Error fetching content for" document-key ":" (.getMessage e))
+      (println "Error fetching content for" document-key ":" (ex-message e))
       nil)))
 
 (def default-timestamp "1970-01-01T00:00:00Z")
@@ -29,8 +29,8 @@
    Returns nested metadata structure matching iOS Document model.
    Defaults non-optional fields to prevent iOS decoding failures."
   [metadata content]
-  (let [modified (or (:modified metadata) default-timestamp)
-        created (or (:created metadata) modified)]
+  (let [modified (r/truncate-timestamp (or (:modified metadata) default-timestamp))
+        created (r/truncate-timestamp (or (:created metadata) modified))]
     {:id (:PK metadata)
      :title (or (:title metadata) "Untitled")
      :content content
@@ -76,12 +76,12 @@
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (case (:type data)
-          :bad-request (r/bad-request (.getMessage e))
+          :bad-request (r/bad-request (ex-message e))
           (do
-            (println "Error:" (.getMessage e))
+            (println "Error:" (ex-message e))
             (r/internal-error "Failed to get document")))))
 
     (catch Exception e
-      (println "Error getting document:" (.getMessage e))
+      (println "Error getting document:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to get document"))))

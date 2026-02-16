@@ -31,8 +31,8 @@
    Returns nested metadata structure matching iOS Document model.
    Defaults non-optional fields to prevent iOS decoding failures."
   [metadata]
-  (let [modified (or (:modified metadata) default-timestamp)
-        created (or (:created metadata) modified)]
+  (let [modified (r/truncate-timestamp (or (:modified metadata) default-timestamp))
+        created (r/truncate-timestamp (or (:created metadata) modified))]
     {:id (:PK metadata)
      :title (or (:title metadata) "Untitled")
      :metadata {:classification (or (:classification metadata) "reference")
@@ -76,12 +76,12 @@
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (case (:type data)
-          :bad-request (r/bad-request (.getMessage e))
+          :bad-request (r/bad-request (ex-message e))
           (do
-            (println "Error:" (.getMessage e))
+            (println "Error:" (ex-message e))
             (r/internal-error "Failed to get documents by tag")))))
 
     (catch Exception e
-      (println "Error getting documents by tag:" (.getMessage e))
+      (println "Error getting documents by tag:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Failed to get documents by tag"))))

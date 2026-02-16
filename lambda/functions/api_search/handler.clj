@@ -49,8 +49,8 @@
    Returns nested metadata structure matching iOS Document model.
    Defaults non-optional fields to prevent iOS decoding failures."
   [doc]
-  (let [modified (or (:modified doc) default-timestamp)
-        created (or (:created doc) modified)]
+  (let [modified (r/truncate-timestamp (or (:modified doc) default-timestamp))
+        created (r/truncate-timestamp (or (:created doc) modified))]
     {:id (:PK doc)
      :title (or (:title doc) "Untitled")
      :metadata {:classification (or (:classification doc) "reference")
@@ -92,12 +92,12 @@
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (case (:type data)
-          :bad-request (r/bad-request (.getMessage e))
+          :bad-request (r/bad-request (ex-message e))
           (do
-            (println "Error:" (.getMessage e))
+            (println "Error:" (ex-message e))
             (r/internal-error "Search failed")))))
 
     (catch Exception e
-      (println "Error searching:" (.getMessage e))
+      (println "Error searching:" (ex-message e))
       (.printStackTrace e)
       (r/internal-error "Search failed"))))
