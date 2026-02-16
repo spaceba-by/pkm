@@ -32,6 +32,15 @@ This document tracks known limitations, technical debt, and planned enhancements
 - **Solution**: Implement continuation token pagination if needed
 - **Priority**: Low - will not be an issue for years
 
+### Concurrency
+
+#### extract_metadata Race Condition with put-item
+- **Issue**: `extract_metadata` uses `ddb/put-item` (full replace) for the METADATA row, while `classify_document` uses `ddb/update-item`. If `extract_metadata` writes after `classify_document`, it overwrites classification-related fields (`:classification`, `:classification_confidence`, `:classification_override`, `entities`, etc.)
+- **Impact**: Intermittent data loss when both Lambdas process the same document concurrently. Mitigated by Step Functions ordering (extract_metadata runs first) and by `classify_document` using `update-item`.
+- **Solution**: Convert `extract_metadata` from `put-item` to `update-item` so parser-derived fields are updated without clobbering classification attributes
+- **Priority**: Medium - mitigated by current ordering but not eliminated
+- **Reference**: PR #63 review comment
+
 ### Test Stability
 
 #### InsightsViewSnapshotTests.test_summariesTab() flaky in CI
