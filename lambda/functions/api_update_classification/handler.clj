@@ -49,7 +49,7 @@
             (r/not-found (str "Document not found: " document-key))
 
             ;; Update classification with override flag
-            (let [now (str (java.time.Instant/now))
+            (let [now (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS))
                   updated (ddb/update-item
                             ddb-table
                             {:PK document-key :SK "METADATA"}

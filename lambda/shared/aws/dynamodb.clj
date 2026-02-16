@@ -223,7 +223,7 @@
 (defn store-entities
   "Store extracted entities for a document"
   [table-name file-path entities]
-  (let [now (str (java.time.Instant/now))]
+  (let [now (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS))]
     ;; Update document metadata with entities
     (update-item table-name
                  {:PK file-path :SK "METADATA"}

@@ -32,8 +32,8 @@
    Returns nested metadata structure matching iOS Document model.
    Defaults non-optional fields to prevent iOS decoding failures."
   [doc]
-  (let [modified (or (:modified doc) default-timestamp)
-        created (or (:created doc) modified)]
+  (let [modified (r/truncate-timestamp (or (:modified doc) default-timestamp))
+        created (r/truncate-timestamp (or (:created doc) modified))]
     {:id (:PK doc)
      :title (or (:title doc) "Untitled")
      :metadata {:classification (or (:classification doc) "reference")
