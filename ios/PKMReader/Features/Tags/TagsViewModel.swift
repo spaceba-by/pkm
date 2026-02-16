@@ -38,7 +38,15 @@ final class TagsViewModel: ObservableObject {
     /// Load all tags
     func loadTags() async {
         state = .loading
+        await fetchTags()
+    }
 
+    /// Refresh the tags list (keeps existing data visible)
+    func refresh() async {
+        await fetchTags()
+    }
+
+    private func fetchTags() async {
         do {
             let tags = try await apiClient.listTags()
             if tags.isEmpty {
@@ -47,13 +55,10 @@ final class TagsViewModel: ObservableObject {
                 let sorted = tags.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
                 state = .loaded(sorted)
             }
+        } catch is CancellationError {
+            return
         } catch {
             state = .error(error)
         }
-    }
-
-    /// Refresh the tags list
-    func refresh() async {
-        await loadTags()
     }
 }

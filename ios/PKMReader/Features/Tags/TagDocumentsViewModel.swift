@@ -42,7 +42,15 @@ final class TagDocumentsViewModel: ObservableObject {
     /// Load documents for this tag
     func loadDocuments() async {
         state = .loading
+        await fetchDocuments()
+    }
 
+    /// Refresh the document list (keeps existing data visible)
+    func refresh() async {
+        await fetchDocuments()
+    }
+
+    private func fetchDocuments() async {
         do {
             let documents = try await apiClient.documentsByTag(tag: tag.name, limit: 50)
             if documents.isEmpty {
@@ -50,13 +58,10 @@ final class TagDocumentsViewModel: ObservableObject {
             } else {
                 state = .loaded(documents)
             }
+        } catch is CancellationError {
+            return
         } catch {
             state = .error(error)
         }
-    }
-
-    /// Refresh the document list
-    func refresh() async {
-        await loadDocuments()
     }
 }
