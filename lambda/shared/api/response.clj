@@ -72,12 +72,15 @@
   [ts]
   (cond
     (nil? ts) nil
-    (number? ts) (let [instant (java.time.Instant/ofEpochSecond (long ts))]
+    (number? ts) (let [epoch-secs (if (> (long ts) 10000000000)
+                                    (quot (long ts) 1000)
+                                    (long ts))
+                       instant (java.time.Instant/ofEpochSecond epoch-secs)]
                    (str instant))
     (string? ts) (if (re-find #"\.\d+" ts)
                    (str/replace ts #"\.\d+(Z|[+-].*)$" "$1")
                    ts)
-    :else (str ts)))
+    :else nil))
 
 (defn get-user-sub
   "Extract user sub (Cognito user ID) from JWT claims in API Gateway v2 format"
