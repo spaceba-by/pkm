@@ -1,6 +1,6 @@
 # Task 0016: Backfill Pre-Existing Documents
 
-**Status**: Planned
+**Status**: Implementation Complete
 
 ## Specifications
 
@@ -35,14 +35,14 @@ For each missing document, async-invoke the same 3 Lambdas that EventBridge norm
 
 ## Acceptance Criteria
 
-- [ ] Paginated S3 listing handles >1000 objects correctly
-- [ ] Script identifies documents in S3 that have no METADATA record in DynamoDB
-- [ ] Dry-run mode (default) shows count and sample paths without triggering anything
-- [ ] Execute mode triggers all 3 processing Lambdas for each missing document
-- [ ] Rate limiting prevents Bedrock throttling (configurable delay)
-- [ ] Supports `--prefix` to scope to a subdirectory
-- [ ] Supports `--limit` to cap the number of documents processed
-- [ ] Progress output shows documents processed and errors
+- [x] Paginated S3 listing handles >1000 objects correctly
+- [x] Script identifies documents in S3 that have no METADATA record in DynamoDB
+- [x] Dry-run mode (default) shows count and sample paths without triggering anything
+- [x] Execute mode triggers all 3 processing Lambdas for each missing document
+- [x] Rate limiting prevents Bedrock throttling (configurable delay)
+- [x] Supports `--prefix` to scope to a subdirectory
+- [x] Supports `--limit` to cap the number of documents processed
+- [x] Progress output shows documents processed and errors
 - [ ] All existing tests continue to pass
 
 ## Implementation Steps

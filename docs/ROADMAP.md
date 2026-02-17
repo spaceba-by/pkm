@@ -115,14 +115,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Full UI test coverage (DocumentList, DocumentDetail, Search, Tags, Insights, Settings)
   - Code coverage 80%+ (267 unit tests, 39 UI tests, CI threshold 78%)
 
-### Planned
-
-- **Task 0016: Backfill Pre-Existing Documents**
+- **Task 0016: Backfill Pre-Existing Documents** ✅
 
   - See: [0016-backfill-existing-documents](tasks/0016-backfill-existing-documents.md)
-  - Babashka CLI script to detect unprocessed S3 documents missing from DynamoDB
-  - Triggers extract_metadata, classify_document, extract_entities for each
-  - Supports dry-run, prefix filtering, rate limiting
+  - Paginated `list-all-objects` in `s3.clj` for S3 ListObjectsV2 with ContinuationToken
+  - Babashka CLI script (`scripts/backfill.clj`) with dry-run, execute, prefix, limit, delay options
+  - Detects unprocessed S3 documents missing from DynamoDB, triggers extract_metadata, classify_document, extract_entities
+
+### Planned
 
 - **Task 0015: Document Deletion Cleanup**
 
