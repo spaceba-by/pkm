@@ -8,6 +8,68 @@
   []
   (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS)))
 
+(defn normalize-date
+  "Normalize a frontmatter date value to ISO 8601 string (second precision, UTC).
+   Handles: ISO 8601 strings, date-only strings (YYYY-MM-DD),
+   date+time without timezone (YYYY-MM-DD HH:MM), java.util.Date objects.
+   Returns nil for nil input or unparseable values."
+  [value]
+  (when value
+    (try
+      (cond
+        ;; java.util.Date (YAML parser can produce these)
+        (instance? java.util.Date value)
+        (str (.truncatedTo (.toInstant value) java.time.temporal.ChronoUnit/SECONDS))
+
+        ;; java.time.Instant
+        (instance? java.time.Instant value)
+        (str (.truncatedTo value java.time.temporal.ChronoUnit/SECONDS))
+
+        (string? value)
+        (let [s (str/trim value)]
+          (cond
+            ;; Full ISO 8601 with time and timezone: 2023-06-15T10:30:00Z or +offset
+            (re-matches #"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*" s)
+            (str (.truncatedTo (java.time.Instant/parse
+                                 ;; Ensure trailing Z if no timezone
+                                 (if (re-find #"[Z+\-]\d*:?\d*$" s) s (str s "Z")))
+                               java.time.temporal.ChronoUnit/SECONDS))
+
+            ;; Date with time, no timezone: "2023-06-15 10:30" or "2023-06-15 10:30:00"
+            (re-matches #"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$" s)
+            (let [normalized (str/replace s " " "T")
+                  normalized (if (re-matches #".*\d{2}:\d{2}$" normalized)
+                               (str normalized ":00Z")
+                               (str normalized "Z"))]
+              (str (.truncatedTo (java.time.Instant/parse normalized)
+                                 java.time.temporal.ChronoUnit/SECONDS)))
+
+            ;; Date only: "2023-06-15"
+            (re-matches #"\d{4}-\d{2}-\d{2}" s)
+            (str (-> (java.time.LocalDate/parse s)
+                     (.atStartOfDay (java.time.ZoneId/of "UTC"))
+                     (.toInstant)
+                     (.truncatedTo java.time.temporal.ChronoUnit/SECONDS)))
+
+            ;; Unrecognized format
+            :else nil))
+
+        :else nil)
+      (catch Exception e
+        (println "Warning: Could not parse date value:" value "-" (ex-message e))
+        nil))))
+
+(defn format-s3-date
+  "Convert S3 LastModified (java.util.Date) to ISO 8601 string (second precision).
+   Returns nil if input is nil."
+  [date]
+  (when date
+    (try
+      (str (.truncatedTo (.toInstant date) java.time.temporal.ChronoUnit/SECONDS))
+      (catch Exception e
+        (println "Warning: Could not format S3 date:" date "-" (ex-message e))
+        nil))))
+
 (defn extract-frontmatter
   "Extract YAML frontmatter from markdown content.
    Returns [frontmatter-map content-without-frontmatter]"
