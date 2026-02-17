@@ -135,9 +135,11 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 - **Task 0009: Semantic Search**
 
   - See: [0009-semantic-search](tasks/0009-semantic-search.md)
-  - OpenSearch integration for full-text search
-  - Relevance scoring and result highlighting
-  - Filter by date range, classification, tags
+  - DuckDB with vss extension for vector similarity search (replaces OpenSearch)
+  - Embedded .duckdb index file stored in S3 (no managed cluster)
+  - Document chunking by heading structure, embeddings via OpenAI or Ollama
+  - Clojure integration via next.jdbc + DuckDB JDBC driver
+  - Batch indexing pipeline with incremental update support
 
 - **Task 0010: Write Support & Admin API**
 
