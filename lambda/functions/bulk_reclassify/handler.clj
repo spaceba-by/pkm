@@ -3,6 +3,7 @@
   (:require [aws.dynamodb :as ddb]
             [aws.lambda :as lambda]
             [aws.s3 :as s3]
+            [shared.deletion :as deletion]
             [cheshire.core :as json]))
 
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
@@ -79,7 +80,11 @@
                     ;; Throttle to avoid overwhelming Bedrock rate limits
                     (Thread/sleep 200))
                   (do
-                    (println "Skipping missing S3 object:" s3-key)
+                    (println "Cleaning up stale DynamoDB records for missing S3 object:" s3-key)
+                    (try
+                      (deletion/cascade-delete-document ddb-table s3-key)
+                      (catch Exception e
+                        (println "Error cleaning up stale records for" s3-key ":" (ex-message e))))
                     (swap! skipped-missing inc))))))
 
           {:statusCode 200

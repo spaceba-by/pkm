@@ -97,6 +97,50 @@ resource "aws_lambda_permission" "allow_eventbridge_extract_metadata" {
   source_arn    = aws_cloudwatch_event_rule.s3_markdown_events_exclude_agent.arn
 }
 
+# EventBridge rule for S3 markdown file deletion events (excludes _agent/)
+resource "aws_cloudwatch_event_rule" "s3_markdown_deleted" {
+  name        = "${var.project_name}-s3-markdown-deleted"
+  description = "Trigger cleanup when markdown files are deleted from S3"
+
+  event_pattern = jsonencode({
+    source      = ["aws.s3"]
+    detail-type = ["Object Deleted"]
+    detail = {
+      bucket = {
+        name = [aws_s3_bucket.vault.id]
+      }
+      object = {
+        key = [{
+          suffix = ".md"
+          }, {
+          anything-but = {
+            prefix = "_agent/"
+          }
+        }]
+      }
+    }
+  })
+
+  tags = {
+    Name = "${var.project_name}-s3-markdown-deleted"
+  }
+}
+
+# Target: delete-document
+resource "aws_cloudwatch_event_target" "delete_document" {
+  rule      = aws_cloudwatch_event_rule.s3_markdown_deleted.name
+  target_id = "delete-document"
+  arn       = aws_lambda_function.delete_document.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_delete_document" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.delete_document.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.s3_markdown_deleted.arn
+}
+
 # EventBridge rule for daily summary
 resource "aws_cloudwatch_event_rule" "daily_summary_schedule" {
   name                = "${var.project_name}-daily-summary-schedule"
