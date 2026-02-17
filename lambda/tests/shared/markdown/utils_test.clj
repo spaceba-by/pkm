@@ -121,7 +121,75 @@
           metadata (md/parse-markdown-metadata content)]
       (is (= "Simple Doc" (:title metadata)))
       (is (not (:has_frontmatter metadata)))
-      (is (some #(= "link" %) (:links_to metadata))))))
+      (is (some #(= "link" %) (:links_to metadata)))))
+
+  (testing "Passes through frontmatter date fields"
+    ;; Note: clj-yaml parses bare dates (YYYY-MM-DD) as java.util.Date objects
+    (let [content "---\ntitle: Dated Doc\ncreated: 2023-01-15\nmodified: 2023-06-20\ndate: 2023-01-15\n---\n\nContent"
+          metadata (md/parse-markdown-metadata content)]
+      (is (instance? java.util.Date (:created metadata)))
+      (is (instance? java.util.Date (:modified metadata)))
+      (is (instance? java.util.Date (:date metadata)))
+      ;; normalize-date can convert these to ISO strings
+      (is (= "2023-01-15T00:00:00Z" (md/normalize-date (:created metadata))))
+      (is (= "2023-06-20T00:00:00Z" (md/normalize-date (:modified metadata)))))))
+
+(deftest normalize-date-test
+  (testing "Returns nil for nil input"
+    (is (nil? (md/normalize-date nil))))
+
+  (testing "Handles full ISO 8601 with timezone"
+    (is (= "2023-06-15T10:30:00Z" (md/normalize-date "2023-06-15T10:30:00Z"))))
+
+  (testing "Handles ISO 8601 with fractional seconds"
+    (is (= "2023-06-15T10:30:00Z" (md/normalize-date "2023-06-15T10:30:00.123Z"))))
+
+  (testing "Handles date-only string"
+    (is (= "2023-06-15T00:00:00Z" (md/normalize-date "2023-06-15"))))
+
+  (testing "Handles date with time, no timezone"
+    (is (= "2023-06-15T10:30:00Z" (md/normalize-date "2023-06-15 10:30"))))
+
+  (testing "Handles date with time and seconds, no timezone"
+    (is (= "2023-06-15T10:30:45Z" (md/normalize-date "2023-06-15 10:30:45"))))
+
+  (testing "Handles dateT time without timezone"
+    (is (= "2023-06-15T10:30:00Z" (md/normalize-date "2023-06-15T10:30:00"))))
+
+  (testing "Handles java.util.Date"
+    (let [instant (java.time.Instant/parse "2023-06-15T10:30:00Z")
+          date (java.util.Date/from instant)]
+      (is (= "2023-06-15T10:30:00Z" (md/normalize-date date)))))
+
+  (testing "Handles java.time.Instant"
+    (let [instant (java.time.Instant/parse "2023-06-15T10:30:00Z")]
+      (is (= "2023-06-15T10:30:00Z" (md/normalize-date instant)))))
+
+  (testing "Returns nil for unparseable string"
+    (is (nil? (md/normalize-date "not a date"))))
+
+  (testing "Returns nil for empty string"
+    (is (nil? (md/normalize-date ""))))
+
+  (testing "Handles whitespace around date"
+    (is (= "2023-06-15T00:00:00Z" (md/normalize-date "  2023-06-15  "))))
+
+  (testing "Handles ISO 8601 with positive offset"
+    (is (= "2023-06-15T05:00:00Z" (md/normalize-date "2023-06-15T10:30:00+05:30")))))
+
+(deftest format-s3-date-test
+  (testing "Returns nil for nil input"
+    (is (nil? (md/format-s3-date nil))))
+
+  (testing "Converts java.util.Date to ISO 8601"
+    (let [instant (java.time.Instant/parse "2023-06-15T10:30:00Z")
+          date (java.util.Date/from instant)]
+      (is (= "2023-06-15T10:30:00Z" (md/format-s3-date date)))))
+
+  (testing "Truncates milliseconds"
+    (let [instant (java.time.Instant/parse "2023-06-15T10:30:00.999Z")
+          date (java.util.Date/from instant)]
+      (is (= "2023-06-15T10:30:00Z" (md/format-s3-date date))))))
 
 (deftest create-frontmatter-test
   (testing "Creates valid YAML frontmatter"

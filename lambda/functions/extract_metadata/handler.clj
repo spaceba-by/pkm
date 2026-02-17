@@ -19,6 +19,16 @@
    ;; Skip .obsidian directory
    (.startsWith object-key ".obsidian/")))
 
+(defn resolve-dates
+  "Resolve created/modified dates from frontmatter, S3 metadata, or current time.
+   Priority: frontmatter > S3 LastModified > now."
+  [metadata s3-last-modified now]
+  (let [fm-created (md/normalize-date (or (:created metadata) (:date metadata)))
+        fm-modified (md/normalize-date (:modified metadata))
+        fallback (or s3-last-modified now)]
+    {:created (or fm-created fallback)
+     :modified (or fm-modified fallback)}))
+
 (defn extract-metadata
   "Extract and store metadata for a markdown document"
   [bucket-name object-key]
@@ -34,10 +44,13 @@
     ;; Parse metadata (no AI needed - pure parsing)
     (let [metadata (md/parse-markdown-metadata content)
           now (md/now-iso)
+          s3-meta (s3/get-object-metadata bucket-name object-key)
+          s3-last-modified (md/format-s3-date (:last-modified s3-meta))
+          {:keys [created modified]} (resolve-dates metadata s3-last-modified now)
           metadata (-> metadata
                        (assoc :s3_key object-key)
-                       (assoc :modified now)
-                       (update :created #(or % now)))]
+                       (assoc :modified modified)
+                       (assoc :created created))]
 
       (println "Extracted metadata from" object-key ":" (:title metadata))
 

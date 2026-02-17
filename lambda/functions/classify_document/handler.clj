@@ -100,21 +100,23 @@
   [bucket-name object-key]
   (println "Processing document:" object-key)
 
-  ;; Check for classification override before reclassifying
-  (let [existing (ddb/get-item ddb-table {:PK object-key :SK "METADATA"})]
-    (when (:classification_override existing)
+  ;; Fetch existing record once for override check and date preservation
+  (let [existing-record (ddb/get-item ddb-table {:PK object-key :SK "METADATA"})]
+
+    ;; Check for classification override before reclassifying
+    (when (:classification_override existing-record)
       (println "Skipping" object-key "- classification override is set")
       (throw (ex-info "Classification override set"
                       {:object-key object-key
-                       :classification (:classification existing)
-                       :skipped true}))))
+                       :classification (:classification existing-record)
+                       :skipped true})))
 
-  ;; Check if document still exists in S3
-  (when-not (s3/object-exists? bucket-name object-key)
-    (println "Document no longer exists in S3:" object-key)
-    (throw (ex-info "Document not found in S3"
-                    {:object-key object-key
-                     :not-found true})))
+    ;; Check if document still exists in S3
+    (when-not (s3/object-exists? bucket-name object-key)
+      (println "Document no longer exists in S3:" object-key)
+      (throw (ex-info "Document not found in S3"
+                      {:object-key object-key
+                       :not-found true})))
 
   ;; Get document content
   (let [content (s3/get-object bucket-name object-key)]
@@ -142,12 +144,16 @@
           _ (println "Classified" object-key "as:" classification
                      "confidence:" confidence)
 
-          ;; Add classification, confidence, and timestamp to metadata
+          ;; Add classification and confidence to metadata
+          ;; Preserve existing created/modified dates from extract_metadata
           metadata (assoc metadata
                          :classification classification
                          :classification_confidence confidence
-                         :modified (md/now-iso)
-                         :s3_key object-key)]
+                         :s3_key object-key)
+          metadata (cond-> metadata
+                     (:created existing-record)  (assoc :created (:created existing-record))
+                     (:modified existing-record) (assoc :modified (:modified existing-record))
+                     (not (:modified existing-record)) (assoc :modified (md/now-iso)))]
 
       ;; Store classification in DynamoDB
       (ddb/put-item ddb-table
