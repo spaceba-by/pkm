@@ -100,25 +100,26 @@
   [bucket-name object-key]
   (println "Processing document:" object-key)
 
-  ;; Check for classification override before reclassifying
+  ;; Fetch existing record once for override check and date preservation
   (let [existing-record (ddb/get-item ddb-table {:PK object-key :SK "METADATA"})]
+
+    ;; Check for classification override before reclassifying
     (when (:classification_override existing-record)
       (println "Skipping" object-key "- classification override is set")
       (throw (ex-info "Classification override set"
                       {:object-key object-key
                        :classification (:classification existing-record)
-                       :skipped true}))))
+                       :skipped true})))
 
-  ;; Check if document still exists in S3
-  (when-not (s3/object-exists? bucket-name object-key)
-    (println "Document no longer exists in S3:" object-key)
-    (throw (ex-info "Document not found in S3"
-                    {:object-key object-key
-                     :not-found true})))
+    ;; Check if document still exists in S3
+    (when-not (s3/object-exists? bucket-name object-key)
+      (println "Document no longer exists in S3:" object-key)
+      (throw (ex-info "Document not found in S3"
+                      {:object-key object-key
+                       :not-found true})))
 
-  ;; Get document content and existing record for date preservation
-  (let [existing-record (ddb/get-item ddb-table {:PK object-key :SK "METADATA"})
-        content (s3/get-object bucket-name object-key)]
+  ;; Get document content
+  (let [content (s3/get-object bucket-name object-key)]
 
     (when (empty? content)
       (println "Warning: Empty content for" object-key)

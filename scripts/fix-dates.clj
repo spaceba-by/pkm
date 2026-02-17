@@ -35,8 +35,8 @@
 
 (defn resolve-dates
   "Resolve correct dates for a document from frontmatter and S3 metadata.
-   Returns {:created <iso> :modified <iso>} with best available dates,
-   or nil if no changes needed."
+   Returns a map with any of {:created <iso> :modified <iso>} for fields that
+   should be updated, or nil if no changes are needed."
   [metadata s3-last-modified existing-record]
   (let [fm-created (md/normalize-date (or (:created metadata) (:date metadata)))
         fm-modified (md/normalize-date (:modified metadata))
