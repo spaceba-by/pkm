@@ -3,11 +3,16 @@
 ;;
 ;; Scans all METADATA records in DynamoDB, re-reads document content from S3,
 ;; and updates created/modified timestamps using the priority:
-;;   1. Frontmatter dates (created, modified, date)
-;;   2. Frontmatter id field (if it contains a parseable date, e.g. "2026.02.12")
-;;   3. S3 key path (for daily notes like "daily/2026/01/2026.01.23.md")
-;;   4. S3 object LastModified
-;;   5. Leave existing DynamoDB value unchanged
+;;   For :created (priority chain):
+;;     1. Frontmatter dates (created, date)
+;;     2. Frontmatter id field (e.g. "2026.02.12")
+;;     3. S3 key path (e.g. "daily/2026/01/2026.01.23.md" or "daily/2026-01-23.md")
+;;     4. S3 object LastModified
+;;     5. Leave existing DynamoDB value unchanged
+;;   For :modified:
+;;     1. Frontmatter modified field
+;;     2. S3 object LastModified
+;;     3. Leave existing DynamoDB value unchanged
 ;;
 ;; Usage (from lambda/ directory):
 ;;   bb -cp shared ../scripts/fix-dates.clj --dry-run
@@ -41,7 +46,7 @@
    Returns an ISO date string or nil."
   [id-value]
   (when id-value
-    (let [s (str id-value)]
+    (let [s (str/trim (str id-value))]
       (try
         (cond
           ;; YYYY.MM.DD format (e.g. "2026.02.12")
@@ -56,18 +61,27 @@
         (catch Exception _ nil)))))
 
 (defn extract-date-from-key
-  "Extract a date from an S3 key path. Daily journal notes use paths like
-   'daily/2026/01/2026.01.23.md'. Returns an ISO date string or nil."
+  "Extract a date from an S3 key path. Supports two daily note layouts:
+   - Nested: 'daily/2026/01/2026.01.23.md'
+   - Flat:   'daily/2026-01-23.md'
+   Returns an ISO date string or nil."
   [s3-key]
   (when s3-key
-    (when-let [match (re-find #"daily/\d{4}/\d{2}/(\d{4}\.\d{2}\.\d{2})\.md$" s3-key)]
-      (md/normalize-date (str/replace (second match) "." "-")))))
+    (or
+     ;; Nested: daily/YYYY/MM/YYYY.MM.DD.md
+     (when-let [match (re-find #"daily/\d{4}/\d{2}/(\d{4}\.\d{2}\.\d{2})\.md$" s3-key)]
+       (md/normalize-date (str/replace (second match) "." "-")))
+     ;; Flat: daily/YYYY-MM-DD.md
+     (when-let [match (re-find #"daily/(\d{4}-\d{2}-\d{2})\.md$" s3-key)]
+       (md/normalize-date (second match))))))
 
 (defn resolve-dates
   "Resolve correct dates for a document from frontmatter, id, key path, and S3 metadata.
    Returns a map with any of {:created <iso> :modified <iso>} for fields that
    should be updated, or nil if no changes are needed.
-   Priority: frontmatter dates > frontmatter id > S3 key path > S3 LastModified."
+
+   :created priority: frontmatter dates > frontmatter id > S3 key path > S3 LastModified
+   :modified priority: frontmatter modified > S3 LastModified"
   [metadata s3-key s3-last-modified existing-record]
   (let [fm-created (md/normalize-date (or (:created metadata) (:date metadata)))
         fm-modified (md/normalize-date (:modified metadata))
