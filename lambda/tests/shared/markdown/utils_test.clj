@@ -124,11 +124,15 @@
       (is (some #(= "link" %) (:links_to metadata)))))
 
   (testing "Passes through frontmatter date fields"
+    ;; Note: clj-yaml parses bare dates (YYYY-MM-DD) as java.util.Date objects
     (let [content "---\ntitle: Dated Doc\ncreated: 2023-01-15\nmodified: 2023-06-20\ndate: 2023-01-15\n---\n\nContent"
           metadata (md/parse-markdown-metadata content)]
-      (is (= "2023-01-15" (:created metadata)))
-      (is (= "2023-06-20" (:modified metadata)))
-      (is (= "2023-01-15" (:date metadata))))))
+      (is (instance? java.util.Date (:created metadata)))
+      (is (instance? java.util.Date (:modified metadata)))
+      (is (instance? java.util.Date (:date metadata)))
+      ;; normalize-date can convert these to ISO strings
+      (is (= "2023-01-15T00:00:00Z" (md/normalize-date (:created metadata))))
+      (is (= "2023-06-20T00:00:00Z" (md/normalize-date (:modified metadata)))))))
 
 (deftest normalize-date-test
   (testing "Returns nil for nil input"

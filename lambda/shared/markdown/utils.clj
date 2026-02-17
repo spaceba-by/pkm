@@ -38,9 +38,11 @@
             ;; Date with time, no timezone: "2023-06-15 10:30" or "2023-06-15 10:30:00"
             (re-matches #"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$" s)
             (let [normalized (str/replace s " " "T")
-                  normalized (if (re-matches #".*\d{2}:\d{2}$" normalized)
-                               (str normalized ":00Z")
-                               (str normalized "Z"))]
+                  ;; Only HH:MM (no seconds) — append :00Z; with seconds — append Z
+                  has-seconds (re-matches #"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$" normalized)
+                  normalized (if has-seconds
+                               (str normalized "Z")
+                               (str normalized ":00Z"))]
               (str (.truncatedTo (java.time.Instant/parse normalized)
                                  java.time.temporal.ChronoUnit/SECONDS)))
 
