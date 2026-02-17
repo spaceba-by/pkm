@@ -3,9 +3,16 @@
 ;;
 ;; Scans all METADATA records in DynamoDB, re-reads document content from S3,
 ;; and updates created/modified timestamps using the priority:
-;;   1. Frontmatter dates (created, modified, date)
-;;   2. S3 object LastModified
-;;   3. Leave existing DynamoDB value unchanged
+;;   For :created (priority chain):
+;;     1. Frontmatter dates (created, date)
+;;     2. Frontmatter id field (e.g. "2026.02.12")
+;;     3. S3 key path (e.g. "daily/2026/01/2026.01.23.md" or "daily/2026-01-23.md")
+;;     4. S3 object LastModified
+;;     5. Leave existing DynamoDB value unchanged
+;;   For :modified:
+;;     1. Frontmatter modified field
+;;     2. S3 object LastModified
+;;     3. Leave existing DynamoDB value unchanged
 ;;
 ;; Usage (from lambda/ directory):
 ;;   bb -cp shared ../scripts/fix-dates.clj --dry-run
@@ -33,16 +40,56 @@
 
 ;; --- Date resolution ---
 
+(defn extract-date-from-id
+  "Extract a date from a frontmatter id field. Many daily notes encode the date
+   in the id using dot-separated format, e.g. 'id: 2026.02.12' for 2026-02-12.
+   Returns an ISO date string or nil."
+  [id-value]
+  (when id-value
+    (let [s (str/trim (str id-value))]
+      (try
+        (cond
+          ;; YYYY.MM.DD format (e.g. "2026.02.12")
+          (re-matches #"\d{4}\.\d{2}\.\d{2}" s)
+          (md/normalize-date (str/replace s "." "-"))
+
+          ;; Already a date-like string, delegate to normalize-date
+          (re-matches #"\d{4}-\d{2}-\d{2}.*" s)
+          (md/normalize-date s)
+
+          :else nil)
+        (catch Exception _ nil)))))
+
+(defn extract-date-from-key
+  "Extract a date from an S3 key path. Supports two daily note layouts:
+   - Nested: 'daily/2026/01/2026.01.23.md'
+   - Flat:   'daily/2026-01-23.md'
+   Returns an ISO date string or nil."
+  [s3-key]
+  (when s3-key
+    (or
+     ;; Nested: daily/YYYY/MM/YYYY.MM.DD.md
+     (when-let [match (re-find #"daily/\d{4}/\d{2}/(\d{4}\.\d{2}\.\d{2})\.md$" s3-key)]
+       (md/normalize-date (str/replace (second match) "." "-")))
+     ;; Flat: daily/YYYY-MM-DD.md
+     (when-let [match (re-find #"daily/(\d{4}-\d{2}-\d{2})\.md$" s3-key)]
+       (md/normalize-date (second match))))))
+
 (defn resolve-dates
-  "Resolve correct dates for a document from frontmatter and S3 metadata.
+  "Resolve correct dates for a document from frontmatter, id, key path, and S3 metadata.
    Returns a map with any of {:created <iso> :modified <iso>} for fields that
-   should be updated, or nil if no changes are needed."
-  [metadata s3-last-modified existing-record]
+   should be updated, or nil if no changes are needed.
+
+   :created priority: frontmatter dates > frontmatter id > S3 key path > S3 LastModified
+   :modified priority: frontmatter modified > S3 LastModified"
+  [metadata s3-key s3-last-modified existing-record]
   (let [fm-created (md/normalize-date (or (:created metadata) (:date metadata)))
         fm-modified (md/normalize-date (:modified metadata))
+        id-date (extract-date-from-id (:id metadata))
+        key-date (extract-date-from-key s3-key)
         s3-date (md/format-s3-date s3-last-modified)
-        ;; Determine best dates
-        best-created (or fm-created s3-date)
+        ;; Determine best dates using priority chain
+        best-created (or fm-created id-date key-date s3-date)
         best-modified (or fm-modified s3-date)
         current-created (:created existing-record)
         current-modified (:modified existing-record)
@@ -64,7 +111,7 @@
     (let [content (s3/get-object bucket s3-key)
           metadata (md/parse-markdown-metadata content)
           s3-meta (s3/get-object-metadata bucket s3-key)
-          date-updates (resolve-dates metadata (:last-modified s3-meta) existing-record)]
+          date-updates (resolve-dates metadata s3-key (:last-modified s3-meta) existing-record)]
       (if date-updates
         (do
           (ddb/update-item-attrs table-name
@@ -165,7 +212,7 @@ Options:
                 (let [content (s3/get-object bucket s3-key)
                       metadata (md/parse-markdown-metadata content)
                       s3-meta (s3/get-object-metadata bucket s3-key)
-                      date-updates (resolve-dates metadata (:last-modified s3-meta) record)]
+                      date-updates (resolve-dates metadata s3-key (:last-modified s3-meta) record)]
                   (if date-updates
                     (do
                       (swap! would-update inc)
