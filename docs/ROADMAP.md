@@ -132,6 +132,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Bulk reclassify stale record cleanup
   - Fixes orphaned DynamoDB data when files are deleted from Obsidian vault
 
+- **Task 0017: Insights Calendar Design**
+
+  - See: [0017-insights-calendar-design](tasks/0017-insights-calendar-design.md)
+  - Replace Insights tab segmented list with monthly calendar grid view
+  - Visual indicators for days with daily summaries and weeks with weekly reports
+  - Month-to-month navigation matching iOS Calendar app conventions
+  - UI mockup design phase before implementation
+  - Accessibility support for calendar interactions
+
 - **Task 0009: Semantic Search**
 
   - See: [0009-semantic-search](tasks/0009-semantic-search.md)
