@@ -33,7 +33,7 @@
          :task (shell "rm -rf functions/*/bootstrap functions/*/*.zip")}
 
   test {:doc "Run tests"
-        :task (shell "bb -cp shared:tests -m test-runner")}
+        :task (shell "bb -cp" (str (with-out-str (babashka.deps/clojure ["-Spath"])) ":shared:tests") "-m" "test-runner")}
 
   repl {:doc "Start nREPL server for development"
         :task (shell "bb --nrepl-server")}}}

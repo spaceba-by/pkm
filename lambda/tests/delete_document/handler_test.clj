@@ -27,23 +27,23 @@
 
 (deftest should-skip-test
   (testing "Skips non-markdown files"
-    (is (true? (should-skip? "notes/image.png")))
-    (is (true? (should-skip? "notes/data.json")))
-    (is (true? (should-skip? "notes/readme.txt"))))
+    (is (should-skip? "notes/image.png"))
+    (is (should-skip? "notes/data.json"))
+    (is (should-skip? "notes/readme.txt")))
 
   (testing "Skips _agent directory files"
-    (is (true? (should-skip? "_agent/summaries/2025-01-20.md")))
-    (is (true? (should-skip? "_agent/reports/weekly.md")))
-    (is (true? (should-skip? "vault/_agent/test.md"))))
+    (is (should-skip? "_agent/summaries/2025-01-20.md"))
+    (is (should-skip? "_agent/reports/weekly.md"))
+    (is (should-skip? "vault/_agent/test.md")))
 
   (testing "Skips .obsidian directory files"
-    (is (true? (should-skip? ".obsidian/config.md")))
-    (is (true? (should-skip? "vault/.obsidian/plugins.md"))))
+    (is (should-skip? ".obsidian/config.md"))
+    (is (should-skip? "vault/.obsidian/plugins.md")))
 
   (testing "Does not skip normal markdown files"
-    (is (false? (should-skip? "notes/meeting.md")))
-    (is (false? (should-skip? "daily notes/2025-01-20.md")))
-    (is (false? (should-skip? "projects/roadmap.md")))))
+    (is (not (should-skip? "notes/meeting.md")))
+    (is (not (should-skip? "daily notes/2025-01-20.md")))
+    (is (not (should-skip? "projects/roadmap.md")))))
 
 ;; =============================================================================
 ;; Handler response shape tests
