@@ -10,7 +10,7 @@ A collection of iOS rendering, display, and data loading improvements. The app c
 
 Documents from the Obsidian vault include YAML front matter blocks (delimited by `---`) at the top. Currently, the full markdown content including front matter is passed directly to `StructuredText`, which renders the YAML block as raw text. This is redundant since the metadata (classification, tags, entities, dates) is already displayed in the document detail header.
 
-The fix should strip YAML front matter from the content before rendering. The `hasFrontmatter` flag on `DocumentMetadata` already indicates whether front matter is present and can be used to gate the stripping logic.
+The fix should strip YAML front matter from the content before rendering. Detection should be done directly on the content string by matching `---` delimiters at the start (regex approach), rather than relying on the `hasFrontmatter` flag on `DocumentMetadata`. The flag is not reliably preserved through the cache layer: `CachedDocument.toDocument()` always sets `hasFrontmatter: false`, so any document loaded from cache would incorrectly skip stripping even when front matter is present in the content.
 
 ### Render Checkboxes
 
@@ -50,7 +50,7 @@ The fix should ensure the unfiltered document list reliably returns the requeste
 
 ## Implementation Steps
 
-- [ ] Step 1: Strip YAML front matter from document content - Add a content-processing step in `DocumentDetailViewModel` that removes the front matter block (everything between opening `---` and closing `---` at the start of the content) before passing it to the view. Use the `hasFrontmatter` flag to determine whether stripping is needed.
+- [ ] Step 1: Strip YAML front matter from document content - Add a content-processing step in `DocumentDetailViewModel` that removes the front matter block (everything between opening `---` and closing `---` at the start of the content) before passing it to the view. Detect front matter directly by regex-matching the content (e.g. `/\A---\n[\s\S]*?\n---\n?/`), regardless of the `hasFrontmatter` flag. Do not rely on the flag: `CachedDocument.toDocument()` always sets it to `false`, so cached documents would silently skip stripping despite still containing front matter in the content string.
 - [ ] Step 2: Render checkboxes in markdown content - Pre-process markdown content to convert `- [ ]` and `- [x]` patterns into rendered checkbox indicators that `StructuredText` can display. Evaluate whether Textual supports GitHub Flavored Markdown task lists natively, or implement a content transformation.
 - [ ] Step 3: Handle internal markdown links - Pre-process `[[wikilink]]` syntax into tappable links that navigate to the corresponding document within the app. Resolve link targets against known document paths. Ensure standard markdown links to external URLs continue to work.
 - [ ] Step 4: Fix unfiltered document list scan - Investigate and fix the `api_list_documents` Lambda so that unfiltered scans return the requested number of METADATA documents. Either accumulate results across multiple scan pages until the limit is met, or switch to an index-based query. Update unit tests for the handler.
