@@ -87,36 +87,50 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
         Tag(id: "swift", name: "swift", documentCount: 4)
     ]
 
-    private let fixtureSummaries: [Summary] = [
-        Summary(
-            id: "_agent/summaries/2024-01-03.md",
-            date: "2024-01-03",
-            modified: Date(timeIntervalSince1970: 1_704_240_000)
-        ),
-        Summary(
-            id: "_agent/summaries/2024-01-02.md",
-            date: "2024-01-02",
-            modified: Date(timeIntervalSince1970: 1_704_153_600)
-        ),
-        Summary(
-            id: "_agent/summaries/2024-01-01.md",
-            date: "2024-01-01",
-            modified: Date(timeIntervalSince1970: 1_704_067_200)
-        )
-    ]
+    private var fixtureSummaries: [Summary] {
+        // Generate summaries for today and a few recent days so the calendar always has data
+        let calendar = Calendar.current
+        let today = Date()
+        var summaries: [Summary] = []
+        for offset in [0, -1, -2, -5, -8, -12] {
+            if let date = calendar.date(byAdding: .day, value: offset, to: today) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                let dateStr = formatter.string(from: date)
+                summaries.append(Summary(
+                    id: "_agent/summaries/\(dateStr).md",
+                    date: dateStr,
+                    modified: date
+                ))
+            }
+        }
+        return summaries
+    }
 
-    private let fixtureReports: [Report] = [
-        Report(
-            id: "_agent/reports/2024-01-15.md",
-            weekOf: "2024-01-15",
-            modified: Date(timeIntervalSince1970: 1_705_276_800)
-        ),
-        Report(
-            id: "_agent/reports/2024-01-08.md",
-            weekOf: "2024-01-08",
-            modified: Date(timeIntervalSince1970: 1_704_672_000)
-        )
-    ]
+    private var fixtureReports: [Report] {
+        // Generate reports for the current week and the previous week
+        let calendar = Calendar.current
+        let today = Date()
+        var reports: [Report] = []
+        for weekOffset in [0, -1] {
+            if let weekStart = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: today) {
+                // Find the Monday of that week
+                let weekday = calendar.component(.weekday, from: weekStart)
+                let daysToMonday = (weekday == 1) ? -6 : 2 - weekday
+                if let monday = calendar.date(byAdding: .day, value: daysToMonday, to: weekStart) {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd"
+                    let dateStr = formatter.string(from: monday)
+                    reports.append(Report(
+                        id: "_agent/reports/weekly/\(dateStr).md",
+                        weekOf: dateStr,
+                        modified: monday
+                    ))
+                }
+            }
+        }
+        return reports
+    }
 
     // MARK: - APIClientProtocol
 

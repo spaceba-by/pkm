@@ -1,6 +1,6 @@
 # Task 0017: Insights Calendar Design
 
-**Status**: Planned
+**Status**: Complete
 
 ## Specifications
 
@@ -80,26 +80,26 @@ Redesign the Insights tab to use a monthly calendar view instead of the current 
 
 ## Acceptance Criteria
 
-- [ ] UI mockups designed and approved before implementation begins
-- [ ] Monthly calendar grid displays with correct day layout for each month
-- [ ] Month-to-month navigation via swipe and/or chevron buttons
-- [ ] Days with daily summaries show a visual indicator (dot/marker)
-- [ ] Weeks with weekly reports show a distinct visual indicator
-- [ ] Today's date is visually highlighted
-- [ ] Tapping a day with a summary navigates to SummaryDetailView
-- [ ] Tapping a week's report indicator navigates to ReportDetailView
-- [ ] Days without content are visually distinct and non-navigable
-- [ ] Calendar handles months with no data gracefully
-- [ ] Pull-to-refresh reloads summary and report data
-- [ ] Existing detail views (SummaryDetailView, ReportDetailView) remain functional
-- [ ] CalendarViewModel has unit test coverage
-- [ ] UI tests updated for calendar-based navigation
-- [ ] Snapshot tests added for calendar states (loaded, empty month, today highlight)
-- [ ] Accessibility: VoiceOver labels for days, summary/report indicators, month navigation
+- [x] UI mockups designed and approved before implementation begins
+- [x] Monthly calendar grid displays with correct day layout for each month
+- [x] Month-to-month navigation via swipe and/or chevron buttons
+- [x] Days with daily summaries show a visual indicator (dot/marker)
+- [x] Weeks with weekly reports show a distinct visual indicator
+- [x] Today's date is visually highlighted
+- [x] Tapping a day with a summary navigates to SummaryDetailView
+- [x] Tapping a week's report indicator navigates to ReportDetailView
+- [x] Days without content are visually distinct and non-navigable
+- [x] Calendar handles months with no data gracefully
+- [x] Pull-to-refresh reloads summary and report data
+- [x] Existing detail views (SummaryDetailView, ReportDetailView) remain functional
+- [x] CalendarViewModel has unit test coverage
+- [x] UI tests updated for calendar-based navigation
+- [x] Snapshot tests added for calendar states (loaded, empty month, today highlight)
+- [x] Accessibility: VoiceOver labels for days, summary/report indicators, month navigation
 
 ## Implementation Steps
 
-- [ ] Step 1: UI Mockup Design
+- [x] Step 1: UI Mockup Design
   - Create ASCII or SwiftUI preview mockups of the calendar layout
   - Mockup monthly grid showing day numbers in a 7-column grid
   - Mockup summary dot indicators on days with content
@@ -110,7 +110,43 @@ Redesign the Insights tab to use a monthly calendar view instead of the current 
   - Document interaction model: what happens on tap of day, week indicator, empty day
   - Present mockups for review and approval before proceeding
 
-- [ ] Step 2: CalendarViewModel and Data Layer
+  ### Design Mockup
+
+  ```
+  +-----------------------------------------------+
+  |              < January 2024 >                  |  CalendarHeaderView
+  +-----------------------------------------------+
+  | Sun   Mon   Tue   Wed   Thu   Fri   Sat       |  Weekday labels
+  +-----------------------------------------------+
+  |                     1     2     3     4     5  |
+  |                          (*)   (*)            |  (*) = summary dot
+  |  ▎ 6     7     8     9    10    11    12      |  ▎ = report indicator (left bar)
+  |                                                |
+  | ▎ 13    14   [15]   16    17    18    19      |  [15] = today highlight (circle)
+  |                (*)                             |
+  |   20    21    22    23    24    25    26       |
+  |                                                |
+  |   27    28    29    30    31                   |
+  +-----------------------------------------------+
+  ```
+
+  **Layout**: Standard 7-column grid (Sun-Sat), one month at a time.
+
+  **Visual indicators**:
+  - Summary dot: Small filled circle below the day number (system tint color)
+  - Report indicator: Subtle vertical bar on the left edge of the week row (system tint color)
+  - Today: Circular background highlight on the day number
+
+  **Interaction model**:
+  - Tap day with summary dot -> navigates to SummaryDetailView
+  - Tap report indicator bar -> navigates to ReportDetailView
+  - Tap day without summary -> no action (cell is non-interactive)
+  - Swipe left/right or tap chevrons -> navigate between months
+  - Pull down -> refresh data
+
+  **Empty month state**: Calendar grid renders normally, no dots or bars. Centered text below: "No insights this month"
+
+- [x] Step 2: CalendarViewModel and Data Layer
   - Create `CalendarViewModel` managing: displayed month/year, navigation, date sets
   - Compute calendar grid data: first weekday offset, number of days, week rows
   - Build lookup sets from Summary dates and Report weekOf dates
@@ -120,7 +156,7 @@ Redesign the Insights tab to use a monthly calendar view instead of the current 
   - Load summaries and reports via existing view models or direct API calls
   - Unit tests for grid computation, date lookups, month navigation
 
-- [ ] Step 3: Calendar UI Components
+- [x] Step 3: Calendar UI Components
   - Implement `CalendarHeaderView` with month/year title and left/right chevron buttons
   - Implement `CalendarDayCell` showing date number, summary dot, today highlight, tap gesture
   - Implement `WeekReportIndicator` for rows with an associated weekly report
@@ -128,7 +164,7 @@ Redesign the Insights tab to use a monthly calendar view instead of the current 
   - Support swipe gesture for month navigation (horizontal swipe or `TabView` with page style)
   - Style to match iOS system calendar conventions (SF Symbols, system colors)
 
-- [ ] Step 4: Integrate Calendar into InsightsView
+- [x] Step 4: Integrate Calendar into InsightsView
   - Replace segmented control and list views with `CalendarView`
   - Wire tap on summary day to navigate to `SummaryDetailView`
   - Wire tap on report indicator to navigate to `ReportDetailView`
@@ -136,7 +172,7 @@ Redesign the Insights tab to use a monthly calendar view instead of the current 
   - Handle loading and error states
   - Remove `SummaryListView` and `ReportListView` (or keep as fallback if desired)
 
-- [ ] Step 5: Accessibility and Polish
+- [x] Step 5: Accessibility and Polish
   - Add VoiceOver labels: "[Date], daily summary available" or "[Date], no summary"
   - Add VoiceOver hints for report indicators: "Double tap to view weekly report"
   - Add accessibility traits for interactive day cells
@@ -144,7 +180,7 @@ Redesign the Insights tab to use a monthly calendar view instead of the current 
   - Style today indicator, summary dots, and report indicators with system semantic colors
   - Test with VoiceOver and Dynamic Type at various sizes
 
-- [ ] Step 6: Tests and Snapshots
+- [x] Step 6: Tests and Snapshots
   - Update `InsightsScreenTests` UI tests for calendar navigation and tapping
   - Update `InsightsPage` page object for calendar elements
   - Add `CalendarViewModelTests`: month navigation, date lookup, grid computation, edge cases

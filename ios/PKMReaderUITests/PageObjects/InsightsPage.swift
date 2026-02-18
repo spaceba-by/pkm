@@ -1,6 +1,6 @@
 import XCTest
 
-/// Page object for the Insights screen
+/// Page object for the Insights screen (calendar-based)
 final class InsightsPage {
     private let app: XCUIApplication
 
@@ -14,43 +14,51 @@ final class InsightsPage {
         app.otherElements["InsightsView"].firstMatch
     }
 
-    var summariesSegment: XCUIElement {
-        app.buttons["Summaries"].firstMatch
+    var calendarView: XCUIElement {
+        app.otherElements["CalendarView"].firstMatch
     }
 
-    var reportsSegment: XCUIElement {
-        app.buttons["Reports"].firstMatch
+    var monthTitle: XCUIElement {
+        app.staticTexts["CalendarMonthTitle"].firstMatch
     }
 
-    var summaryList: XCUIElement {
-        app.collectionViews["SummaryList"].firstMatch
+    var previousMonthButton: XCUIElement {
+        app.buttons["CalendarPreviousMonth"].firstMatch
     }
 
-    var reportList: XCUIElement {
-        app.collectionViews["ReportList"].firstMatch
+    var nextMonthButton: XCUIElement {
+        app.buttons["CalendarNextMonth"].firstMatch
+    }
+
+    var emptyMonthLabel: XCUIElement {
+        app.staticTexts["EmptyMonthLabel"].firstMatch
     }
 
     // MARK: - Actions
 
-    func selectSummaries() {
-        summariesSegment.tap()
+    func tapPreviousMonth() {
+        previousMonthButton.tap()
     }
 
-    func selectReports() {
-        reportsSegment.tap()
+    func tapNextMonth() {
+        nextMonthButton.tap()
     }
 
-    func tapSummary(at index: Int) {
-        summaryList.cells.element(boundBy: index).tap()
+    func tapDay(id: String) {
+        app.buttons["CalendarDay_\(id)"].firstMatch.tap()
     }
 
-    func tapReport(at index: Int) {
-        reportList.cells.element(boundBy: index).tap()
+    func tapWeekReportIndicator() {
+        app.buttons["WeekReportIndicator"].firstMatch.tap()
     }
 
     // MARK: - Assertions
 
     func assertIsDisplayed(timeout: TimeInterval = 5) {
         XCTAssertTrue(insightsView.waitForExistence(timeout: timeout), "Insights screen not displayed")
+    }
+
+    func assertCalendarIsDisplayed(timeout: TimeInterval = 5) {
+        XCTAssertTrue(calendarView.waitForExistence(timeout: timeout), "Calendar view not displayed")
     }
 }

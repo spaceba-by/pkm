@@ -1,35 +1,69 @@
 import SwiftUI
 
-/// Container view with segmented control for summaries and reports
+/// Container view displaying a monthly calendar with summary and report indicators
 struct InsightsView: View {
     let apiClient: any APIClientProtocol
-    @State private var selectedSegment: InsightSegment = .summaries
+    @StateObject private var viewModel: CalendarViewModel
 
-    enum InsightSegment: String, CaseIterable {
-        case summaries = "Summaries"
-        case reports = "Reports"
+    init(apiClient: any APIClientProtocol) {
+        self.apiClient = apiClient
+        _viewModel = StateObject(wrappedValue: CalendarViewModel(apiClient: apiClient))
     }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Picker("Insights", selection: $selectedSegment) {
-                    ForEach(InsightSegment.allCases, id: \.self) { segment in
-                        Text(segment.rawValue).tag(segment)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
+            Group {
+                switch viewModel.state {
+                case .loading:
+                    LoadingView(message: "Loading insights...")
 
-                switch selectedSegment {
-                case .summaries:
-                    SummaryListView(apiClient: apiClient)
-                case .reports:
-                    ReportListView(apiClient: apiClient)
+                case .loaded:
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            CalendarView(
+                                viewModel: viewModel,
+                                onSummaryTap: { summary in
+                                    selectedSummary = summary
+                                },
+                                onReportTap: { report in
+                                    selectedReport = report
+                                }
+                            )
+
+                            if !viewModel.hasInsightsThisMonth {
+                                Text("No insights this month")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 8)
+                                    .accessibilityIdentifier("EmptyMonthLabel")
+                            }
+                        }
+                        .padding(.vertical)
+                    }
+                    .refreshable {
+                        await viewModel.refresh()
+                    }
+
+                case .error(let error):
+                    ErrorView(error: error) {
+                        Task { await viewModel.loadData() }
+                    }
                 }
             }
             .navigationTitle("Insights")
+            .navigationDestination(item: $selectedSummary) { summary in
+                SummaryDetailView(summary: summary, apiClient: apiClient)
+            }
+            .navigationDestination(item: $selectedReport) { report in
+                ReportDetailView(report: report, apiClient: apiClient)
+            }
+        }
+        .task {
+            await viewModel.loadData()
         }
         .accessibilityIdentifier("InsightsView")
     }
+
+    @State private var selectedSummary: Summary?
+    @State private var selectedReport: Report?
 }
