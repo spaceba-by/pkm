@@ -118,53 +118,53 @@
                       {:object-key object-key
                        :not-found true})))
 
-  ;; Get document content
-  (let [content (s3/get-object bucket-name object-key)]
+    ;; Get document content
+    (let [content (s3/get-object bucket-name object-key)]
 
-    (when (empty? content)
-      (println "Warning: Empty content for" object-key)
-      (throw (ex-info "Empty document" {:object-key object-key})))
+      (when (empty? content)
+        (println "Warning: Empty content for" object-key)
+        (throw (ex-info "Empty document" {:object-key object-key})))
 
-    ;; Parse metadata
-    (let [metadata (md/parse-markdown-metadata content)
+      ;; Parse metadata
+      (let [metadata (md/parse-markdown-metadata content)
 
-          ;; Check for deterministic frontmatter signals before calling Bedrock
-          fm-signal (detect-classification-from-frontmatter metadata object-key)
+            ;; Check for deterministic frontmatter signals before calling Bedrock
+            fm-signal (detect-classification-from-frontmatter metadata object-key)
 
-          result (if fm-signal
-                   (do (println "Frontmatter signal detected for" object-key
-                                ":" (:signal fm-signal)
-                                "→" (:classification fm-signal))
-                       fm-signal)
-                   (bedrock/classify-document bedrock-model content metadata))
+            result (if fm-signal
+                     (do (println "Frontmatter signal detected for" object-key
+                                  ":" (:signal fm-signal)
+                                  "→" (:classification fm-signal))
+                         fm-signal)
+                     (bedrock/classify-document bedrock-model content metadata))
 
-          classification (:classification result)
-          confidence (:confidence result)
+            classification (:classification result)
+            confidence (:confidence result)
 
-          _ (println "Classified" object-key "as:" classification
-                     "confidence:" confidence)
+            _ (println "Classified" object-key "as:" classification
+                       "confidence:" confidence)
 
-          ;; Add classification and confidence to metadata
-          ;; Preserve existing created/modified dates from extract_metadata
-          metadata (assoc metadata
-                         :classification classification
-                         :classification_confidence confidence
-                         :s3_key object-key)
-          metadata (cond-> metadata
-                     (:created existing-record)  (assoc :created (:created existing-record))
-                     (:modified existing-record) (assoc :modified (:modified existing-record))
-                     (not (:modified existing-record)) (assoc :modified (md/now-iso)))]
+            ;; Add classification and confidence to metadata
+            ;; Preserve existing created/modified dates from extract_metadata
+            metadata (assoc metadata
+                           :classification classification
+                           :classification_confidence confidence
+                           :s3_key object-key)
+            metadata (cond-> metadata
+                       (:created existing-record)  (assoc :created (:created existing-record))
+                       (:modified existing-record) (assoc :modified (:modified existing-record))
+                       (not (:modified existing-record)) (assoc :modified (md/now-iso)))]
 
-      ;; Store classification in DynamoDB
-      (ddb/put-item ddb-table
-                    (assoc metadata
-                           :PK object-key
-                           :SK "METADATA"
-                           :document_path object-key))
+        ;; Store classification in DynamoDB
+        (ddb/put-item ddb-table
+                      (assoc metadata
+                             :PK object-key
+                             :SK "METADATA"
+                             :document_path object-key))
 
-      {:classification classification
-       :confidence confidence
-       :title (:title metadata)})))
+        {:classification classification
+         :confidence confidence
+         :title (:title metadata)}))))
 
 (defn handler
   "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
