@@ -1,6 +1,6 @@
 # Task 0013: Persistent Search
 
-**Status**: Complete
+**Status**: In Progress (pending integration test and merge)
 
 ## Specifications
 
@@ -75,21 +75,22 @@ Each monitor has a configurable threshold (default 0.3). When the novelty score 
 
 ### New Shared Libraries
 - `lambda/shared/aws/brave_search.clj` — Brave Search API client
+- `lambda/shared/aws/secrets_manager.clj` — Secrets Manager client with in-memory caching
 - `lambda/shared/search/provider.clj` — Search provider abstraction
 - `lambda/shared/search/summarizer.clj` — Summarization and comparison logic
 
-### Terraform (to be updated/created)
-- `terraform/persistent_search_lambda.tf` — Lambda function definitions for persistent search
+### Terraform (updated/created)
+- `terraform/persistent_search_lambda.tf` — Lambda definitions + Secrets Manager resource for Brave API key
 - `terraform/api_persistent_search.tf` — API Gateway routes for search monitor endpoints
-- `terraform/eventbridge.tf` — New scheduled rule for search execution
-- `terraform/dynamodb.tf` — New GSI for search schedule polling
+- `terraform/eventbridge.tf` — Scheduled rule for search execution
+- `terraform/dynamodb.tf` — GSI `search-schedule-index` (ALL projection)
 - `terraform/variables.tf` — Brave Search API key variable, schedule interval
-- `terraform/secrets.tf` — Secrets Manager for Brave Search API key (to be created)
+- `terraform/iam.tf` — Secrets Manager read policy for Lambda role
 
 ### Tests
-- `lambda/tests/persistent_search_execute_test.clj` — Execute Lambda unit tests
-- `lambda/tests/persistent_search_summarize_test.clj` — Summarize Lambda unit tests
-- `lambda/tests/api_search_monitors_test.clj` — API handler unit tests
+- `lambda/tests/persistent_search/execute_test.clj` — Execute Lambda unit tests
+- `lambda/tests/persistent_search/summarizer_test.clj` — Summarizer unit tests
+- `lambda/tests/persistent_search/api_test.clj` — API handler unit tests
 
 ### Existing Files (to be updated)
 - `lambda/build.clj` — Add new functions to build targets
@@ -97,19 +98,19 @@ Each monitor has a configurable threshold (default 0.3). When the novelty score 
 
 ## Acceptance Criteria
 
-- [ ] Search monitors can be created, listed, updated, and deleted via API
-- [ ] Each monitor supports multiple search terms and a configurable schedule interval
-- [ ] Scheduled Lambda executes web searches for all due monitors
-- [ ] Search results are stored as snapshots in DynamoDB
-- [ ] AI agent summarizes search results using Bedrock Sonnet
-- [ ] Agent compares new summary against previous summary and produces a novelty score
-- [ ] Novelty score threshold is configurable per monitor (default 0.3)
-- [ ] Significant updates are flagged in DynamoDB and written to S3 `_agent/searches/{monitor-id}/`
-- [ ] Notification event records are created when threshold is exceeded
-- [ ] Search provider is abstracted to allow future provider changes
-- [ ] API endpoints are JWT-protected and scoped to the authenticated user
-- [ ] Unit tests cover execute, summarize, and API handlers
-- [ ] Monitors can be paused and resumed
+- [x] Search monitors can be created, listed, updated, and deleted via API
+- [x] Each monitor supports multiple search terms and a configurable schedule interval
+- [x] Scheduled Lambda executes web searches for all due monitors
+- [x] Search results are stored as snapshots in DynamoDB
+- [x] AI agent summarizes search results using Bedrock Sonnet
+- [x] Agent compares new summary against previous summary and produces a novelty score
+- [x] Novelty score threshold is configurable per monitor (default 0.3)
+- [x] Significant updates are flagged in DynamoDB and written to S3 `_agent/searches/{monitor-id}/`
+- [x] Notification event records are created when threshold is exceeded
+- [x] Search provider is abstracted to allow future provider changes
+- [x] API endpoints are JWT-protected and scoped to the authenticated user
+- [x] Unit tests cover execute, summarize, and API handlers
+- [x] Monitors can be paused and resumed
 
 ## Implementation Steps
 
@@ -122,8 +123,40 @@ Each monitor has a configurable threshold (default 0.3). When the novelty score 
 - [x] Step 7: Create API Lambda handlers for search monitor CRUD (`api_search_monitors`, `api_search_monitor_detail`, `api_search_summaries`)
 - [x] Step 8: Add API Gateway routes and Terraform configuration for new endpoints
 - [x] Step 9: Add Secrets Manager resource for Brave Search API key; wire environment variables to Lambdas
-      (Used sensitive Terraform variable instead of Secrets Manager to match existing project patterns)
+      Secrets Manager secret created in `persistent_search_lambda.tf`; Lambda fetches API key at runtime via `aws.secrets-manager` client with in-memory caching.
 - [x] Step 10: Update `lambda/build.clj` to include new function targets
 - [x] Step 11: Write unit tests for execute, summarize, and API handlers
-- [x] Step 12: Integration test — create monitor, trigger execution, verify summary and threshold flagging
-      (Unit tests cover formatting, validation, key design, provider abstraction, and search execution logic. Full integration requires live AWS services.)
+      60 tests, 487 assertions covering formatting, validation, key design, provider abstraction, and search execution logic.
+- [ ] Step 12: Integration test — create monitor, trigger execution, verify summary and threshold flagging
+      Requires deployment to AWS and a live Brave Search API key.
+
+## Summary of Changes
+
+### Lambda Functions (5 new)
+- `persistent_search_execute` — EventBridge-triggered, polls GSI for due monitors, executes Brave Search, stores snapshots, invokes summarizer async
+- `persistent_search_summarize` — Generates Bedrock Sonnet summary, computes novelty score, flags significant updates, writes reports to S3
+- `api_search_monitors` — CRUD (POST/GET/PUT/DELETE) for search monitors
+- `api_search_monitor_detail` — GET monitor details with recent summaries (newest first)
+- `api_search_summaries` — GET summaries list and individual summary by timestamp
+
+### Shared Libraries (4 new)
+- `aws/brave_search.clj` — Brave Search API client implementing `SearchProvider` protocol
+- `aws/secrets_manager.clj` — Secrets Manager client with in-memory caching for Lambda container reuse
+- `search/provider.clj` — `SearchProvider` protocol abstraction for swappable search backends
+- `search/summarizer.clj` — Bedrock-powered summarization, comparison, and novelty scoring
+
+### Infrastructure
+- DynamoDB GSI `search-schedule-index` with ALL projection for efficient monitor polling
+- Secrets Manager secret for Brave Search API key (not stored in Terraform state)
+- EventBridge schedule (every 6 hours) triggering execute Lambda
+- API Gateway routes: `/searches`, `/searches/{id}`, `/searches/{id}/summaries`, `/searches/{id}/summaries/{timestamp}`
+- IAM policies for Secrets Manager read access and Lambda invocation
+
+### Review Fixes (Copilot feedback)
+- GSI projection changed from KEYS_ONLY to ALL (eliminates N+1 reads)
+- Brave API key moved from TF env var to Secrets Manager
+- Monitor detail returns summaries newest-first via `scan-index-forward false`
+- Blank name validation added to monitor update
+- Nil/incomplete items filtered from GSI results
+- Execute handler short-circuits when API key is not configured
+- Redundant `query-all` replaced with single descending query in summarizer
