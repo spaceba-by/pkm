@@ -169,6 +169,25 @@ resource "aws_iam_role_policy" "lambda_sqs_access" {
   })
 }
 
+# Policy for Secrets Manager access (Brave Search API key)
+resource "aws_iam_role_policy" "lambda_secretsmanager_access" {
+  name = "secretsmanager-access"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.brave_search_api_key.arn
+      }
+    ]
+  })
+}
+
 # Policy for Lambda to invoke other Lambda functions (for update-classification-index)
 resource "aws_iam_role_policy" "lambda_invoke" {
   name = "lambda-invoke"
@@ -750,6 +769,38 @@ resource "aws_iam_role_policy" "github_actions_sqs" {
           "sqs:ListQueueTags"
         ]
         Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage Secrets Manager
+resource "aws_iam_role_policy" "github_actions_secretsmanager" {
+  for_each = local.github_oidc
+
+  name = "secretsmanager-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SecretsManagerManagement"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:TagResource",
+          "secretsmanager:UntagResource",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:PutResourcePolicy",
+          "secretsmanager:DeleteResourcePolicy"
+        ]
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/*"
       }
     ]
   })

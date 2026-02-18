@@ -113,8 +113,9 @@
      :expr-attr-values - Expression attribute values map
      :limit - Maximum items to return (default 100)
      :select - Select mode: nil (default), \"COUNT\", \"ALL_ATTRIBUTES\", etc.
-               When \"COUNT\", returns just the count (integer) instead of items."
-  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit select]
+               When \"COUNT\", returns just the count (integer) instead of items.
+     :scan-index-forward - Sort direction: true for ascending (default), false for descending"
+  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit select scan-index-forward]
                  :or {limit 100}}]
   (let [request (cond-> {:TableName table-name
                          :KeyConditionExpression key-condition-expr
@@ -122,7 +123,8 @@
                   ;; Don't include Limit when using COUNT - we want total count
                   (and limit (not= select "COUNT")) (assoc :Limit limit)
                   index-name (assoc :IndexName index-name)
-                  select (assoc :Select select))
+                  select (assoc :Select select)
+                  (some? scan-index-forward) (assoc :ScanIndexForward scan-index-forward))
         response (-> (aws/invoke @ddb-client
                                  {:op :Query
                                   :request request})

@@ -104,7 +104,14 @@
    "api_update_classification"   "handler/handler"
    "api_bulk_reclassify"         "handler/handler"
    "bulk_reclassify"             "handler/handler"
-   "delete_document"             "handler/handler"})
+   "delete_document"             "handler/handler"
+   ;; Persistent search Lambda functions
+   "persistent_search_execute"   "handler/handler"
+   "persistent_search_summarize" "handler/handler"
+   ;; Persistent search API Lambda functions
+   "api_search_monitors"         "handler/handler"
+   "api_search_monitor_detail"   "handler/handler"
+   "api_search_summaries"        "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

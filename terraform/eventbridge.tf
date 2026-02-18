@@ -231,6 +231,31 @@ resource "aws_lambda_permission" "allow_eventbridge_classification_index" {
   source_arn    = aws_cloudwatch_event_rule.classification_index_schedule.arn
 }
 
+# EventBridge rule for persistent search execution (every 6 hours)
+resource "aws_cloudwatch_event_rule" "persistent_search_schedule" {
+  name                = "${var.project_name}-persistent-search-schedule"
+  description         = "Trigger persistent search execution every 6 hours"
+  schedule_expression = var.persistent_search_schedule
+
+  tags = {
+    Name = "${var.project_name}-persistent-search-schedule"
+  }
+}
+
+resource "aws_cloudwatch_event_target" "persistent_search_execute" {
+  rule      = aws_cloudwatch_event_rule.persistent_search_schedule.name
+  target_id = "persistent-search-execute"
+  arn       = aws_lambda_function.persistent_search_execute.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_persistent_search" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.persistent_search_execute.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.persistent_search_schedule.arn
+}
+
 resource "aws_iam_role_policy" "eventbridge_stepfunctions_invoke" {
   name = "stepfunctions-invoke"
   role = aws_iam_role.eventbridge_stepfunctions.id
