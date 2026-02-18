@@ -270,6 +270,73 @@ resource "aws_apigatewayv2_route" "list_reports" {
 }
 
 # =============================================================================
+# API Routes - Write Operations (Admin only, enforced at Lambda level)
+# =============================================================================
+
+# POST /documents - Create a new document
+resource "aws_apigatewayv2_integration" "create_document" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_create_document["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "create_document" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "POST /documents"
+  target             = "integrations/${aws_apigatewayv2_integration.create_document["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# PUT /documents/{key+} - Update an existing document
+resource "aws_apigatewayv2_integration" "update_document" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_update_document["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "update_document" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "PUT /documents/{key+}"
+  target             = "integrations/${aws_apigatewayv2_integration.update_document["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# DELETE /documents/{key+} - Delete a document
+resource "aws_apigatewayv2_integration" "delete_document_api" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_delete_document["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "delete_document_api" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "DELETE /documents/{key+}"
+  target             = "integrations/${aws_apigatewayv2_integration.delete_document_api["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# =============================================================================
 # API Routes - Update Classification
 # =============================================================================
 
@@ -397,6 +464,36 @@ resource "aws_lambda_permission" "api_list_reports" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_list_reports["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_create_document" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_create_document["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_update_document" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_update_document["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_delete_document" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_delete_document["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }

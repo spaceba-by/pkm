@@ -34,6 +34,17 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Result to return from updateClassification
     var updateClassificationResult: Result<Void, Error> = .success(())
 
+    /// Result to return from createDocument
+    var createDocumentResult: Result<CreateDocumentResponse, Error> = .success(
+        CreateDocumentResponse(key: "test.md", title: "Test", createdAt: "2024-01-01T00:00:00Z")
+    )
+
+    /// Result to return from updateDocument
+    var updateDocumentResult: Result<Void, Error> = .success(())
+
+    /// Result to return from deleteDocument
+    var deleteDocumentResult: Result<Void, Error> = .success(())
+
     // MARK: - Call Tracking
 
     /// Number of times listDocuments was called
@@ -83,6 +94,15 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     /// Last classification passed to updateClassification
     private(set) var lastUpdateClassificationValue: DocumentClassification?
+
+    /// Number of times createDocument was called
+    private(set) var createDocumentCallCount = 0
+
+    /// Number of times updateDocument was called
+    private(set) var updateDocumentCallCount = 0
+
+    /// Number of times deleteDocument was called
+    private(set) var deleteDocumentCallCount = 0
 
     // MARK: - APIClientProtocol
 
@@ -153,6 +173,21 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try updateClassificationResult.get()
     }
 
+    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse {
+        createDocumentCallCount += 1
+        return try createDocumentResult.get()
+    }
+
+    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {
+        updateDocumentCallCount += 1
+        try updateDocumentResult.get()
+    }
+
+    func deleteDocument(key: String) async throws {
+        deleteDocumentCallCount += 1
+        try deleteDocumentResult.get()
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -174,5 +209,8 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         updateClassificationCallCount = 0
         lastUpdateClassificationDocumentId = nil
         lastUpdateClassificationValue = nil
+        createDocumentCallCount = 0
+        updateDocumentCallCount = 0
+        deleteDocumentCallCount = 0
     }
 }

@@ -117,6 +117,28 @@ resource "aws_cognito_user_pool_client" "ios_client" {
 }
 
 # =============================================================================
+# Cognito User Groups - Role-based access control
+# =============================================================================
+
+resource "aws_cognito_user_group" "admin" {
+  for_each = local.mobile_api
+
+  name         = "admin"
+  user_pool_id = aws_cognito_user_pool.pkm_users["enabled"].id
+  description  = "Admin users with read and write access"
+  precedence   = 1
+}
+
+resource "aws_cognito_user_group" "reader" {
+  for_each = local.mobile_api
+
+  name         = "reader"
+  user_pool_id = aws_cognito_user_pool.pkm_users["enabled"].id
+  description  = "Read-only users"
+  precedence   = 10
+}
+
+# =============================================================================
 # Cognito Identity Pool - AWS Credentials (for future direct AWS access)
 # =============================================================================
 

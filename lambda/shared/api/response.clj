@@ -35,6 +35,37 @@
    :body (json/generate-string {:error "Not Found"
                                 :message message})})
 
+(defn forbidden
+  "Create a 403 Forbidden response"
+  [message]
+  {:statusCode 403
+   :headers {"Content-Type" "application/json"}
+   :body (json/generate-string {:error "Forbidden"
+                                :message message})})
+
+(defn conflict
+  "Create a 409 Conflict response"
+  [message]
+  {:statusCode 409
+   :headers {"Content-Type" "application/json"}
+   :body (json/generate-string {:error "Conflict"
+                                :message message})})
+
+(defn created
+  "Create a 201 Created response"
+  [body]
+  {:statusCode 201
+   :headers {"Content-Type" "application/json"
+             "Cache-Control" "no-cache, no-store, must-revalidate"}
+   :body (json/generate-string body)})
+
+(defn no-content
+  "Create a 204 No Content response"
+  []
+  {:statusCode 204
+   :headers {}
+   :body ""})
+
 (defn internal-error
   "Create a 500 Internal Server Error response"
   [message]
@@ -91,3 +122,33 @@
    (get-in event ["requestContext" "authorizer" "jwt" "claims" "sub"])
    ;; Fallback
    "unknown"))
+
+(defn get-user-groups
+  "Extract Cognito user groups from JWT claims in API Gateway v2 format.
+   Returns a set of group names.
+   The groups claim key is 'cognito:groups' which contains a space-separated
+   list of group names (API Gateway v2 flattens the array to a string)."
+  [event]
+  (let [claims (or (get-in event [:requestContext :authorizer :jwt :claims])
+                   (get-in event ["requestContext" "authorizer" "jwt" "claims"])
+                   {})
+        ;; The key has a colon, so we need to check both keyword and string forms
+        groups-claim (or (get claims (keyword "cognito:groups"))
+                         (get claims "cognito:groups"))]
+    (cond
+      (nil? groups-claim) #{}
+      ;; API Gateway v2 sends groups as space-separated string
+      (string? groups-claim) (set (remove str/blank? (str/split groups-claim #"\s+")))
+      (sequential? groups-claim) (set groups-claim)
+      :else #{})))
+
+(defn admin?
+  "Check if the user belongs to the admin group"
+  [event]
+  (contains? (get-user-groups event) "admin"))
+
+(defn require-admin
+  "Check if user is admin, returns nil if authorized or a 403 response if not"
+  [event]
+  (when-not (admin? event)
+    (forbidden "Admin access required")))

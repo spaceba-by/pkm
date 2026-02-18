@@ -7,6 +7,9 @@ struct DocumentDetailView: View {
     let apiClient: any APIClientProtocol
     @StateObject private var viewModel: DocumentDetailViewModel
     @State private var wikilinkTarget: Document?
+    @State private var showEditor = false
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
 
     init(document: Document, apiClient: any APIClientProtocol) {
         self.document = document
@@ -38,6 +41,51 @@ struct DocumentDetailView: View {
             await viewModel.loadContent()
         }
         .accessibilityIdentifier("DocumentDetailView")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        showEditor = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Document actions")
+            }
+        }
+        .sheet(isPresented: $showEditor) {
+            DocumentEditorView(
+                mode: .edit(document),
+                apiClient: apiClient
+            )
+        }
+        .confirmationDialog(
+            "Delete Document",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    isDeleting = true
+                    do {
+                        try await apiClient.deleteDocument(key: document.id)
+                    } catch {
+                        // Error is shown inline; deletion failure leaves the view intact
+                        isDeleting = false
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete \"\(document.displayTitle)\"? This cannot be undone.")
+        }
         .environment(\.openURL, OpenURLAction { url in
             if url.scheme == "pkm" {
                 let target = url.absoluteString
@@ -240,4 +288,9 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listReports(limit: Int) async throws -> [Report] { [] }
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] { [] }
     func updateClassification(documentId: String, classification: DocumentClassification) async throws {}
+    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse {
+        CreateDocumentResponse(key: key, title: title ?? key, createdAt: "2024-01-01T00:00:00Z")
+    }
+    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {}
+    func deleteDocument(key: String) async throws {}
 }

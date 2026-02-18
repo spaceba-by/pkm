@@ -70,6 +70,25 @@ protocol APIClientProtocol: Sendable {
     ///   - documentId: The document's S3 key
     ///   - classification: The new classification to apply
     func updateClassification(documentId: String, classification: DocumentClassification) async throws
+
+    /// Create a new document (admin only)
+    /// - Parameters:
+    ///   - key: The S3 key for the new document
+    ///   - title: Optional title for the document
+    ///   - content: The markdown content
+    /// - Returns: The created document key and timestamp
+    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse
+
+    /// Update an existing document (admin only)
+    /// - Parameters:
+    ///   - key: The document's S3 key
+    ///   - content: The new markdown content
+    ///   - ifUnmodifiedSince: Optional conflict detection timestamp
+    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws
+
+    /// Delete a document (admin only)
+    /// - Parameter key: The document's S3 key
+    func deleteDocument(key: String) async throws
 }
 
 extension APIClientProtocol {
