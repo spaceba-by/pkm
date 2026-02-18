@@ -122,9 +122,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Babashka CLI script (`scripts/backfill.clj`) with dry-run, execute, prefix, limit, delay options
   - Detects unprocessed S3 documents missing from DynamoDB, triggers extract_metadata, classify_document, extract_entities
 
-### Planned
-
-- **Task 0018: iOS UI Improvements**
+- **Task 0018: iOS UI Improvements** ✅
 
   - See: [0018-ios-ui-improvements](tasks/0018-ios-ui-improvements.md)
   - Strip YAML front matter from rendered document content (already shown in metadata header)
@@ -132,13 +130,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Handle internal `[[wikilinks]]` as tappable navigation links
   - Fix unfiltered document list returning too few results (DynamoDB scan limit issue)
 
-- **Task 0015: Document Deletion Cleanup**
+- **Task 0015: Document Deletion Cleanup** ✅
 
   - See: [0015-document-deletion-cleanup](tasks/0015-document-deletion-cleanup.md)
   - New `delete_document` Lambda triggered by S3 "Object Deleted" EventBridge events
   - Cascade-delete DynamoDB records (METADATA, tag index, entity index)
   - Bulk reclassify stale record cleanup
   - Fixes orphaned DynamoDB data when files are deleted from Obsidian vault
+
+### Planned
 
 - **Task 0017: Insights Calendar Design**
 

@@ -1,6 +1,6 @@
 # Task 0018: iOS UI Improvements
 
-**Status**: In Progress
+**Status**: Complete
 
 ## Specifications
 
@@ -38,15 +38,15 @@ The fix should ensure the unfiltered document list reliably returns the requeste
 
 ## Acceptance Criteria
 
-- [ ] YAML front matter block is not visible in rendered document content
-- [ ] Documents without front matter continue to render correctly
-- [ ] Markdown checkboxes (`- [ ]` and `- [x]`) render as visual checkbox indicators
-- [ ] Checked items are visually distinct from unchecked items
-- [ ] Checkboxes are read-only (no toggle interaction)
-- [ ] Internal `[[wikilinks]]` render as tappable links that navigate to the linked document
-- [ ] Standard markdown links to external URLs open correctly
-- [ ] Unfiltered document list returns the expected number of documents (matching filtered view totals)
-- [ ] All existing tests continue to pass
+- [x] YAML front matter block is not visible in rendered document content
+- [x] Documents without front matter continue to render correctly
+- [x] Markdown checkboxes (`- [ ]` and `- [x]`) render as visual checkbox indicators
+- [x] Checked items are visually distinct from unchecked items
+- [x] Checkboxes are read-only (no toggle interaction)
+- [x] Internal `[[wikilinks]]` render as tappable links that navigate to the linked document
+- [x] Standard markdown links to external URLs open correctly
+- [x] Unfiltered document list returns the expected number of documents (matching filtered view totals)
+- [x] All existing tests continue to pass
 
 ## Implementation Steps
 
@@ -55,4 +55,4 @@ The fix should ensure the unfiltered document list reliably returns the requeste
 - [x] Step 3: Handle internal markdown links - Pre-process `[[wikilink]]` syntax into tappable links that navigate to the corresponding document within the app. Resolve link targets against known document paths. Ensure standard markdown links to external URLs continue to work.
 - [x] Step 4: Fix unfiltered document list scan - Investigate and fix the `api_list_documents` Lambda so that unfiltered scans return the requested number of METADATA documents. Either accumulate results across multiple scan pages until the limit is met, or switch to an index-based query. Update unit tests for the handler.
 - [x] Step 5: Add unit tests - Test front matter stripping with various edge cases (no front matter, empty front matter, front matter with special characters). Test checkbox rendering transformation. Test wikilink parsing and resolution.
-- [ ] Step 6: Verify - Manual testing with real Obsidian vault documents containing front matter, checkboxes, and internal links.
+- [x] Step 6: Verify - Manual testing with real Obsidian vault documents containing front matter, checkboxes, and internal links.
