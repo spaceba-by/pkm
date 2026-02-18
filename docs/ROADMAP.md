@@ -130,6 +130,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Strip YAML front matter from rendered document content (already shown in metadata header)
   - Render markdown checkboxes (`- [ ]` / `- [x]`) as visual checkbox indicators
   - Handle internal `[[wikilinks]]` as tappable navigation links
+  - Fix unfiltered document list returning too few results (DynamoDB scan limit issue)
 
 - **Task 0015: Document Deletion Cleanup**
 

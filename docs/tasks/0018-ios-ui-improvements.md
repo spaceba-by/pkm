@@ -4,7 +4,7 @@
 
 ## Specifications
 
-A collection of iOS rendering and display improvements focused on better markdown content presentation in the document detail view. The app currently uses the Textual library (`StructuredText`) for markdown rendering. These improvements address gaps where content isn't rendered optimally.
+A collection of iOS rendering, display, and data loading improvements. The app currently uses the Textual library (`StructuredText`) for markdown rendering. These improvements address gaps where content isn't rendered optimally and where the document list doesn't load the expected number of results.
 
 ### Improve YAML Front Matter Rendering
 
@@ -20,12 +20,21 @@ Obsidian-style markdown uses `- [ ]` and `- [x]` syntax for task lists / checkbo
 
 Obsidian uses `[[wikilink]]` syntax for internal links between documents. These should be rendered as tappable links that navigate to the linked document within the app (if it exists in the vault), rather than displaying the raw `[[...]]` bracket syntax. Standard markdown links (`[text](url)`) to external URLs should also open correctly.
 
+### Fix Unfiltered Document List Returning Too Few Results
+
+The main Documents view with no classification filter shows only ~5 documents, while filtered views (e.g., by classification) return many more. The `api_list_documents` Lambda uses a DynamoDB `Scan` with a filter expression (`SK = :sk` where SK is `METADATA`) and a `limit` parameter. The DynamoDB `Scan` limit caps items **examined**, not items **returned** — so when the table contains many non-METADATA items (tags, entities, classification index entries), a scan with limit=50 may examine 50 items but only return a few that match the filter. Filtered views likely use a GSI query which doesn't have this problem.
+
+The fix should ensure the unfiltered document list reliably returns the requested number of documents, either by paginating through scan results until enough matches are collected, or by using an index-based query instead of a scan.
+
 ## Relevant Files
 
 - `ios/PKMReader/Features/DocumentDetail/DocumentDetailView.swift` - Document content rendering with `StructuredText`
 - `ios/PKMReader/Features/DocumentDetail/DocumentDetailViewModel.swift` - Content loading and state management
 - `ios/PKMReader/Models/Document.swift` - `DocumentMetadata.hasFrontmatter` flag
 - `lambda/shared/markdown/utils.clj` - Backend front matter extraction regex and wikilink parsing (reference)
+- `lambda/functions/api_list_documents/handler.clj` - Document list API handler with DynamoDB scan
+- `lambda/shared/aws/dynamodb.clj` - DynamoDB scan/query operations
+- `ios/PKMReader/Features/DocumentList/DocumentListViewModel.swift` - Document list view model with pagination
 
 ## Acceptance Criteria
 
@@ -36,6 +45,7 @@ Obsidian uses `[[wikilink]]` syntax for internal links between documents. These 
 - [ ] Checkboxes are read-only (no toggle interaction)
 - [ ] Internal `[[wikilinks]]` render as tappable links that navigate to the linked document
 - [ ] Standard markdown links to external URLs open correctly
+- [ ] Unfiltered document list returns the expected number of documents (matching filtered view totals)
 - [ ] All existing tests continue to pass
 
 ## Implementation Steps
@@ -43,5 +53,6 @@ Obsidian uses `[[wikilink]]` syntax for internal links between documents. These 
 - [ ] Step 1: Strip YAML front matter from document content - Add a content-processing step in `DocumentDetailViewModel` that removes the front matter block (everything between opening `---` and closing `---` at the start of the content) before passing it to the view. Use the `hasFrontmatter` flag to determine whether stripping is needed.
 - [ ] Step 2: Render checkboxes in markdown content - Pre-process markdown content to convert `- [ ]` and `- [x]` patterns into rendered checkbox indicators that `StructuredText` can display. Evaluate whether Textual supports GitHub Flavored Markdown task lists natively, or implement a content transformation.
 - [ ] Step 3: Handle internal markdown links - Pre-process `[[wikilink]]` syntax into tappable links that navigate to the corresponding document within the app. Resolve link targets against known document paths. Ensure standard markdown links to external URLs continue to work.
-- [ ] Step 4: Add unit tests - Test front matter stripping with various edge cases (no front matter, empty front matter, front matter with special characters). Test checkbox rendering transformation. Test wikilink parsing and resolution.
-- [ ] Step 5: Verify - Manual testing with real Obsidian vault documents containing front matter, checkboxes, and internal links.
+- [ ] Step 4: Fix unfiltered document list scan - Investigate and fix the `api_list_documents` Lambda so that unfiltered scans return the requested number of METADATA documents. Either accumulate results across multiple scan pages until the limit is met, or switch to an index-based query. Update unit tests for the handler.
+- [ ] Step 5: Add unit tests - Test front matter stripping with various edge cases (no front matter, empty front matter, front matter with special characters). Test checkbox rendering transformation. Test wikilink parsing and resolution.
+- [ ] Step 6: Verify - Manual testing with real Obsidian vault documents containing front matter, checkboxes, and internal links.
