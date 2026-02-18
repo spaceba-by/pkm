@@ -67,7 +67,7 @@ Options:
             (println usage-text)
             (System/exit 1))))))
 
-;; --- Main ---
+;; --- Core Logic ---
 
 (defn skip-path?
   "Returns true if the DynamoDB key is not a real document path"
