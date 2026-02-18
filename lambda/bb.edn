@@ -32,6 +32,9 @@
  {clean {:doc "Clean build artifacts"
          :task (shell "rm -rf functions/*/bootstrap functions/*/*.zip")}
 
+  lint {:doc "Lint Clojure sources with clj-kondo"
+        :task (shell "clj-kondo --lint shared functions --fail-level error")}
+
   test {:doc "Run tests"
         :task (shell "bb -cp" (str (with-out-str (babashka.deps/clojure ["-Spath"])) ":shared:tests") "-m" "test-runner")}
 
