@@ -39,6 +39,15 @@ final class SearchViewModel: ObservableObject {
         }
     }
 
+    /// Current search mode
+    @Published var searchMode: SearchMode = .keyword {
+        didSet {
+            if oldValue != searchMode {
+                onSearchTextChanged()
+            }
+        }
+    }
+
     /// Minimum query length required
     let minimumQueryLength = 2
 
@@ -61,7 +70,7 @@ final class SearchViewModel: ObservableObject {
         state = .loading
 
         do {
-            let results = try await apiClient.search(query: query, limit: 20)
+            let results = try await apiClient.search(query: query, limit: 20, mode: searchMode)
             guard !Task.isCancelled else { return }
             if results.isEmpty {
                 state = .empty

@@ -104,7 +104,8 @@
    "api_update_classification"   "handler/handler"
    "api_bulk_reclassify"         "handler/handler"
    "bulk_reclassify"             "handler/handler"
-   "delete_document"             "handler/handler"})
+   "delete_document"             "handler/handler"
+   "index_embeddings"            "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Search view with debounced text input and results
+/// Search view with debounced text input, mode selection, and results
 struct SearchView: View {
     @StateObject private var viewModel: SearchViewModel
 
@@ -43,6 +43,18 @@ struct SearchView: View {
                 text: $viewModel.searchText,
                 prompt: "Search documents..."
             )
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Picker("Mode", selection: $viewModel.searchMode) {
+                        ForEach(SearchMode.allCases, id: \.self) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                    .accessibilityIdentifier("SearchModePicker")
+                }
+            }
             .refreshable {
                 await viewModel.search()
             }

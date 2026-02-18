@@ -71,7 +71,7 @@ actor APIClient: APIClientProtocol {
         return try await performRequestWithRetry(url: url)
     }
 
-    func search(query: String, limit: Int) async throws -> [Document] {
+    func search(query: String, limit: Int, mode: SearchMode = .keyword) async throws -> [Document] {
         var components = URLComponents(
             url: baseURL.appendingPathComponent("search"),
             resolvingAgainstBaseURL: false
@@ -79,7 +79,8 @@ actor APIClient: APIClientProtocol {
 
         components?.queryItems = [
             URLQueryItem(name: "q", value: query),
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "mode", value: mode.rawValue)
         ]
 
         guard let url = components?.url else {

@@ -129,4 +129,30 @@ final class SearchViewModelTests: XCTestCase {
         XCTAssertNotEqual(SearchViewModel.State.idle, SearchViewModel.State.empty)
         XCTAssertNotEqual(SearchViewModel.State.loading, SearchViewModel.State.empty)
     }
+
+    // MARK: - Search Mode
+
+    func test_initialSearchMode_isKeyword() {
+        XCTAssertEqual(sut.searchMode, .keyword)
+    }
+
+    func test_semanticSearch_passesMode() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchMode = .semantic
+        sut.searchText = "sample"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.lastSearchMode, .semantic)
+    }
+
+    func test_changingMode_retriggersSearch() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchText = "test query"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.searchCallCount, 1)
+
+        sut.searchMode = .semantic
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.searchCallCount, 2)
+        XCTAssertEqual(mockAPIClient.lastSearchMode, .semantic)
+    }
 }
