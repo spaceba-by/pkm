@@ -1,4 +1,22 @@
 # =============================================================================
+# Brave Search API Key (Secrets Manager)
+# =============================================================================
+
+resource "aws_secretsmanager_secret" "brave_search_api_key" {
+  name        = "${var.project_name}/brave-search-api-key"
+  description = "Brave Search API key for persistent search feature"
+
+  tags = {
+    Name = "${var.project_name}-brave-search-api-key"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "brave_search_api_key" {
+  secret_id     = aws_secretsmanager_secret.brave_search_api_key.id
+  secret_string = var.brave_search_api_key
+}
+
+# =============================================================================
 # Persistent Search Lambda Functions
 # =============================================================================
 
@@ -39,9 +57,9 @@ resource "aws_lambda_function" "persistent_search_execute" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME  = aws_dynamodb_table.metadata.name
-      BRAVE_SEARCH_API_KEY = var.brave_search_api_key
-      SUMMARIZE_LAMBDA_NAME = aws_lambda_function.persistent_search_summarize.function_name
+      DYNAMODB_TABLE_NAME     = aws_dynamodb_table.metadata.name
+      BRAVE_SEARCH_SECRET_ARN = aws_secretsmanager_secret.brave_search_api_key.arn
+      SUMMARIZE_LAMBDA_NAME   = aws_lambda_function.persistent_search_summarize.function_name
     }
   }
 

@@ -38,16 +38,10 @@
                            :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
                            :expr-attr-values {":pk" user-pk
                                               ":prefix" (str "search_monitor#" monitor-id "#summary#")}
+                           :scan-index-forward false
                            :limit 1)]
-    ;; DynamoDB returns items in ascending SK order; we want the latest
-    ;; Since SK contains timestamp, the last item in a full query is the latest.
-    ;; With limit 1 and ascending order, we'd get the oldest. Query all and take last.
-    (let [all-results (ddb/query-all table-name
-                                     :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                                     :expr-attr-values {":pk" user-pk
-                                                        ":prefix" (str "search_monitor#" monitor-id "#summary#")})]
-      (when (seq all-results)
-        (:summary_text (last all-results))))))
+    (when (seq results)
+      (:summary_text (first results)))))
 
 (defn store-summary
   "Store a search summary in DynamoDB"

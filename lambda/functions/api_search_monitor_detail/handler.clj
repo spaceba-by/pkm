@@ -64,17 +64,14 @@
           (if (nil? monitor)
             (r/not-found (str "Monitor not found: " monitor-id))
 
-            ;; Fetch recent summaries
+            ;; Fetch recent summaries (newest first)
             (let [summaries (ddb/query ddb-table
                                        :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
                                        :expr-attr-values {":pk" pk
                                                            ":prefix" (str "search_monitor#" monitor-id "#summary#")}
-                                       :limit 100)
-                  ;; Sort by timestamp descending and take limit
-                  sorted-summaries (->> summaries
-                                        (sort-by :timestamp #(compare %2 %1))
-                                        (take summary-limit)
-                                        (mapv format-summary))]
+                                       :scan-index-forward false
+                                       :limit summary-limit)
+                  sorted-summaries (mapv format-summary summaries)]
 
               (r/ok {:monitor (format-monitor monitor)
                      :summaries sorted-summaries

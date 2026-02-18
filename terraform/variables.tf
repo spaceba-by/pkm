@@ -47,7 +47,7 @@ variable "persistent_search_schedule" {
 }
 
 variable "brave_search_api_key" {
-  description = "Brave Search API key for persistent search feature"
+  description = "Brave Search API key for persistent search feature. Stored in Secrets Manager at runtime."
   type        = string
   default     = ""
   sensitive   = true

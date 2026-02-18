@@ -71,10 +71,10 @@ resource "aws_dynamodb_table" "metadata" {
 
   # GSI for search monitor schedule polling
   global_secondary_index {
-    name               = "search-schedule-index"
-    hash_key           = "monitor_status"
-    range_key          = "next_execution"
-    projection_type    = "KEYS_ONLY"
+    name            = "search-schedule-index"
+    hash_key        = "monitor_status"
+    range_key       = "next_execution"
+    projection_type = "ALL"
   }
 
   point_in_time_recovery {

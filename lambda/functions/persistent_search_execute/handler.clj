@@ -7,13 +7,15 @@
   (:require [aws.dynamodb :as ddb]
             [aws.brave-search :as brave]
             [aws.lambda :as lambda]
+            [aws.secrets-manager :as sm]
             [search.provider :as sp]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [clojure.string :as str])
   (:import [java.time Instant Duration]
            [java.time.temporal ChronoUnit]))
 
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
-(def brave-api-key (System/getenv "BRAVE_SEARCH_API_KEY"))
+(def brave-search-secret-arn (System/getenv "BRAVE_SEARCH_SECRET_ARN"))
 (def summarize-lambda (System/getenv "SUMMARIZE_LAMBDA_NAME"))
 
 (defn- now-iso []
@@ -35,10 +37,9 @@
                            :expr-attr-values {":status" "active"
                                               ":now" now}
                            :limit 50)]
-    ;; GSI projects PK + SK only; fetch full items
-    (mapv (fn [item]
-            (ddb/get-item table-name {:PK (:PK item) :SK (:SK item)}))
-          results)))
+    ;; GSI projects ALL attributes, so results contain full items.
+    ;; Filter any nil/incomplete items for safety (e.g., eventual consistency).
+    (filterv #(and (some? %) (:monitor_id %)) results)))
 
 (defn execute-search-terms
   "Execute web searches for all terms in a monitor. Returns a vector of
@@ -119,15 +120,25 @@
     (let [_ (json/parse-string (:body request) true)]
       (println "Executing persistent search - checking for due monitors")
 
-      (let [due-monitors (get-due-monitors ddb-table)]
-        (println "Found" (count due-monitors) "due monitors")
+      ;; Retrieve API key from Secrets Manager
+      (let [api-key (when-not (str/blank? brave-search-secret-arn)
+                      (sm/get-secret-value brave-search-secret-arn))]
+        (if (str/blank? api-key)
+          (do
+            (println "Brave Search API key not configured - skipping execution")
+            {:statusCode 200
+             :body (json/generate-string {:message "Brave Search API key not configured"
+                                          :timestamp (now-iso)})})
 
-        (if (empty? due-monitors)
-          {:statusCode 200
-           :body (json/generate-string {:message "No monitors due for execution"
-                                        :timestamp (now-iso)})}
+          (let [due-monitors (get-due-monitors ddb-table)]
+            (println "Found" (count due-monitors) "due monitors")
 
-          (let [provider (brave/create-provider brave-api-key)
+            (if (empty? due-monitors)
+              {:statusCode 200
+               :body (json/generate-string {:message "No monitors due for execution"
+                                            :timestamp (now-iso)})}
+
+              (let [provider (brave/create-provider api-key)
                 results (mapv (fn [monitor]
                                 (try
                                   (process-monitor provider ddb-table monitor)
@@ -140,7 +151,7 @@
             {:statusCode 200
              :body (json/generate-string {:monitors-processed (count results)
                                           :results results
-                                          :timestamp (now-iso)})}))))
+                                          :timestamp (now-iso)})})))))
 
     (catch Exception e
       (println "Error in persistent search execute:" (ex-message e))

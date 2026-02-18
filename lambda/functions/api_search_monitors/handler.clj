@@ -127,6 +127,9 @@
 
         ;; Validate updates
         (cond
+          (and (contains? body :name) (str/blank? (:name body)))
+          (r/bad-request "Monitor name cannot be blank")
+
           (and (:searchTerms body) (empty? (:searchTerms body)))
           (r/bad-request "At least one search term is required")
 
