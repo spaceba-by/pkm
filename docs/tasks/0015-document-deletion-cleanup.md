@@ -1,6 +1,6 @@
 # Task 0015: Document Deletion Cleanup
 
-**Status**: In Progress
+**Status**: Complete
 
 ## Specifications
 
@@ -39,7 +39,7 @@ The METADATA record contains `tags` and `entities` fields needed to locate relat
 - [x] `_agent/` and `.obsidian/` paths are skipped
 - [x] `bulk_reclassify` cleans up stale DynamoDB records when S3 object is missing
 - [x] Unit tests cover deletion logic
-- [ ] All existing tests continue to pass
+- [x] All existing tests continue to pass
 
 ## Implementation Steps
 
@@ -48,7 +48,7 @@ The METADATA record contains `tags` and `entities` fields needed to locate relat
 - [x] Step 3: Build registration - Added `"delete_document" "handler/handler"` to the `functions` map in `lambda/build.clj` and path to `lambda/bb.edn`.
 - [x] Step 4: Bulk reclassify stale cleanup - Updated `bulk_reclassify` to call `shared.deletion/cascade-delete-document` when S3 object is missing instead of just skipping.
 - [x] Step 5: Unit tests - Created `deletion_test.clj` (5 tests: cascade with tags/entities, idempotent, no tags, empty collections, entity lowercasing) and `handler_test.clj` (3 tests: should-skip?, response shape, event parsing). Registered in test runner.
-- [ ] Step 6: Verify - Run `bb test`, `terraform fmt`, `terraform validate`, and `bb build.clj delete_document`.
+- [x] Step 6: Verify - Run `bb test`, `terraform fmt`, `terraform validate`, and `bb build.clj delete_document`.
 
 ## Summary of Changes
 
