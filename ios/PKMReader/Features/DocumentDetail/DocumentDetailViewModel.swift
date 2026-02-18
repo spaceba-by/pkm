@@ -113,19 +113,48 @@ final class DocumentDetailViewModel: ObservableObject {
         return result
     }
 
-    /// Convert [[wikilinks]] to standard markdown links with pkm: scheme
+    /// Convert [[wikilinks]] to standard markdown links with pkm: scheme.
+    /// Targets are percent-encoded so that the resulting string is a valid URL.
     private func convertWikilinks(_ content: String) -> String {
         // First handle [[target|display]] form, then [[target]] form
-        var result = content.replacingOccurrences(
-            of: #"\[\[([^\]|]+)\|([^\]]+)\]\]"#,
-            with: "[$2](pkm:$1)",
-            options: .regularExpression
+        var result = replaceWikilinks(
+            in: content,
+            pattern: #"\[\[([^\]|]+)\|([^\]]+)\]\]"#,
+            hasDisplayText: true
         )
-        result = result.replacingOccurrences(
-            of: #"\[\[([^\]]+)\]\]"#,
-            with: "[$1](pkm:$1)",
-            options: .regularExpression
+        result = replaceWikilinks(
+            in: result,
+            pattern: #"\[\[([^\]]+)\]\]"#,
+            hasDisplayText: false
         )
+        return result
+    }
+
+    /// Replace wikilinks matched by the given pattern, percent-encoding the target for the pkm: URL.
+    private func replaceWikilinks(in content: String, pattern: String, hasDisplayText: Bool) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return content }
+        let nsContent = content as NSString
+        var result = ""
+        var lastIndex = 0
+
+        let matches = regex.matches(in: content, range: NSRange(location: 0, length: nsContent.length))
+        for match in matches {
+            let matchRange = match.range
+            if matchRange.location > lastIndex {
+                result += nsContent.substring(with: NSRange(location: lastIndex, length: matchRange.location - lastIndex))
+            }
+
+            let target = nsContent.substring(with: match.range(at: 1))
+            let encodedTarget = target.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? target
+            let displayText = hasDisplayText ? nsContent.substring(with: match.range(at: 2)) : target
+
+            result += "[\(displayText)](pkm:\(encodedTarget))"
+            lastIndex = matchRange.location + matchRange.length
+        }
+
+        if lastIndex < nsContent.length {
+            result += nsContent.substring(with: NSRange(location: lastIndex, length: nsContent.length - lastIndex))
+        }
         return result
     }
 

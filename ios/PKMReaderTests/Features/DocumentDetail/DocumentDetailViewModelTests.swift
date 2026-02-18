@@ -235,7 +235,7 @@ final class DocumentDetailViewModelTests: XCTestCase {
 
         let content = "See [[My Page]] for details"
         let result = sut.processContent(content)
-        XCTAssertEqual(result, "See [My Page](pkm:My Page) for details")
+        XCTAssertEqual(result, "See [My Page](pkm:My%20Page) for details")
     }
 
     func test_processContent_wikilinkWithDisplayText() {

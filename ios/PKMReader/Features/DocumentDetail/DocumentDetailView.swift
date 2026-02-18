@@ -40,9 +40,9 @@ struct DocumentDetailView: View {
         .accessibilityIdentifier("DocumentDetailView")
         .environment(\.openURL, OpenURLAction { url in
             if url.scheme == "pkm" {
-                let target = url.absoluteString.replacingOccurrences(of: "pkm:", with: "")
-                Task {
-                    if let doc = try? await apiClient.search(query: target, limit: 1).first {
+                let target = url.resourceSpecifier?.removingPercentEncoding ?? ""
+                Task { @MainActor in
+                    if let doc = (try? await apiClient.search(query: target, limit: 1))?.first {
                         wikilinkTarget = doc
                     }
                 }
