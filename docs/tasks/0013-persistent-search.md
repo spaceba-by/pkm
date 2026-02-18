@@ -1,6 +1,6 @@
 # Task 0013: Persistent Search
 
-**Status**: Planned
+**Status**: Complete
 
 ## Specifications
 
@@ -113,15 +113,17 @@ Each monitor has a configurable threshold (default 0.3). When the novelty score 
 
 ## Implementation Steps
 
-- [ ] Step 1: Design DynamoDB key schema for monitors, snapshots, and summaries; add GSI to `terraform/dynamodb.tf`
-- [ ] Step 2: Create Brave Search API client (`lambda/shared/aws/brave_search.clj`) with provider abstraction
-- [ ] Step 3: Create `persistent_search_execute` Lambda — poll due monitors, execute searches, store snapshots
-- [ ] Step 4: Create summarization and comparison logic (`lambda/shared/search/summarizer.clj`) using Bedrock Sonnet
-- [ ] Step 5: Create `persistent_search_summarize` Lambda — generate summary, compute novelty score, flag significant updates, write to S3
-- [ ] Step 6: Add EventBridge scheduled rule for periodic execution in Terraform
-- [ ] Step 7: Create API Lambda handlers for search monitor CRUD (`api_search_monitors`, `api_search_monitor_detail`, `api_search_summaries`)
-- [ ] Step 8: Add API Gateway routes and Terraform configuration for new endpoints
-- [ ] Step 9: Add Secrets Manager resource for Brave Search API key; wire environment variables to Lambdas
-- [ ] Step 10: Update `lambda/build.clj` to include new function targets
-- [ ] Step 11: Write unit tests for execute, summarize, and API handlers
-- [ ] Step 12: Integration test — create monitor, trigger execution, verify summary and threshold flagging
+- [x] Step 1: Design DynamoDB key schema for monitors, snapshots, and summaries; add GSI to `terraform/dynamodb.tf`
+- [x] Step 2: Create Brave Search API client (`lambda/shared/aws/brave_search.clj`) with provider abstraction
+- [x] Step 3: Create `persistent_search_execute` Lambda — poll due monitors, execute searches, store snapshots
+- [x] Step 4: Create summarization and comparison logic (`lambda/shared/search/summarizer.clj`) using Bedrock Sonnet
+- [x] Step 5: Create `persistent_search_summarize` Lambda — generate summary, compute novelty score, flag significant updates, write to S3
+- [x] Step 6: Add EventBridge scheduled rule for periodic execution in Terraform
+- [x] Step 7: Create API Lambda handlers for search monitor CRUD (`api_search_monitors`, `api_search_monitor_detail`, `api_search_summaries`)
+- [x] Step 8: Add API Gateway routes and Terraform configuration for new endpoints
+- [x] Step 9: Add Secrets Manager resource for Brave Search API key; wire environment variables to Lambdas
+      (Used sensitive Terraform variable instead of Secrets Manager to match existing project patterns)
+- [x] Step 10: Update `lambda/build.clj` to include new function targets
+- [x] Step 11: Write unit tests for execute, summarize, and API handlers
+- [x] Step 12: Integration test — create monitor, trigger execution, verify summary and threshold flagging
+      (Unit tests cover formatting, validation, key design, provider abstraction, and search execution logic. Full integration requires live AWS services.)

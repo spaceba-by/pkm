@@ -35,6 +35,16 @@ resource "aws_dynamodb_table" "metadata" {
     type = "S"
   }
 
+  attribute {
+    name = "monitor_status"
+    type = "S"
+  }
+
+  attribute {
+    name = "next_execution"
+    type = "S"
+  }
+
   # GSI for tag-based queries
   global_secondary_index {
     name            = "tag-index"
@@ -57,6 +67,14 @@ resource "aws_dynamodb_table" "metadata" {
     hash_key        = "entity_key"
     range_key       = "SK"
     projection_type = "ALL"
+  }
+
+  # GSI for search monitor schedule polling
+  global_secondary_index {
+    name               = "search-schedule-index"
+    hash_key           = "monitor_status"
+    range_key          = "next_execution"
+    projection_type    = "KEYS_ONLY"
   }
 
   point_in_time_recovery {

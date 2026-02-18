@@ -40,6 +40,19 @@ variable "weekly_report_schedule" {
   default     = "cron(0 20 ? * SUN *)"
 }
 
+variable "persistent_search_schedule" {
+  description = "Schedule expression for persistent search execution"
+  type        = string
+  default     = "rate(6 hours)"
+}
+
+variable "brave_search_api_key" {
+  description = "Brave Search API key for persistent search feature"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "bedrock_haiku_model_id" {
   description = "Bedrock model ID for Haiku (classification, extraction)"
   type        = string
