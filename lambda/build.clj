@@ -107,6 +107,7 @@
    "api_create_document"         "handler/handler"
    "api_update_document"         "handler/handler"
    "api_delete_document"         "handler/handler"
+   "api_graph_data"              "handler/handler"
    "bulk_reclassify"             "handler/handler"
    "delete_document"             "handler/handler"
    ;; Persistent search Lambda functions

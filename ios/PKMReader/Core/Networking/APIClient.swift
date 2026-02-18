@@ -185,6 +185,11 @@ actor APIClient: APIClientProtocol {
         try await performDeleteRequestWithRetry(url: url)
     }
 
+    func getGraphData() async throws -> GraphDataResponse {
+        let url = baseURL.appendingPathComponent("graph")
+        return try await performRequestWithRetry(url: url)
+    }
+
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] {
         let tagDocumentsURL = baseURL
             .appendingPathComponent("tags")

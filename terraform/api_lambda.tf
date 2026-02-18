@@ -16,7 +16,8 @@ locals {
     "api-bulk-reclassify",
     "api-create-document",
     "api-update-document",
-    "api-delete-document"
+    "api-delete-document",
+    "api-graph-data"
   ] : []
 
   api_lambda_environment = {
@@ -595,5 +596,48 @@ resource "aws_lambda_function" "api_delete_document" {
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-api-delete-document"
+  })
+}
+
+# =============================================================================
+# API Graph Data Lambda
+# =============================================================================
+
+resource "aws_lambda_function" "api_graph_data" {
+  for_each = local.mobile_api
+
+  function_name = "${var.project_name}-api-graph-data"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 512
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/api_graph_data.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/api_graph_data.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_graph_data.zip" : null
+
+  environment {
+    variables = local.api_lambda_environment
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.api_lambda_logs
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-api-graph-data"
   })
 }

@@ -55,4 +55,7 @@ enum APIEndpoints {
 
     /// Weekly reports endpoint
     static let reports = "/reports"
+
+    /// Knowledge graph data endpoint
+    static let graph = "/graph"
 }

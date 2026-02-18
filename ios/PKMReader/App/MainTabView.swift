@@ -32,17 +32,23 @@ struct MainTabView: View {
                     }
                     .tag(2)
 
+                GraphView(apiClient: apiClient)
+                    .tabItem {
+                        Label("Graph", systemImage: "circle.hexagongrid")
+                    }
+                    .tag(3)
+
                 InsightsView(apiClient: apiClient)
                     .tabItem {
                         Label("Insights", systemImage: "lightbulb.max")
                     }
-                    .tag(3)
+                    .tag(4)
 
                 SettingsView(authService: authService)
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
-                    .tag(4)
+                    .tag(5)
             }
         }
         .accessibilityIdentifier("MainTabView")

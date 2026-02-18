@@ -201,5 +201,133 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
     func deleteDocument(key: String) async throws {
         // No-op for UI tests
     }
+
+    func getGraphData() async throws -> GraphDataResponse {
+        let nodes: [GraphNode] = [
+            GraphNode(
+                id: "doc:notes/meeting-notes.md",
+                type: "document",
+                label: "Team Meeting Notes",
+                path: "notes/meeting-notes.md",
+                classification: "meeting",
+                entityType: nil
+            ),
+            GraphNode(
+                id: "doc:ideas/app-redesign.md",
+                type: "document",
+                label: "App Redesign Ideas",
+                path: "ideas/app-redesign.md",
+                classification: "idea",
+                entityType: nil
+            ),
+            GraphNode(
+                id: "doc:reference/swift-concurrency.md",
+                type: "document",
+                label: "Swift Concurrency Guide",
+                path: "reference/swift-concurrency.md",
+                classification: "reference",
+                entityType: nil
+            ),
+            GraphNode(
+                id: "entity:people:alice",
+                type: "entity",
+                label: "Alice",
+                path: nil,
+                classification: nil,
+                entityType: "people"
+            ),
+            GraphNode(
+                id: "entity:people:bob",
+                type: "entity",
+                label: "Bob",
+                path: nil,
+                classification: nil,
+                entityType: "people"
+            ),
+            GraphNode(
+                id: "entity:concepts:sprint planning",
+                type: "entity",
+                label: "Sprint Planning",
+                path: nil,
+                classification: nil,
+                entityType: "concepts"
+            ),
+            GraphNode(
+                id: "tag:meeting",
+                type: "tag",
+                label: "meeting",
+                path: nil,
+                classification: nil,
+                entityType: nil
+            ),
+            GraphNode(
+                id: "tag:swift",
+                type: "tag",
+                label: "swift",
+                path: nil,
+                classification: nil,
+                entityType: nil
+            ),
+            GraphNode(
+                id: "tag:design",
+                type: "tag",
+                label: "design",
+                path: nil,
+                classification: nil,
+                entityType: nil
+            )
+        ]
+        let edges: [GraphEdge] = [
+            GraphEdge(
+                source: "doc:notes/meeting-notes.md",
+                target: "entity:people:alice",
+                type: "mentions",
+                weight: 1
+            ),
+            GraphEdge(
+                source: "doc:notes/meeting-notes.md",
+                target: "entity:people:bob",
+                type: "mentions",
+                weight: 1
+            ),
+            GraphEdge(
+                source: "doc:notes/meeting-notes.md",
+                target: "entity:concepts:sprint planning",
+                type: "mentions",
+                weight: 1
+            ),
+            GraphEdge(
+                source: "doc:notes/meeting-notes.md",
+                target: "tag:meeting",
+                type: "tagged",
+                weight: 1
+            ),
+            GraphEdge(
+                source: "doc:ideas/app-redesign.md",
+                target: "tag:design",
+                type: "tagged",
+                weight: 1
+            ),
+            GraphEdge(
+                source: "doc:reference/swift-concurrency.md",
+                target: "tag:swift",
+                type: "tagged",
+                weight: 1
+            ),
+            GraphEdge(
+                source: "entity:people:alice",
+                target: "entity:people:bob",
+                type: "co_occurrence",
+                weight: 1
+            )
+        ]
+        return GraphDataResponse(
+            nodes: nodes,
+            edges: edges,
+            nodeCount: nodes.count,
+            edgeCount: edges.count
+        )
+    }
 }
+
 #endif

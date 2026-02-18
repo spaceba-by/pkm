@@ -89,6 +89,10 @@ protocol APIClientProtocol: Sendable {
     /// Delete a document (admin only)
     /// - Parameter key: The document's S3 key
     func deleteDocument(key: String) async throws
+
+    /// Get knowledge graph data (nodes and edges)
+    /// - Returns: Graph data with nodes and edges for visualization
+    func getGraphData() async throws -> GraphDataResponse
 }
 
 extension APIClientProtocol {
