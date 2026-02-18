@@ -1,0 +1,4 @@
+{;; Each Lambda function has its own handler.clj in the `handler` namespace.
+ ;; They are independent at runtime but clj-kondo sees them together,
+ ;; producing false "redefined var" warnings.
+ :linters {:redefined-var {:level :off}}}

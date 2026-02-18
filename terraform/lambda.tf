@@ -22,7 +22,8 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
     "generate-daily-summary",
     "generate-weekly-report",
     "update-classification-index",
-    "bulk-reclassify"
+    "bulk-reclassify",
+    "delete-document"
   ])
 
   name              = "/aws/lambda/${var.project_name}-${each.key}"
@@ -339,5 +340,52 @@ resource "aws_lambda_function" "bulk_reclassify" {
 
   tags = {
     Name = "${var.project_name}-bulk-reclassify"
+  }
+}
+
+# 8. delete-document Lambda (Babashka)
+resource "aws_lambda_function" "delete_document" {
+  function_name = "${var.project_name}-delete-document"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 10
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/delete_document.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/delete_document.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/delete_document.zip" : null
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
+    }
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.lambda_logs
+  ]
+
+  lifecycle {
+    precondition {
+      condition     = var.lambda_source_type != "s3" || var.lambda_build_tag != ""
+      error_message = "lambda_build_tag is required when lambda_source_type is 's3'."
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-delete-document"
   }
 }

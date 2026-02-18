@@ -169,6 +169,6 @@
        :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (println "Running test weekly report generation")
   (println "Result:" (handler {})))

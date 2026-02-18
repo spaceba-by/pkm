@@ -50,6 +50,6 @@
        :body (json/generate-string {:error (ex-message e)})})))
 
 ;; For local testing
-(defn -main [& args]
+(defn -main []
   (println "Running test update of classification index")
   (println "Result:" (handler {})))
