@@ -35,7 +35,13 @@
   [request]
   (try
     (let [event (json/parse-string (:body request) true)
-          params (or event {})
+          ;; Support both direct invocation (params at top level) and
+          ;; API-style invocation (params nested in :body as JSON string)
+          params (if-let [body (:body event)]
+                   (if (string? body)
+                     (json/parse-string body true)
+                     body)
+                   (or event {}))
           classification (:classification params)
           dry-run (boolean (:dry_run params))
 
