@@ -124,6 +124,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 ### Planned
 
+- **Task 0018: iOS UI Improvements**
+
+  - See: [0018-ios-ui-improvements](tasks/0018-ios-ui-improvements.md)
+  - Strip YAML front matter from rendered document content (already shown in metadata header)
+  - Render markdown checkboxes (`- [ ]` / `- [x]`) as visual checkbox indicators
+  - Handle internal `[[wikilinks]]` as tappable navigation links
+  - Fix unfiltered document list returning too few results (DynamoDB scan limit issue)
+
 - **Task 0015: Document Deletion Cleanup**
 
   - See: [0015-document-deletion-cleanup](tasks/0015-document-deletion-cleanup.md)
