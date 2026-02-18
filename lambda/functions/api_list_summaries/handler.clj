@@ -31,7 +31,7 @@
       {:id key
        :date date})))
 
-(defn list-summaries
+(defn list-daily-summaries
   "List daily summary files, sorted by date descending"
   [limit]
   (let [objects (list-summary-files)]
@@ -54,7 +54,7 @@
 
           _ (println "User" user-sub "listing summaries, limit:" limit)
 
-          summaries (list-summaries limit)]
+          summaries (list-daily-summaries limit)]
 
       (r/ok {:summaries summaries
              :count (count summaries)}))
