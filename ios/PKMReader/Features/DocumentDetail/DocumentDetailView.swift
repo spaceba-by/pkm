@@ -6,6 +6,7 @@ struct DocumentDetailView: View {
     let document: Document
     let apiClient: any APIClientProtocol
     @StateObject private var viewModel: DocumentDetailViewModel
+    @State private var wikilinkTarget: Document?
 
     init(document: Document, apiClient: any APIClientProtocol) {
         self.document = document
@@ -37,6 +38,23 @@ struct DocumentDetailView: View {
             await viewModel.loadContent()
         }
         .accessibilityIdentifier("DocumentDetailView")
+        .environment(\.openURL, OpenURLAction { url in
+            if url.scheme == "pkm" {
+                let target = url.absoluteString
+                    .replacingOccurrences(of: "pkm:", with: "")
+                    .removingPercentEncoding ?? ""
+                Task { @MainActor in
+                    if let doc = (try? await apiClient.search(query: target, limit: 1))?.first {
+                        wikilinkTarget = doc
+                    }
+                }
+                return .handled
+            }
+            return .systemAction
+        })
+        .navigationDestination(item: $wikilinkTarget) { doc in
+            DocumentDetailView(document: doc, apiClient: apiClient)
+        }
     }
 
     private var metadataSection: some View {

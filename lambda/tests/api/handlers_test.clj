@@ -11,7 +11,9 @@
    formatting changes, these tests will catch any breaking changes to the
    API response structure."
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [cheshire.core :as json])
+  (:import [java.util Base64]))
 
 (def default-timestamp "1970-01-01T00:00:00Z")
 
@@ -375,3 +377,50 @@
       (is (= "2025-01-20" (:weekOf (first sorted))))
       (is (= "2025-01-13" (:weekOf (second sorted))))
       (is (= "2025-01-06" (:weekOf (nth sorted 2)))))))
+
+;; =============================================================================
+;; api_list_documents cursor encode/decode tests
+;; =============================================================================
+
+(defn encode-cursor
+  "Encode a DynamoDB LastEvaluatedKey as a base64 JSON string (from api_list_documents)"
+  [last-key]
+  (when last-key
+    (.encodeToString (Base64/getUrlEncoder)
+                     (.getBytes (json/generate-string last-key) "UTF-8"))))
+
+(defn decode-cursor
+  "Decode a base64 JSON cursor back to a DynamoDB ExclusiveStartKey map (from api_list_documents)"
+  [cursor]
+  (when (and cursor (not (empty? cursor)))
+    (try
+      (let [decoded (String. (.decode (Base64/getUrlDecoder) cursor) "UTF-8")]
+        (json/parse-string decoded true))
+      (catch Exception _
+        nil))))
+
+(deftest cursor-encode-decode-test
+  (testing "Round-trip encode/decode preserves key"
+    (let [key {:PK "notes/test.md" :SK "METADATA"}
+          encoded (encode-cursor key)
+          decoded (decode-cursor encoded)]
+      (is (some? encoded) "encoded cursor should not be nil")
+      (is (= key decoded) "decoded cursor should match original key")))
+
+  (testing "nil key returns nil cursor"
+    (is (nil? (encode-cursor nil))))
+
+  (testing "nil cursor returns nil key"
+    (is (nil? (decode-cursor nil))))
+
+  (testing "empty cursor returns nil key"
+    (is (nil? (decode-cursor ""))))
+
+  (testing "invalid cursor returns nil"
+    (is (nil? (decode-cursor "not-valid-base64!@#$"))))
+
+  (testing "Cursor with complex key values"
+    (let [key {:PK "path/to/document with spaces.md" :SK "METADATA"}
+          encoded (encode-cursor key)
+          decoded (decode-cursor encoded)]
+      (is (= key decoded)))))

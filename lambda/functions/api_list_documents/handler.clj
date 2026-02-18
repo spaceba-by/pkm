@@ -2,19 +2,40 @@
   "API Lambda: List documents with pagination and filtering"
   (:require [aws.dynamodb :as ddb]
             [api.response :as r]
-            [cheshire.core :as json]))
+            [cheshire.core :as json])
+  (:import [java.util Base64]))
 
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def default-limit 50)
 (def max-limit 100)
 
+(defn encode-cursor
+  "Encode a DynamoDB LastEvaluatedKey as a base64 JSON string"
+  [last-key]
+  (when last-key
+    (.encodeToString (Base64/getUrlEncoder)
+                     (.getBytes (json/generate-string last-key) "UTF-8"))))
+
+(defn decode-cursor
+  "Decode a base64 JSON cursor back to a DynamoDB ExclusiveStartKey map"
+  [cursor]
+  (when (and cursor (not (empty? cursor)))
+    (try
+      (let [decoded (String. (.decode (Base64/getUrlDecoder) cursor) "UTF-8")]
+        (json/parse-string decoded true))
+      (catch Exception _
+        nil))))
+
 (defn list-all-documents
-  "Scan all document metadata items"
-  [limit]
-  (ddb/scan ddb-table
-            :filter-expr "SK = :sk"
-            :expr-attr-values {":sk" "METADATA"}
-            :limit (min limit max-limit)))
+  "Scan all document metadata items with cursor-based pagination"
+  [limit cursor]
+  (let [start-key (decode-cursor cursor)
+        [items last-key] (ddb/scan-to-limit ddb-table
+                                            :filter-expr "SK = :sk"
+                                            :expr-attr-values {":sk" "METADATA"}
+                                            :limit (min limit max-limit)
+                                            :exclusive-start-key start-key)]
+    [items (encode-cursor last-key)]))
 
 (defn list-by-classification
   "Query documents by classification using GSI"
@@ -55,18 +76,20 @@
           classification (or (get params :classification)
                              (get params "classification"))
           limit (r/parse-int-param params "limit" default-limit)
+          cursor (or (get params :cursor)
+                     (get params "cursor"))
           user-sub (r/get-user-sub event)
 
           _ (println "User" user-sub "listing documents, classification:" classification "limit:" limit)
 
-          documents (if classification
-                      (list-by-classification classification limit)
-                      (list-all-documents limit))
+          [documents next-cursor] (if classification
+                                    [(list-by-classification classification limit) nil]
+                                    (list-all-documents limit cursor))
           formatted (mapv format-document documents)]
 
       (r/ok {:documents formatted
              :count (count formatted)
-             :nextCursor nil}))
+             :nextCursor next-cursor}))
 
     (catch Exception e
       (println "Error listing documents:" (ex-message e))

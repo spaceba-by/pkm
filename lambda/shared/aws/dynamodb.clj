@@ -171,6 +171,58 @@
         (recur new-acc last-key)
         new-acc))))
 
+(defn scan-to-limit
+  "Scans DynamoDB table with pagination, accumulating filtered results until
+   the target limit is reached or the table is exhausted.
+   Returns [items next-start-key] tuple for cursor support. next-start-key is
+   nil when all items have been returned, or the key of the last returned item
+   (to be used as ExclusiveStartKey on the next call) when more items remain.
+   Options:
+     :filter-expr - Filter expression
+     :expr-attr-values - Expression attribute values map
+     :limit - Target number of filtered items to return
+     :exclusive-start-key - Optional start key for cursor-based resumption"
+  [table-name & {:keys [filter-expr expr-attr-values limit exclusive-start-key]
+                 :or {limit 50}}]
+  (loop [acc []
+         start-key exclusive-start-key]
+    (let [request (cond-> {:TableName table-name}
+                    filter-expr (assoc :FilterExpression filter-expr)
+                    expr-attr-values (assoc :ExpressionAttributeValues
+                                           (marshall-item expr-attr-values))
+                    start-key (assoc :ExclusiveStartKey
+                                     (marshall-item start-key)))
+          response (-> (aws/invoke @ddb-client
+                                   {:op :Scan
+                                    :request request})
+                       (check-error "Scan"))
+          items (mapv unmarshall-item (:Items response))
+          new-acc (into acc items)
+          last-key (when-let [lek (:LastEvaluatedKey response)]
+                     (unmarshall-item lek))]
+      (cond
+        ;; We have enough items: return exactly limit items.
+        ;; Use the last returned item's key as the cursor so the next call
+        ;; resumes after that item, not after the end of the current DynamoDB page
+        ;; (which would skip any overflow items that were fetched but not returned).
+        (>= (count new-acc) limit)
+        (let [result-items (vec (take limit new-acc))
+              last-item (peek result-items)
+              ;; Build cursor key from the last returned item (PK + SK)
+              cursor-key (cond-> {}
+                           (:PK last-item) (assoc :PK (:PK last-item))
+                           (:SK last-item) (assoc :SK (:SK last-item)))]
+          [result-items (when (or last-key (> (count new-acc) limit))
+                          cursor-key)])
+
+        ;; No more pages: return all accumulated items with no cursor
+        (nil? last-key)
+        [new-acc nil]
+
+        ;; Still need more items: continue scanning
+        :else
+        (recur new-acc last-key)))))
+
 (defn query-all
   "Queries DynamoDB table with pagination, handling LastEvaluatedKey.
    Returns all matching items across all pages.
