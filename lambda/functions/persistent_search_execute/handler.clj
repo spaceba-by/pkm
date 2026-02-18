@@ -139,19 +139,19 @@
                                             :timestamp (now-iso)})}
 
               (let [provider (brave/create-provider api-key)
-                results (mapv (fn [monitor]
-                                (try
-                                  (process-monitor provider ddb-table monitor)
-                                  (catch Exception e
-                                    (println "Error processing monitor:" (:monitor_id monitor)
-                                             "-" (ex-message e))
-                                    {:monitor-id (:monitor_id monitor)
-                                     :error (ex-message e)})))
-                              due-monitors)]
-            {:statusCode 200
-             :body (json/generate-string {:monitors-processed (count results)
-                                          :results results
-                                          :timestamp (now-iso)})})))))
+                    results  (mapv (fn [monitor]
+                                    (try
+                                      (process-monitor provider ddb-table monitor)
+                                      (catch Exception e
+                                        (println "Error processing monitor:" (:monitor_id monitor)
+                                                 "-" (ex-message e))
+                                        {:monitor-id (:monitor_id monitor)
+                                         :error (ex-message e)})))
+                                  due-monitors)]
+                {:statusCode 200
+                 :body (json/generate-string {:monitors-processed (count results)
+                                              :results results
+                                              :timestamp (now-iso)})}))))))
 
     (catch Exception e
       (println "Error in persistent search execute:" (ex-message e))
