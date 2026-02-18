@@ -141,7 +141,8 @@ final class DocumentDetailViewModel: ObservableObject {
         for match in matches {
             let matchRange = match.range
             if matchRange.location > lastIndex {
-                result += nsContent.substring(with: NSRange(location: lastIndex, length: matchRange.location - lastIndex))
+                let prefixRange = NSRange(location: lastIndex, length: matchRange.location - lastIndex)
+                result += nsContent.substring(with: prefixRange)
             }
 
             let target = nsContent.substring(with: match.range(at: 1))
