@@ -1,6 +1,6 @@
 # Task 0018: iOS UI Improvements
 
-**Status**: Planned
+**Status**: In Progress
 
 ## Specifications
 
@@ -50,9 +50,9 @@ The fix should ensure the unfiltered document list reliably returns the requeste
 
 ## Implementation Steps
 
-- [ ] Step 1: Strip YAML front matter from document content - Add a content-processing step in `DocumentDetailViewModel` that removes the front matter block (everything between opening `---` and closing `---` at the start of the content) before passing it to the view. Detect front matter directly by regex-matching the content (e.g. `/\A---\n[\s\S]*?\n---\n?/`), regardless of the `hasFrontmatter` flag. Do not rely on the flag: `CachedDocument.toDocument()` always sets it to `false`, so cached documents would silently skip stripping despite still containing front matter in the content string.
-- [ ] Step 2: Render checkboxes in markdown content - Pre-process markdown content to convert `- [ ]` and `- [x]` patterns into rendered checkbox indicators that `StructuredText` can display. Evaluate whether Textual supports GitHub Flavored Markdown task lists natively, or implement a content transformation.
-- [ ] Step 3: Handle internal markdown links - Pre-process `[[wikilink]]` syntax into tappable links that navigate to the corresponding document within the app. Resolve link targets against known document paths. Ensure standard markdown links to external URLs continue to work.
-- [ ] Step 4: Fix unfiltered document list scan - Investigate and fix the `api_list_documents` Lambda so that unfiltered scans return the requested number of METADATA documents. Either accumulate results across multiple scan pages until the limit is met, or switch to an index-based query. Update unit tests for the handler.
-- [ ] Step 5: Add unit tests - Test front matter stripping with various edge cases (no front matter, empty front matter, front matter with special characters). Test checkbox rendering transformation. Test wikilink parsing and resolution.
+- [x] Step 1: Strip YAML front matter from document content - Add a content-processing step in `DocumentDetailViewModel` that removes the front matter block (everything between opening `---` and closing `---` at the start of the content) before passing it to the view. Detect front matter directly by regex-matching the content (e.g. `/\A---\n[\s\S]*?\n---\n?/`), regardless of the `hasFrontmatter` flag. Do not rely on the flag: `CachedDocument.toDocument()` always sets it to `false`, so cached documents would silently skip stripping despite still containing front matter in the content string.
+- [x] Step 2: Render checkboxes in markdown content - Pre-process markdown content to convert `- [ ]` and `- [x]` patterns into rendered checkbox indicators that `StructuredText` can display. Evaluate whether Textual supports GitHub Flavored Markdown task lists natively, or implement a content transformation.
+- [x] Step 3: Handle internal markdown links - Pre-process `[[wikilink]]` syntax into tappable links that navigate to the corresponding document within the app. Resolve link targets against known document paths. Ensure standard markdown links to external URLs continue to work.
+- [x] Step 4: Fix unfiltered document list scan - Investigate and fix the `api_list_documents` Lambda so that unfiltered scans return the requested number of METADATA documents. Either accumulate results across multiple scan pages until the limit is met, or switch to an index-based query. Update unit tests for the handler.
+- [x] Step 5: Add unit tests - Test front matter stripping with various edge cases (no front matter, empty front matter, front matter with special characters). Test checkbox rendering transformation. Test wikilink parsing and resolution.
 - [ ] Step 6: Verify - Manual testing with real Obsidian vault documents containing front matter, checkboxes, and internal links.

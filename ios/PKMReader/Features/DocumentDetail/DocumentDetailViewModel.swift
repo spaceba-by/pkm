@@ -47,7 +47,7 @@ final class DocumentDetailViewModel: ObservableObject {
 
         // If content already loaded, use it
         if let content = document.content {
-            contentState = .loaded(content)
+            contentState = .loaded(processContent(content))
         }
     }
 
@@ -63,13 +63,70 @@ final class DocumentDetailViewModel: ObservableObject {
         do {
             let fullDocument = try await apiClient.getDocument(key: document.id)
             if let content = fullDocument.content {
-                contentState = .loaded(content)
+                contentState = .loaded(processContent(content))
             } else {
                 contentState = .loaded("*No content available*")
             }
         } catch {
             contentState = .error(error)
         }
+    }
+
+    // MARK: - Content Processing
+
+    /// Process content through all transformations before rendering
+    func processContent(_ content: String) -> String {
+        var result = content
+        result = stripFrontmatter(result)
+        result = renderCheckboxes(result)
+        result = convertWikilinks(result)
+        return result
+    }
+
+    /// Strip YAML front matter block from the start of content
+    private func stripFrontmatter(_ content: String) -> String {
+        // Match front matter: starts with ---, ends with --- (with optional content between)
+        guard let range = content.range(
+            of: #"^---\n(?:[\s\S]*?\n)?---\n?"#,
+            options: .regularExpression
+        ) else {
+            return content
+        }
+        return String(content[range.upperBound...])
+    }
+
+    /// Replace markdown checkbox syntax with Unicode ballot characters
+    private func renderCheckboxes(_ content: String) -> String {
+        var result = content
+        // Unchecked: - [ ] → - ☐ ((?m) enables multiline mode for ^ to match line starts)
+        result = result.replacingOccurrences(
+            of: #"(?m)^(\s*)- \[ \]"#,
+            with: "$1- ☐",
+            options: .regularExpression
+        )
+        // Checked: - [x] or - [X] → - ☑
+        result = result.replacingOccurrences(
+            of: #"(?m)^(\s*)- \[[xX]\]"#,
+            with: "$1- ☑",
+            options: .regularExpression
+        )
+        return result
+    }
+
+    /// Convert [[wikilinks]] to standard markdown links with pkm: scheme
+    private func convertWikilinks(_ content: String) -> String {
+        // First handle [[target|display]] form, then [[target]] form
+        var result = content.replacingOccurrences(
+            of: #"\[\[([^\]|]+)\|([^\]]+)\]\]"#,
+            with: "[$2](pkm:$1)",
+            options: .regularExpression
+        )
+        result = result.replacingOccurrences(
+            of: #"\[\[([^\]]+)\]\]"#,
+            with: "[$1](pkm:$1)",
+            options: .regularExpression
+        )
+        return result
     }
 
     /// Update the document's classification

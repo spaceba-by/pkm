@@ -171,6 +171,37 @@
         (recur new-acc last-key)
         new-acc))))
 
+(defn scan-to-limit
+  "Scans DynamoDB table with pagination, accumulating filtered results until
+   the target limit is reached or the table is exhausted.
+   Returns [items last-evaluated-key] tuple for cursor support.
+   Options:
+     :filter-expr - Filter expression
+     :expr-attr-values - Expression attribute values map
+     :limit - Target number of filtered items to return
+     :exclusive-start-key - Optional start key for cursor-based resumption"
+  [table-name & {:keys [filter-expr expr-attr-values limit exclusive-start-key]
+                 :or {limit 50}}]
+  (loop [acc []
+         start-key exclusive-start-key]
+    (let [request (cond-> {:TableName table-name}
+                    filter-expr (assoc :FilterExpression filter-expr)
+                    expr-attr-values (assoc :ExpressionAttributeValues
+                                           (marshall-item expr-attr-values))
+                    start-key (assoc :ExclusiveStartKey
+                                     (marshall-item start-key)))
+          response (-> (aws/invoke @ddb-client
+                                   {:op :Scan
+                                    :request request})
+                       (check-error "Scan"))
+          items (mapv unmarshall-item (:Items response))
+          new-acc (into acc items)
+          last-key (when-let [lek (:LastEvaluatedKey response)]
+                     (unmarshall-item lek))]
+      (if (or (>= (count new-acc) limit) (nil? last-key))
+        [(vec (take limit new-acc)) last-key]
+        (recur new-acc last-key)))))
+
 (defn query-all
   "Queries DynamoDB table with pagination, handling LastEvaluatedKey.
    Returns all matching items across all pages.
