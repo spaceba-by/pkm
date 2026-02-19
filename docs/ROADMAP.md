@@ -147,6 +147,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - iOS search mode toggle (keyword/semantic) with protocol extension
   - CLI indexing script with dry-run, stats, and prefix/limit filtering
 
+- **Task 0010: Write Support & Admin API** ✅
+
+  - See: [0010-write-support](tasks/0010-write-support.md)
+  - Cognito user groups (admin, reader) for role-based access control
+  - 3 new API endpoints: create, update, delete documents (admin only)
+  - Document editor with markdown preview, conflict detection
+  - Lambda-level group-based authorization via Cognito JWT claims
+
 ### Planned
 
 - **Task 0017: Insights Calendar Design**
@@ -157,13 +165,6 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Month-to-month navigation matching iOS Calendar app conventions
   - UI mockup design phase before implementation
   - Accessibility support for calendar interactions
-
-- **Task 0010: Write Support & Admin API**
-
-  - See: [0010-write-support](tasks/0010-write-support.md)
-  - Create/edit/delete documents from mobile
-  - Cognito user groups for admin authorization
-  - Document editor with markdown preview
 
 - **Task 0011: Knowledge Graph Visualization**
 
