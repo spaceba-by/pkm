@@ -1,7 +1,6 @@
 (ns aws.dynamodb
   "DynamoDB operations using awyeah client"
   (:require [com.grzm.awyeah.client.api :as aws]
-            [clojure.walk :as walk]
             [clojure.string :as str]))
 
 (defonce ^:private ddb-client
@@ -33,12 +32,7 @@
                (every? string? v) {:SS (vec v)}
                (every? number? v) {:NS (mapv str v)}
                :else {:L (mapv marshall-value (vec v))})
-    (map? v) {:M (walk/postwalk
-                   (fn [x]
-                     (if (and (map? x) (not (contains? x :S)))
-                       (into {} (map (fn [[k v]] [k (marshall-value v)]) x))
-                       x))
-                   v)}
+    (map? v) {:M (into {} (map (fn [[k v]] [(name k) (marshall-value v)]) v))}
     :else {:S (str v)}))
 
 (defn- marshall-item
@@ -113,8 +107,9 @@
      :expr-attr-values - Expression attribute values map
      :limit - Maximum items to return (default 100)
      :select - Select mode: nil (default), \"COUNT\", \"ALL_ATTRIBUTES\", etc.
-               When \"COUNT\", returns just the count (integer) instead of items."
-  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit select]
+               When \"COUNT\", returns just the count (integer) instead of items.
+     :scan-index-forward - Sort direction: true for ascending (default), false for descending"
+  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit select scan-index-forward]
                  :or {limit 100}}]
   (let [request (cond-> {:TableName table-name
                          :KeyConditionExpression key-condition-expr
@@ -122,7 +117,8 @@
                   ;; Don't include Limit when using COUNT - we want total count
                   (and limit (not= select "COUNT")) (assoc :Limit limit)
                   index-name (assoc :IndexName index-name)
-                  select (assoc :Select select))
+                  select (assoc :Select select)
+                  (some? scan-index-forward) (assoc :ScanIndexForward scan-index-forward))
         response (-> (aws/invoke @ddb-client
                                  {:op :Query
                                   :request request})
