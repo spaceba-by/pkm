@@ -12,10 +12,8 @@ final class SettingsScreenTests: XCTestCase {
         app = XCUIApplication()
         app.launchWithMockData()
 
-        // Navigate to Settings tab
-        let settingsTab = app.tabBars.buttons["Settings"]
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "Settings tab not found")
-        settingsTab.tap()
+        // Navigate to Settings tab (may be behind "More" on iPhone with 6+ tabs)
+        app.navigateToTab("Settings")
     }
 
     override func tearDownWithError() throws {
@@ -59,20 +57,21 @@ final class SettingsScreenTests: XCTestCase {
 
     // MARK: - Tab Navigation
 
-    func test_fiveTabLayout_exists() throws {
+    func test_tabLayout_exists() throws {
         let tabBar = app.tabBars.element
         XCTAssertTrue(tabBar.waitForExistence(timeout: 5), "Tab bar not found")
 
+        // With 6 tabs, iPhone shows first 4 + "More"
         let documentsTab = app.tabBars.buttons["Documents"]
         let searchTab = app.tabBars.buttons["Search"]
         let tagsTab = app.tabBars.buttons["Tags"]
         let insightsTab = app.tabBars.buttons["Insights"]
-        let settingsTab = app.tabBars.buttons["Settings"]
+        let moreTab = app.tabBars.buttons["More"]
 
         XCTAssertTrue(documentsTab.exists, "Documents tab not found")
         XCTAssertTrue(searchTab.exists, "Search tab not found")
         XCTAssertTrue(tagsTab.exists, "Tags tab not found")
         XCTAssertTrue(insightsTab.exists, "Insights tab not found")
-        XCTAssertTrue(settingsTab.exists, "Settings tab not found")
+        XCTAssertTrue(moreTab.exists, "More tab not found")
     }
 }

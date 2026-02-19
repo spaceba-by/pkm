@@ -45,6 +45,11 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Result to return from deleteDocument
     var deleteDocumentResult: Result<Void, Error> = .success(())
 
+    /// Result to return from getGraphData
+    var getGraphDataResult: Result<GraphDataResponse, Error> = .success(
+        GraphDataResponse(nodes: [], edges: [], nodeCount: 0, edgeCount: 0)
+    )
+
     // MARK: - Call Tracking
 
     /// Number of times listDocuments was called
@@ -188,6 +193,14 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try deleteDocumentResult.get()
     }
 
+    /// Number of times getGraphData was called
+    private(set) var getGraphDataCallCount = 0
+
+    func getGraphData() async throws -> GraphDataResponse {
+        getGraphDataCallCount += 1
+        return try getGraphDataResult.get()
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -212,5 +225,6 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         createDocumentCallCount = 0
         updateDocumentCallCount = 0
         deleteDocumentCallCount = 0
+        getGraphDataCallCount = 0
     }
 }

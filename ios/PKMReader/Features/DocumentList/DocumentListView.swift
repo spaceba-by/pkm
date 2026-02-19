@@ -162,4 +162,7 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     }
     func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {}
     func deleteDocument(key: String) async throws {}
+    func getGraphData() async throws -> GraphDataResponse {
+        GraphDataResponse(nodes: [], edges: [], nodeCount: 0, edgeCount: 0)
+    }
 }

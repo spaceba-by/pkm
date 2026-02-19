@@ -14,10 +14,8 @@ final class InsightsScreenTests: XCTestCase {
         app.launchWithMockData()
         insightsPage = InsightsPage(app: app)
 
-        // Navigate to Insights tab
-        let insightsTab = app.tabBars.buttons["Insights"]
-        XCTAssertTrue(insightsTab.waitForExistence(timeout: 5), "Insights tab not found")
-        insightsTab.tap()
+        // Navigate to Insights tab (may be behind "More" on iPhone with 6+ tabs)
+        app.navigateToTab("Insights")
     }
 
     override func tearDownWithError() throws {

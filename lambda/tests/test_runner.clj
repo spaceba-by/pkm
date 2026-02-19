@@ -16,6 +16,7 @@
 (require '[search.chunker-test])
 (require '[search.semantic-test])
 (require '[api.write-handlers-test])
+(require '[api.graph-data-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -31,7 +32,8 @@
                  'search.vector-index-test
                  'search.chunker-test
                  'search.semantic-test
-                 'api.write-handlers-test)]
+                 'api.write-handlers-test
+                 'api.graph-data-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))

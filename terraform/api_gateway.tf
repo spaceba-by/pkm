@@ -385,6 +385,30 @@ resource "aws_apigatewayv2_route" "bulk_reclassify" {
 }
 
 # =============================================================================
+# API Routes - Knowledge Graph
+# =============================================================================
+
+resource "aws_apigatewayv2_integration" "graph_data" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_graph_data["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "graph_data" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "GET /graph"
+  target             = "integrations/${aws_apigatewayv2_integration.graph_data["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# =============================================================================
 # Lambda Permissions for API Gateway
 # =============================================================================
 
@@ -514,6 +538,16 @@ resource "aws_lambda_permission" "api_bulk_reclassify" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_bulk_reclassify["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_graph_data" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_graph_data["enabled"].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }

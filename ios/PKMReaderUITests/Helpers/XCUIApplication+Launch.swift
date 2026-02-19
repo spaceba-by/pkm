@@ -36,4 +36,23 @@ extension XCUIApplication {
         launchEnvironment = environment
         launch()
     }
+
+    /// Navigate to a tab, handling the "More" overflow tab if needed.
+    /// On iPhone with 6+ tabs, iOS shows 4 visible tabs + "More".
+    func navigateToTab(_ tabName: String, timeout: TimeInterval = 5) {
+        let directTab = tabBars.buttons[tabName]
+        if directTab.waitForExistence(timeout: timeout) {
+            directTab.tap()
+            return
+        }
+        // Tab might be behind "More"
+        let moreTab = tabBars.buttons["More"]
+        if moreTab.waitForExistence(timeout: timeout) {
+            moreTab.tap()
+            let moreRow = tables.cells.staticTexts[tabName]
+            if moreRow.waitForExistence(timeout: timeout) {
+                moreRow.tap()
+            }
+        }
+    }
 }

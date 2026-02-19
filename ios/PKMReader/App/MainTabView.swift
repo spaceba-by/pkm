@@ -43,6 +43,12 @@ struct MainTabView: View {
                         Label("Settings", systemImage: "gear")
                     }
                     .tag(4)
+
+                GraphView(apiClient: apiClient)
+                    .tabItem {
+                        Label("Graph", systemImage: "circle.hexagongrid")
+                    }
+                    .tag(5)
             }
         }
         .accessibilityIdentifier("MainTabView")
