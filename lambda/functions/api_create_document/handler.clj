@@ -56,8 +56,9 @@
           (if-let [error (validate-key document-key)]
             (r/bad-request error)
 
-            ;; Check if document already exists
-            (if (s3/object-exists? s3-bucket document-key)
+            ;; Check if document already exists (S3 or DynamoDB metadata)
+            (if (or (s3/object-exists? s3-bucket document-key)
+                    (ddb/get-item ddb-table {:PK document-key :SK "METADATA"}))
               (r/conflict (str "Document already exists: " document-key))
 
               ;; Create document in S3

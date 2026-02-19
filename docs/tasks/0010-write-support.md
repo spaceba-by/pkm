@@ -25,7 +25,7 @@ Enable document creation and editing from the mobile app. Requires admin authori
 
 - [x] Cognito user groups for admin vs read-only access
 - [x] API endpoints for create, update, and delete documents
-- [x] Group-based authorization in API Gateway
+- [x] Group-based authorization in Lambda handlers (via Cognito JWT claims)
 - [x] Document editor view in iOS app
 - [x] Markdown preview in editor
 - [x] Changes sync to S3 and back to local vault via rclone

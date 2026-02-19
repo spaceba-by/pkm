@@ -6,10 +6,14 @@ struct DocumentDetailView: View {
     let document: Document
     let apiClient: any APIClientProtocol
     @StateObject private var viewModel: DocumentDetailViewModel
+
+    @Environment(\.dismiss)
+    private var dismiss
     @State private var wikilinkTarget: Document?
     @State private var showEditor = false
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
+    @State private var deleteError: String?
 
     init(document: Document, apiClient: any APIClientProtocol) {
         self.document = document
@@ -75,16 +79,27 @@ struct DocumentDetailView: View {
             Button("Delete", role: .destructive) {
                 Task {
                     isDeleting = true
+                    defer { isDeleting = false }
                     do {
                         try await apiClient.deleteDocument(key: document.id)
+                        dismiss()
                     } catch {
-                        // Error is shown inline; deletion failure leaves the view intact
-                        isDeleting = false
+                        deleteError = error.localizedDescription
                     }
                 }
             }
         } message: {
             Text("Are you sure you want to delete \"\(document.displayTitle)\"? This cannot be undone.")
+        }
+        .alert("Delete Failed", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let deleteError {
+                Text(deleteError)
+            }
         }
         .environment(\.openURL, OpenURLAction { url in
             if url.scheme == "pkm" {

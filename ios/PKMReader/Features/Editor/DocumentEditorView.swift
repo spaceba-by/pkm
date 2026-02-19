@@ -4,7 +4,9 @@ import Textual
 /// View for creating and editing documents
 struct DocumentEditorView: View {
     @StateObject private var viewModel: DocumentEditorViewModel
-    @Environment(\.dismiss) private var dismiss
+
+    @Environment(\.dismiss)
+    private var dismiss
 
     init(mode: DocumentEditorViewModel.Mode, apiClient: any APIClientProtocol) {
         _viewModel = StateObject(wrappedValue: DocumentEditorViewModel(
@@ -64,7 +66,7 @@ struct DocumentEditorView: View {
                     if case .error = viewModel.saveState { return true }
                     return false
                 },
-                set: { if !$0 { viewModel.saveState = .idle } }
+                set: { if !$0 { viewModel.resetSaveState() } }
             )) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -72,8 +74,8 @@ struct DocumentEditorView: View {
                     Text(message)
                 }
             }
-            .onChange(of: viewModel.saveState) {
-                if viewModel.saveState == .saved {
+            .onChange(of: viewModel.saveState) { _, newState in
+                if newState == .saved {
                     dismiss()
                 }
             }

@@ -147,30 +147,52 @@
 ;; api_update_document conflict detection tests
 ;; =============================================================================
 
+(defn conflict?
+  "Return true when an update should be rejected due to a modification
+   conflict. Mirrors the api_update_document handler logic:
+   ifUnmodifiedSince is optional; when present, reject if current
+   modified timestamp is after the condition."
+  [current-modified if-unmodified-since]
+  (boolean
+    (when if-unmodified-since
+      (pos? (compare current-modified if-unmodified-since)))))
+
 (deftest conflict-detection-test
   (testing "No conflict when ifUnmodifiedSince matches"
-    (let [current-modified "2025-01-15T10:00:00Z"
-          if-unmodified-since "2025-01-15T10:00:00Z"]
-      ;; Should not conflict: current is not after the condition
-      (is (not (pos? (compare current-modified if-unmodified-since))))))
+    (is (false? (conflict? "2025-01-15T10:00:00Z" "2025-01-15T10:00:00Z"))))
 
   (testing "Conflict when document was modified after client fetch"
-    (let [current-modified "2025-01-15T12:00:00Z"
-          if-unmodified-since "2025-01-15T10:00:00Z"]
-      ;; Should conflict: current is after the condition
-      (is (pos? (compare current-modified if-unmodified-since)))))
+    (is (true? (conflict? "2025-01-15T12:00:00Z" "2025-01-15T10:00:00Z"))))
 
-  (testing "No conflict when ifUnmodifiedSince is nil (no check)"
-    ;; When ifUnmodifiedSince is nil, we skip the check
-    (is (nil? nil))))
+  (testing "No conflict when ifUnmodifiedSince is nil (skip check)"
+    (is (false? (conflict? "2025-01-15T12:00:00Z" nil))))
+
+  (testing "No conflict when current is before ifUnmodifiedSince"
+    (is (false? (conflict? "2025-01-15T08:00:00Z" "2025-01-15T10:00:00Z")))))
 
 ;; =============================================================================
 ;; api_delete_document validation tests
 ;; =============================================================================
 
+(defn validate-delete-key
+  "Validate the document key for api_delete_document."
+  [key]
+  (cond
+    (str/blank? key)
+    "Document key is required"
+
+    (str/starts-with? key "_agent/")
+    "Deletion of agent documents is not allowed"
+
+    :else nil))
+
 (deftest delete-validation-test
   (testing "Rejects agent directory deletions"
-    (is (true? (.startsWith "_agent/summaries/2025-01-01.md" "_agent/"))))
+    (is (= "Deletion of agent documents is not allowed"
+           (validate-delete-key "_agent/summaries/2025-01-01.md"))))
 
   (testing "Allows normal document deletions"
-    (is (false? (.startsWith "notes/test.md" "_agent/")))))
+    (is (nil? (validate-delete-key "notes/test.md"))))
+
+  (testing "Rejects blank key"
+    (is (some? (validate-delete-key "")))))

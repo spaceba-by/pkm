@@ -263,7 +263,9 @@ actor APIClient: APIClientProtocol {
         throw lastError
     }
 
-    private func performMutatingRequest<T: Decodable>(url: URL, method: String, body: [String: String]?) async throws -> T {
+    private func performMutatingRequest<T: Decodable>(
+        url: URL, method: String, body: [String: String]?
+    ) async throws -> T {
         let token = try await authService.getAccessToken()
 
         var request = URLRequest(url: url)
@@ -469,56 +471,11 @@ actor APIClient: APIClientProtocol {
     }
 }
 
-// MARK: - Response Types
-
-struct SearchResponse: Codable, Sendable {
-    let query: String
-    let results: [Document]
-    let count: Int
-}
-
-struct TagListResponse: Codable, Sendable {
-    let tags: [Tag]
-    let count: Int
-}
-
-struct ClassificationListResponse: Codable, Sendable {
-    let classifications: [ClassificationCount]
-}
-
-struct SummaryListResponse: Codable, Sendable {
-    let summaries: [Summary]
-    let count: Int
-}
-
-struct ReportListResponse: Codable, Sendable {
-    let reports: [Report]
-    let count: Int
-}
-
-struct DocumentsByTagResponse: Codable, Sendable {
-    let tag: String
-    let documents: [Document]
-    let count: Int
-}
-
 /// Empty response for operations that return minimal data
 private struct EmptyResponse: Codable, Sendable {
     // Accepts any JSON response
     init(from decoder: Decoder) throws {
         // Consume the container without requiring specific keys
         _ = try? decoder.singleValueContainer()
-    }
-}
-
-struct CreateDocumentResponse: Codable, Sendable {
-    let key: String
-    let title: String
-    let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case key
-        case title
-        case createdAt = "created_at"
     }
 }

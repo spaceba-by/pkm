@@ -75,6 +75,10 @@ final class DocumentEditorViewModel: ObservableObject {
         }
     }
 
+    func resetSaveState() {
+        saveState = .idle
+    }
+
     func save() async {
         guard isValid else { return }
 
