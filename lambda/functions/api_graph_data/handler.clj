@@ -111,18 +111,19 @@
             (add-edge! doc-id link-id "links_to" 2)))))
 
     ;; Pass 2: Add co-occurrence edges between entities in the same document
+    ;; Skip documents with too many entities to avoid combinatorial explosion
     (doseq [doc documents]
       (let [entities (or (:entities doc) {})
             all-entity-ids (for [entity-type entity-types
                                  entity-name (get entities (keyword entity-type) [])
                                  :when (and entity-name (not (str/blank? entity-name)))]
                              (entity-node-id entity-type entity-name))
-            ;; Deduplicate entities per document to avoid self-edges and redundant edges
             unique-entity-ids (distinct all-entity-ids)]
-        (doseq [[i a] (map-indexed vector unique-entity-ids)
-                b (drop (inc i) unique-entity-ids)
-                :when (not= a b)]
-          (add-edge! a b "co_occurrence" 1))))
+        (when (<= (count unique-entity-ids) 10)
+          (doseq [[i a] (map-indexed vector unique-entity-ids)
+                  b (drop (inc i) unique-entity-ids)
+                  :when (not= a b)]
+            (add-edge! a b "co_occurrence" 1)))))
 
     {:nodes (vec (vals @nodes))
      :edges @edges}))
