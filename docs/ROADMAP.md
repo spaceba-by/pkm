@@ -138,6 +138,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Bulk reclassify stale record cleanup
   - Fixes orphaned DynamoDB data when files are deleted from Obsidian vault
 
+- **Task 0009: Semantic Search** ✅
+
+  - See: [0009-semantic-search](tasks/0009-semantic-search.md)
+  - In-memory vector index with cosine similarity search
+  - Document chunking by heading structure, embeddings via Bedrock Titan or OpenAI
+  - Incremental indexing pipeline with S3-persisted index
+  - iOS search mode toggle (keyword/semantic) with protocol extension
+  - CLI indexing script with dry-run, stats, and prefix/limit filtering
+
 ### Planned
 
 - **Task 0017: Insights Calendar Design**
@@ -148,15 +157,6 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Month-to-month navigation matching iOS Calendar app conventions
   - UI mockup design phase before implementation
   - Accessibility support for calendar interactions
-
-- **Task 0009: Semantic Search**
-
-  - See: [0009-semantic-search](tasks/0009-semantic-search.md)
-  - DuckDB with vss extension for vector similarity search (replaces OpenSearch)
-  - Embedded .duckdb index file stored in S3 (no managed cluster)
-  - Document chunking by heading structure, embeddings via OpenAI or Ollama
-  - Clojure integration via next.jdbc + DuckDB JDBC driver
-  - Batch indexing pipeline with incremental update support
 
 - **Task 0010: Write Support & Admin API**
 
