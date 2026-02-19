@@ -1,7 +1,6 @@
 (ns aws.dynamodb
   "DynamoDB operations using awyeah client"
   (:require [com.grzm.awyeah.client.api :as aws]
-            [clojure.walk :as walk]
             [clojure.string :as str]))
 
 (defonce ^:private ddb-client
@@ -33,12 +32,7 @@
                (every? string? v) {:SS (vec v)}
                (every? number? v) {:NS (mapv str v)}
                :else {:L (mapv marshall-value (vec v))})
-    (map? v) {:M (walk/postwalk
-                   (fn [x]
-                     (if (and (map? x) (not (contains? x :S)))
-                       (into {} (map (fn [[k v]] [k (marshall-value v)]) x))
-                       x))
-                   v)}
+    (map? v) {:M (into {} (map (fn [[k v]] [(name k) (marshall-value v)]) v))}
     :else {:S (str v)}))
 
 (defn- marshall-item
