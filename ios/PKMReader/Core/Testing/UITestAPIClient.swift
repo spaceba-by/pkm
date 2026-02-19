@@ -155,7 +155,7 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
         )
     }
 
-    func search(query: String, limit: Int) async throws -> [Document] {
+    func search(query: String, limit: Int, mode: SearchMode = .keyword) async throws -> [Document] {
         fixtureDocuments.filter { document in
             document.title.localizedCaseInsensitiveContains(query) ||
             document.metadata.tags.contains { $0.localizedCaseInsensitiveContains(query) }

@@ -233,7 +233,7 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
         )
     }
 
-    func search(query: String, limit: Int) async throws -> [Document] { [] }
+    func search(query: String, limit: Int, mode: SearchMode) async throws -> [Document] { [] }
     func listTags() async throws -> [Tag] { [] }
     func listClassifications() async throws -> [ClassificationCount] { [] }
     func listSummaries(limit: Int) async throws -> [Summary] { [] }

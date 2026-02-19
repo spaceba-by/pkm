@@ -108,10 +108,14 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         throw APIError.invalidResponse
     }
 
-    func search(query: String, limit: Int) async throws -> [Document] {
+    /// Last mode passed to search
+    private(set) var lastSearchMode: SearchMode?
+
+    func search(query: String, limit: Int, mode: SearchMode = .keyword) async throws -> [Document] {
         searchCallCount += 1
         lastSearchQuery = query
         lastSearchLimit = limit
+        lastSearchMode = mode
         return try searchResult.get()
     }
 
@@ -162,6 +166,7 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         searchCallCount = 0
         lastSearchQuery = nil
         lastSearchLimit = nil
+        lastSearchMode = nil
         listTagsCallCount = 0
         documentsByTagCallCount = 0
         lastDocumentsByTagTag = nil

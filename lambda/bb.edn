@@ -20,7 +20,8 @@
          "functions/persistent_search_summarize"
          "functions/api_search_monitors"
          "functions/api_search_monitor_detail"
-         "functions/api_search_summaries"]
+         "functions/api_search_summaries"
+         "functions/index_embeddings"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}

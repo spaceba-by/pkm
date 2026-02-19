@@ -1,5 +1,18 @@
 import Foundation
 
+/// Search mode for document queries
+enum SearchMode: String, CaseIterable, Sendable {
+    case keyword
+    case semantic
+
+    var displayName: String {
+        switch self {
+        case .keyword: "Keyword"
+        case .semantic: "Semantic"
+        }
+    }
+}
+
 /// Protocol defining the API client interface for testability
 protocol APIClientProtocol: Sendable {
     /// List documents with optional filtering and pagination
@@ -23,8 +36,9 @@ protocol APIClientProtocol: Sendable {
     /// - Parameters:
     ///   - query: Search query string
     ///   - limit: Maximum number of results
+    ///   - mode: Search mode (keyword or semantic)
     /// - Returns: List of matching documents
-    func search(query: String, limit: Int) async throws -> [Document]
+    func search(query: String, limit: Int, mode: SearchMode) async throws -> [Document]
 
     /// List all tags in the vault
     /// - Returns: List of tags with document counts
@@ -56,4 +70,10 @@ protocol APIClientProtocol: Sendable {
     ///   - documentId: The document's S3 key
     ///   - classification: The new classification to apply
     func updateClassification(documentId: String, classification: DocumentClassification) async throws
+}
+
+extension APIClientProtocol {
+    func search(query: String, limit: Int) async throws -> [Document] {
+        try await search(query: query, limit: limit, mode: .keyword)
+    }
 }

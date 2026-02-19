@@ -12,6 +12,9 @@
 (require '[persistent-search.execute-test])
 (require '[persistent-search.summarizer-test])
 (require '[persistent-search.api-test])
+(require '[search.vector-index-test])
+(require '[search.chunker-test])
+(require '[search.semantic-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -23,7 +26,10 @@
                  'delete-document.handler-test
                  'persistent-search.execute-test
                  'persistent-search.summarizer-test
-                 'persistent-search.api-test)]
+                 'persistent-search.api-test
+                 'search.vector-index-test
+                 'search.chunker-test
+                 'search.semantic-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))

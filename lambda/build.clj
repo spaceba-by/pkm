@@ -112,7 +112,8 @@
    ;; Persistent search API Lambda functions
    "api_search_monitors"         "handler/handler"
    "api_search_monitor_detail"   "handler/handler"
-   "api_search_summaries"        "handler/handler"})
+   "api_search_summaries"        "handler/handler"
+   "index_embeddings"            "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")
