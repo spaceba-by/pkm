@@ -189,5 +189,17 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
     func updateClassification(documentId: String, classification: DocumentClassification) async throws {
         // No-op for UI tests
     }
+
+    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse {
+        CreateDocumentResponse(key: key, title: title ?? key, createdAt: "2024-01-01T00:00:00Z")
+    }
+
+    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {
+        // No-op for UI tests
+    }
+
+    func deleteDocument(key: String) async throws {
+        // No-op for UI tests
+    }
 }
 #endif

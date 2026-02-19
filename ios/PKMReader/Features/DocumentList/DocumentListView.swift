@@ -4,6 +4,7 @@ import SwiftUI
 struct DocumentListView: View {
     @StateObject private var viewModel: DocumentListViewModel
     @State private var showingFilter = false
+    @State private var showingEditor = false
 
     init(apiClient: any APIClientProtocol) {
         _viewModel = StateObject(wrappedValue: DocumentListViewModel(apiClient: apiClient))
@@ -43,8 +44,24 @@ struct DocumentListView: View {
             .navigationTitle("Documents")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    filterButton
+                    HStack(spacing: 12) {
+                        Button {
+                            showingEditor = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("Create document")
+                        .accessibilityIdentifier("CreateDocumentButton")
+
+                        filterButton
+                    }
                 }
+            }
+            .sheet(isPresented: $showingEditor) {
+                DocumentEditorView(
+                    mode: .create,
+                    apiClient: viewModel.apiClient
+                )
             }
             .sheet(isPresented: $showingFilter) {
                 FilterSheet(
@@ -140,4 +157,9 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listReports(limit: Int) async throws -> [Report] { [] }
     func documentsByTag(tag: String, limit: Int) async throws -> [Document] { [] }
     func updateClassification(documentId: String, classification: DocumentClassification) async throws {}
+    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse {
+        CreateDocumentResponse(key: key, title: title ?? key, createdAt: "2024-01-01T00:00:00Z")
+    }
+    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {}
+    func deleteDocument(key: String) async throws {}
 }
