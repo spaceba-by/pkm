@@ -12,10 +12,8 @@ final class GraphScreenTests: XCTestCase {
         app = XCUIApplication()
         app.launchWithMockData()
 
-        // Navigate to Graph tab
-        let graphTab = app.tabBars.buttons["Graph"]
-        XCTAssertTrue(graphTab.waitForExistence(timeout: 5), "Graph tab not found")
-        graphTab.tap()
+        // Navigate to Graph tab (may be behind "More" on iPhone with 6+ tabs)
+        app.navigateToTab("Graph")
     }
 
     override func tearDownWithError() throws {
