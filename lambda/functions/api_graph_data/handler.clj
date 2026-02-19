@@ -47,7 +47,11 @@
                     (swap! nodes assoc id node-data))
 
         add-edge! (fn [source target edge-type weight]
-                    (let [edge-key (if (neg? (compare source target))
+                    ;; Directional edge types preserve source/target order;
+                    ;; undirected types sort to deduplicate
+                    (let [directional? (#{"links_to"} edge-type)
+                          edge-key (if (or directional?
+                                           (neg? (compare source target)))
                                      [source target edge-type]
                                      [target source edge-type])]
                       (when-not (contains? @edge-set edge-key)
@@ -109,9 +113,12 @@
             all-entity-ids (for [entity-type entity-types
                                  entity-name (get entities (keyword entity-type) [])
                                  :when (and entity-name (not (str/blank? entity-name)))]
-                             (entity-node-id entity-type entity-name))]
-        (doseq [[i a] (map-indexed vector all-entity-ids)
-                b (drop (inc i) all-entity-ids)]
+                             (entity-node-id entity-type entity-name))
+            ;; Deduplicate entities per document to avoid self-edges and redundant edges
+            unique-entity-ids (distinct all-entity-ids)]
+        (doseq [[i a] (map-indexed vector unique-entity-ids)
+                b (drop (inc i) unique-entity-ids)
+                :when (not= a b)]
           (add-edge! a b "co_occurrence" 1))))
 
     {:nodes (vec (vals @nodes))
@@ -124,21 +131,17 @@
     (let [event (json/parse-string (:body request) true)
           params (r/parse-query-params event)
           user-sub (r/get-user-sub event)
+          limit (min (or (some-> (or (get params :limit) (get params "limit"))
+                                 parse-long)
+                         1000)
+                     2000)
 
-          ;; Optional filters
-          center-entity (or (get params :entity)
-                            (get params "entity"))
-          center-doc (or (get params :document)
-                         (get params "document"))
+          _ (println "User" user-sub "requesting graph data, limit:" limit)
 
-          _ (println "User" user-sub "requesting graph data"
-                     (when center-entity (str "centered on entity: " center-entity))
-                     (when center-doc (str "centered on document: " center-doc)))
-
-          ;; Fetch all document metadata
-          documents (ddb/scan-all ddb-table
-                                  :filter-expr "SK = :sk"
-                                  :expr-attr-values {":sk" "METADATA"})
+          ;; Fetch document metadata with limit to prevent unbounded scans
+          documents (ddb/scan-to-limit ddb-table limit
+                                       :filter-expr "SK = :sk"
+                                       :expr-attr-values {":sk" "METADATA"})
 
           _ (println "Found" (count documents) "documents for graph")
 

@@ -12,6 +12,8 @@ final class GraphViewModel: ObservableObject {
 
     private let apiClient: any APIClientProtocol
     private var simulationTask: Task<Void, Never>?
+    /// Precomputed connection count per node ID for O(1) lookups
+    private var degreeMap: [String: Int] = [:]
 
     init(apiClient: any APIClientProtocol) {
         self.apiClient = apiClient
@@ -25,6 +27,7 @@ final class GraphViewModel: ObservableObject {
             let response = try await apiClient.getGraphData()
             nodes = response.nodes
             edges = response.edges
+            degreeMap = buildDegreeMap()
             initializePositions()
             runSimulation()
         } catch {
@@ -50,11 +53,14 @@ final class GraphViewModel: ObservableObject {
 
     private func runSimulation() {
         simulationTask?.cancel()
-        simulationTask = Task { [weak self] in
-            guard let self else { return }
 
+        let nodeIds = nodes.map(\.id)
+        let edgesCopy = edges
+        let currentPositions = positions
+
+        simulationTask = Task.detached { [weak self] in
+            var positions = currentPositions
             let iterations = 150
-            let nodeIds = self.nodes.map(\.id)
 
             for iteration in 0..<iterations {
                 if Task.isCancelled { return }
@@ -62,17 +68,34 @@ final class GraphViewModel: ObservableObject {
                 let temperature = 1.0 - (Double(iteration) / Double(iterations))
                 let maxDisplacement = 10.0 * temperature + 0.5
 
-                var forces = computeForces(nodeIds: nodeIds)
-                applyForces(&forces, nodeIds: nodeIds, maxDisplacement: maxDisplacement)
+                var forces = Self.computeForces(
+                    nodeIds: nodeIds, edges: edgesCopy, positions: positions
+                )
+                Self.applyForces(
+                    &forces, nodeIds: nodeIds, positions: &positions, maxDisplacement: maxDisplacement
+                )
 
+                // Update UI every 5 iterations
                 if iteration.isMultiple(of: 5) {
+                    let snapshot = positions
+                    await MainActor.run { [weak self] in
+                        self?.positions = snapshot
+                    }
                     try? await Task.sleep(for: .milliseconds(16))
                 }
+            }
+
+            // Final position update
+            let finalPositions = positions
+            await MainActor.run { [weak self] in
+                self?.positions = finalPositions
             }
         }
     }
 
-    private func computeForces(nodeIds: [String]) -> [String: CGPoint] {
+    nonisolated private static func computeForces(
+        nodeIds: [String], edges: [GraphEdge], positions: [String: CGPoint]
+    ) -> [String: CGPoint] {
         var forces: [String: CGPoint] = [:]
         for id in nodeIds { forces[id] = .zero }
 
@@ -119,7 +142,12 @@ final class GraphViewModel: ObservableObject {
         return forces
     }
 
-    private func applyForces(_ forces: inout [String: CGPoint], nodeIds: [String], maxDisplacement: Double) {
+    nonisolated private static func applyForces(
+        _ forces: inout [String: CGPoint],
+        nodeIds: [String],
+        positions: inout [String: CGPoint],
+        maxDisplacement: Double
+    ) {
         for id in nodeIds {
             guard let pos = positions[id], let force = forces[id] else { continue }
             let dx = max(-maxDisplacement, min(maxDisplacement, Double(force.x)))
@@ -128,13 +156,13 @@ final class GraphViewModel: ObservableObject {
         }
     }
 
-    private func buildEdgeIndex() -> [String: Set<String>] {
-        var index: [String: Set<String>] = [:]
+    private func buildDegreeMap() -> [String: Int] {
+        var counts: [String: Int] = [:]
         for edge in edges {
-            index[edge.source, default: []].insert(edge.target)
-            index[edge.target, default: []].insert(edge.source)
+            counts[edge.source, default: 0] += 1
+            counts[edge.target, default: 0] += 1
         }
-        return index
+        return counts
     }
 
     func nodeColor(for node: GraphNode) -> Color {
@@ -164,7 +192,7 @@ final class GraphViewModel: ObservableObject {
     }
 
     func nodeSize(for node: GraphNode) -> CGFloat {
-        let connectionCount = edges.filter { $0.source == node.id || $0.target == node.id }.count
+        let connectionCount = degreeMap[node.id] ?? 0
         let base: CGFloat = node.type == "document" ? 20.0 : 14.0
         return base + CGFloat(min(connectionCount, 10)) * 2.0
     }

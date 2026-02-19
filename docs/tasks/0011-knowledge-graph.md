@@ -26,8 +26,10 @@ Build a knowledge graph visualization that maps relationships between entities e
 - [x] Interactive graph visualization in iOS app
 - [x] Nodes represent documents, entities, and tags
 - [x] Edges represent relationships (mentions, co-occurrence, links)
-- [x] Tap on node to navigate to document or filter by entity
-- [x] Graph supports zoom, pan, and clustering
+- [x] Tap on node to see details and navigate to document
+- [ ] Entity-centered filtering UI (future enhancement)
+- [x] Graph supports zoom and pan gestures
+- [ ] Clustering/grouping behavior (future enhancement)
 - [x] Performance acceptable for graphs with 500+ nodes
 
 ## Implementation Steps

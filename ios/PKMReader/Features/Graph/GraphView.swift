@@ -5,6 +5,7 @@ struct GraphView: View {
     let apiClient: any APIClientProtocol
     @StateObject private var viewModel: GraphViewModel
     @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
     @State private var navigateDocument: Document?
@@ -56,10 +57,10 @@ struct GraphView: View {
             let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
 
             Canvas { context, _ in
-                let transform = CGAffineTransform(
-                    translationX: center.x + offset.width,
-                    y: center.y + offset.height
-                ).scaledBy(x: scale, y: scale)
+                let transform = CGAffineTransform.identity
+                    .scaledBy(x: scale, y: scale)
+                    .translatedBy(x: center.x + offset.width,
+                                  y: center.y + offset.height)
 
                 // Draw edges
                 for edge in viewModel.edges {
@@ -116,7 +117,10 @@ struct GraphView: View {
                 SimultaneousGesture(
                     MagnificationGesture()
                         .onChanged { value in
-                            scale = max(0.1, min(5.0, value.magnitude))
+                            scale = max(0.1, min(5.0, lastScale * value.magnitude))
+                        }
+                        .onEnded { _ in
+                            lastScale = scale
                         },
                     DragGesture()
                         .onChanged { value in
@@ -229,23 +233,23 @@ struct GraphView: View {
     }
 
     private func handleTap(at location: CGPoint, center: CGPoint) {
-        let tapRadius: CGFloat = 30.0
+        let transform = CGAffineTransform.identity
+            .scaledBy(x: scale, y: scale)
+            .translatedBy(x: center.x + offset.width,
+                          y: center.y + offset.height)
 
         for node in viewModel.nodes {
             guard let pos = viewModel.positions[node.id] else { continue }
-
-            let transform = CGAffineTransform(
-                translationX: center.x + offset.width,
-                y: center.y + offset.height
-            )
-                .scaledBy(x: scale, y: scale)
             let screenPos = pos.applying(transform)
+
+            let nodeRadius = viewModel.nodeSize(for: node) * scale / 2
+            let hitRadius = max(nodeRadius + 8, 16.0) // minimum tap target
 
             let dx = location.x - screenPos.x
             let dy = location.y - screenPos.y
             let distance = sqrt(dx * dx + dy * dy)
 
-            if distance < tapRadius {
+            if distance < hitRadius {
                 if viewModel.selectedNode?.id == node.id {
                     viewModel.selectedNode = nil
                 } else {
@@ -282,6 +286,6 @@ struct GraphView: View {
     }
 
     private func connectionCount(for node: GraphNode) -> Int {
-        viewModel.edges.filter { $0.source == node.id || $0.target == node.id }.count
+        viewModel.edges.lazy.filter { $0.source == node.id || $0.target == node.id }.count
     }
 }
