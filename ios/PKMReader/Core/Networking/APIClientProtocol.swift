@@ -71,3 +71,9 @@ protocol APIClientProtocol: Sendable {
     ///   - classification: The new classification to apply
     func updateClassification(documentId: String, classification: DocumentClassification) async throws
 }
+
+extension APIClientProtocol {
+    func search(query: String, limit: Int) async throws -> [Document] {
+        try await search(query: query, limit: limit, mode: .keyword)
+    }
+}

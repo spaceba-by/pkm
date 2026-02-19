@@ -52,8 +52,18 @@
           "--execute" (recur (rest remaining) (assoc opts :mode :execute))
           "--stats"   (recur (rest remaining) (assoc opts :mode :stats))
           "--full"    (recur (rest remaining) (assoc opts :full true))
-          "--prefix"  (recur (drop 2 remaining) (assoc opts :prefix (second remaining)))
-          "--limit"   (recur (drop 2 remaining) (assoc opts :limit (Integer/parseInt (second remaining))))
+          "--prefix"  (if (second remaining)
+                        (recur (drop 2 remaining) (assoc opts :prefix (second remaining)))
+                        (do (println "Missing value for --prefix")
+                            (assoc opts :mode :help)))
+          "--limit"   (if (second remaining)
+                        (try
+                          (recur (drop 2 remaining) (assoc opts :limit (Integer/parseInt (second remaining))))
+                          (catch NumberFormatException _
+                            (println "Invalid value for --limit; must be an integer")
+                            (assoc opts :mode :help)))
+                        (do (println "Missing value for --limit")
+                            (assoc opts :mode :help)))
           (do (println "Unknown option:" arg)
               (recur (rest remaining) opts)))))))
 
@@ -145,8 +155,8 @@
                  s3-bucket ddb-table embed-fn index changed
                  :on-progress (fn [path chunks]
                                 (swap! indexed-count inc)
-                                (println (str "  [" @indexed-count "/" (count changed) "]")
-                                         path "(" chunks "chunks)")))
+                                (println (str "  [" @indexed-count "/" (count changed) "] "
+                                                        path " (" chunks " chunks)"))))
           index (indexer/remove-deleted index (vec deleted))
           elapsed (/ (- (System/currentTimeMillis) start-time) 1000.0)]
 

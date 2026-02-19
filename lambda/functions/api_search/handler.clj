@@ -18,16 +18,19 @@
 (def default-limit 20)
 (def max-limit 50)
 
+;; Cached Bedrock client - created once per Lambda cold start
+(defonce ^:private bedrock-client
+  (delay (aws/client {:api :bedrock-runtime})))
+
 ;; Cached index - loaded once per Lambda cold start
 (defonce ^:private cached-index (atom nil))
 
 (defn- get-index
   "Get the vector index, loading from S3 on first call"
   []
-  (or @cached-index
-      (let [index (indexer/load-index s3-bucket)]
-        (reset! cached-index index)
-        index)))
+  (swap! cached-index
+         (fn [curr]
+           (or curr (indexer/load-index s3-bucket)))))
 
 (defn get-all-documents
   "Get all document metadata for client-side search"
@@ -60,10 +63,9 @@
 (defn- make-embed-fn
   "Create an embedding function using Bedrock Titan"
   []
-  (let [client (aws/client {:api :bedrock-runtime})]
-    (emb/make-embedding-fn :bedrock
-                           :bedrock-client client
-                           :model-id embedding-model-id)))
+  (emb/make-embedding-fn :bedrock
+                         :bedrock-client @bedrock-client
+                         :model-id embedding-model-id))
 
 (defn search-documents-semantic
   "Search documents using semantic (vector similarity) search.

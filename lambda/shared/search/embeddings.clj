@@ -30,8 +30,8 @@
                                dimensions default-dimensions}}]
   (let [request (bedrock-embedding-request text model-id dimensions)
         response (aws/invoke bedrock-client
-                                                      {:op :InvokeModel
-                                                       :request request})]
+                              {:op :InvokeModel
+                               :request request})]
     (when-let [error (:cognitect.anomalies/category response)]
       (throw (ex-info (str "Bedrock embedding failed: " (or (:message response) error))
                       {:error error :response response})))
@@ -71,9 +71,12 @@
                                        "Content-Type" "application/json"}
                              :body (json/generate-string
                                     {:model model
-                                     :input text})})
-        parsed (json/parse-string (:body response) true)]
-    (get-in parsed [:data 0 :embedding])))
+                                     :input text})})]
+    (when-not (<= 200 (:status response) 299)
+      (throw (ex-info (str "OpenAI embedding failed: HTTP " (:status response))
+                      {:status (:status response) :body (:body response)})))
+    (let [parsed (json/parse-string (:body response) true)]
+      (get-in parsed [:data 0 :embedding]))))
 
 (defn generate-embeddings-openai
   "Generate embeddings for multiple texts using OpenAI batch API.
@@ -88,11 +91,14 @@
                                        "Content-Type" "application/json"}
                              :body (json/generate-string
                                     {:model model
-                                     :input texts})})
-        parsed (json/parse-string (:body response) true)]
-    (->> (:data parsed)
-         (sort-by :index)
-         (mapv :embedding))))
+                                     :input texts})})]
+    (when-not (<= 200 (:status response) 299)
+      (throw (ex-info (str "OpenAI batch embedding failed: HTTP " (:status response))
+                      {:status (:status response) :body (:body response)})))
+    (let [parsed (json/parse-string (:body response) true)]
+      (->> (:data parsed)
+           (sort-by :index)
+           (mapv :embedding)))))
 
 ;; --- Provider-agnostic interface ---
 
