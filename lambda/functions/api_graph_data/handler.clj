@@ -4,12 +4,7 @@
   (:require [aws.dynamodb :as ddb]
             [api.response :as r]
             [cheshire.core :as json]
-            [cheshire.generate :as gen]
             [clojure.string :as str]))
-
-;; Register encoder for java.net.URI so that if bblf's error handler
-;; tries to serialize ex-data containing a URI, it won't crash
-(gen/add-encoder java.net.URI gen/encode-str)
 
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 
