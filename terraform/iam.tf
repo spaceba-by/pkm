@@ -839,6 +839,11 @@ resource "aws_iam_role_policy" "github_actions_cognito" {
           "cognito-idp:DescribeUserPoolClient",
           "cognito-idp:UpdateUserPoolClient",
           "cognito-idp:ListUserPoolClients",
+          "cognito-idp:CreateGroup",
+          "cognito-idp:DeleteGroup",
+          "cognito-idp:GetGroup",
+          "cognito-idp:UpdateGroup",
+          "cognito-idp:ListGroups",
           "cognito-idp:TagResource",
           "cognito-idp:UntagResource",
           "cognito-idp:ListTagsForResource"
