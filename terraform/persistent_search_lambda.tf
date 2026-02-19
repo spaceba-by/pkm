@@ -12,6 +12,7 @@ resource "aws_secretsmanager_secret" "brave_search_api_key" {
 }
 
 resource "aws_secretsmanager_secret_version" "brave_search_api_key" {
+  count         = var.brave_search_api_key != "" ? 1 : 0
   secret_id     = aws_secretsmanager_secret.brave_search_api_key.id
   secret_string = var.brave_search_api_key
 }
