@@ -139,9 +139,10 @@
           _ (println "User" user-sub "requesting graph data, limit:" limit)
 
           ;; Fetch document metadata with limit to prevent unbounded scans
-          documents (ddb/scan-to-limit ddb-table limit
-                                       :filter-expr "SK = :sk"
-                                       :expr-attr-values {":sk" "METADATA"})
+          [documents _] (ddb/scan-to-limit ddb-table
+                                           :filter-expr "SK = :sk"
+                                           :expr-attr-values {":sk" "METADATA"}
+                                           :limit limit)
 
           _ (println "Found" (count documents) "documents for graph")
 
