@@ -4,9 +4,17 @@
   (:require [aws.dynamodb :as ddb]
             [api.response :as r]
             [cheshire.core :as json]
+            [cheshire.generate :as gen]
             [clojure.string :as str]))
 
+;; Register encoder for java.net.URI so that if bblf's error handler
+;; tries to serialize ex-data containing a URI, it won't crash
+(gen/add-encoder java.net.URI gen/encode-str)
+
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
+
+;; Lambda Runtime API payload limit is 6 MB; keep response well under
+(def max-body-bytes (* 5 1024 1024))
 
 (def entity-types #{"people" "organizations" "concepts" "locations"})
 
@@ -133,8 +141,8 @@
           user-sub (r/get-user-sub event)
           limit (min (or (some-> (or (get params :limit) (get params "limit"))
                                  parse-long)
-                         1000)
-                     2000)
+                         500)
+                     1000)
 
           _ (println "User" user-sub "requesting graph data, limit:" limit)
 
@@ -147,12 +155,25 @@
           _ (println "Found" (count documents) "documents for graph")
 
           ;; Build the graph
-          graph (build-graph documents)]
+          graph (build-graph documents)
+          body {:nodes (:nodes graph)
+                :edges (:edges graph)
+                :nodeCount (count (:nodes graph))
+                :edgeCount (count (:edges graph))}
+          body-json (json/generate-string body)
+          body-size (count (.getBytes body-json "UTF-8"))]
 
-      (r/ok {:nodes (:nodes graph)
-             :edges (:edges graph)
-             :nodeCount (count (:nodes graph))
-             :edgeCount (count (:edges graph))}))
+      (println "Graph response size:" body-size "bytes,"
+               (count (:nodes graph)) "nodes,"
+               (count (:edges graph)) "edges")
+
+      (if (> body-size max-body-bytes)
+        (r/bad-request (str "Graph too large (" body-size " bytes). "
+                            "Try a smaller limit (current: " limit ")."))
+        {:statusCode 200
+         :headers {"Content-Type" "application/json"
+                   "Cache-Control" "private, max-age=300"}
+         :body body-json}))
 
     (catch Exception e
       (println "Error building graph data:" (ex-message e))
