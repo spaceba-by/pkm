@@ -155,6 +155,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Document editor with markdown preview, conflict detection
   - Lambda-level group-based authorization via Cognito JWT claims
 
+- **Task 0011: Knowledge Graph Visualization** ✅
+
+  - See: [0011-knowledge-graph](tasks/0011-knowledge-graph.md)
+  - API endpoint (GET /graph) with entity relationship mapping from extracted entities
+  - Interactive force-directed graph visualization in iOS app with Canvas rendering
+  - 6-tab layout: Documents, Search, Tags, Insights, Settings, Graph
+  - Navigate documents by entity connections, color-coded by classification/type
+
 ### Planned
 
 - **Task 0017: Insights Calendar Design**
@@ -165,13 +173,6 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Month-to-month navigation matching iOS Calendar app conventions
   - UI mockup design phase before implementation
   - Accessibility support for calendar interactions
-
-- **Task 0011: Knowledge Graph Visualization**
-
-  - See: [0011-knowledge-graph](tasks/0011-knowledge-graph.md)
-  - Entity relationship mapping from extracted entities
-  - Interactive graph visualization in iOS app
-  - Navigate documents by entity connections
 
 - **Task 0013: Persistent Search**
 
