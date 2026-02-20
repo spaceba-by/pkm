@@ -126,7 +126,7 @@
             week-end-iso (str week-end)
             _ (println "Querying documents modified since" week-start-iso)
 
-            week-docs-all (ddb/get-documents-modified-since ddb-table week-start-iso :limit 2000)
+            week-docs-all (ddb/get-documents-modified-since ddb-table week-start-iso)
 
           ;; Filter to target week
             week-docs (filter-week-docs week-docs-all week-start-iso week-end-iso)

@@ -107,7 +107,7 @@
        (println "Querying documents modified between" since-iso "and" until-iso)
 
       ;; Query documents modified since start of target day
-       (let [recent-docs (ddb/get-documents-modified-since ddb-table since-iso :limit 1000)
+       (let [recent-docs (ddb/get-documents-modified-since ddb-table since-iso)
 
              ;; Filter to documents within target day
              day-docs (filter-day-docs recent-docs since-iso until-iso)
