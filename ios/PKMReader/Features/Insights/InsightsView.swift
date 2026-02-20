@@ -4,6 +4,8 @@ import SwiftUI
 struct InsightsView: View {
     let apiClient: any APIClientProtocol
     @StateObject private var viewModel: CalendarViewModel
+    @State private var selectedSummary: Summary?
+    @State private var selectedReport: Report?
 
     init(apiClient: any APIClientProtocol) {
         self.apiClient = apiClient
@@ -63,7 +65,4 @@ struct InsightsView: View {
         }
         .accessibilityIdentifier("InsightsView")
     }
-
-    @State private var selectedSummary: Summary?
-    @State private var selectedReport: Report?
 }

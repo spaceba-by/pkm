@@ -49,10 +49,14 @@ struct CalendarDayCell: View {
         return .primary
     }
 
-    private var accessibilityText: String {
+    private static let accessibilityDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
-        let dateText = formatter.string(from: day.date)
+        return formatter
+    }()
+
+    private var accessibilityText: String {
+        let dateText = Self.accessibilityDateFormatter.string(from: day.date)
         if day.isToday && hasSummary {
             return "\(dateText), today, daily summary available"
         } else if day.isToday {

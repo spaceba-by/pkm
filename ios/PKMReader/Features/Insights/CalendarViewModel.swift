@@ -15,12 +15,16 @@ struct CalendarWeek: Identifiable, Equatable {
     let days: [CalendarDay]
     let weekStart: Date
 
+    private static let weekIdFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-'W'ww"
+        return formatter
+    }()
+
     init(days: [CalendarDay], weekStart: Date) {
         self.days = days
         self.weekStart = weekStart
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-'W'ww"
-        self.id = formatter.string(from: weekStart)
+        self.id = Self.weekIdFormatter.string(from: weekStart)
     }
 }
 
@@ -58,6 +62,9 @@ final class CalendarViewModel: ObservableObject {
     private var summaryByDate: [String: Summary] = [:]
     private var reportByWeek: [String: Report] = [:]
 
+    private let dateKeyFormatter: DateFormatter
+    private let monthTitleFormatter: DateFormatter
+
     init(
         apiClient: any APIClientProtocol,
         calendar: Calendar = .current,
@@ -66,6 +73,17 @@ final class CalendarViewModel: ObservableObject {
         self.apiClient = apiClient
         self.calendar = calendar
         self.today = today
+
+        let dkf = DateFormatter()
+        dkf.dateFormat = "yyyy-MM-dd"
+        dkf.timeZone = calendar.timeZone
+        self.dateKeyFormatter = dkf
+
+        let mtf = DateFormatter()
+        mtf.dateFormat = "MMMM yyyy"
+        mtf.timeZone = calendar.timeZone
+        self.monthTitleFormatter = mtf
+
         // Start on the first day of the current month
         let components = calendar.dateComponents([.year, .month], from: today)
         self.displayedMonth = calendar.date(from: components) ?? today
@@ -105,10 +123,7 @@ final class CalendarViewModel: ObservableObject {
 
     /// The displayed month/year as a formatted string (e.g. "January 2024")
     var displayedMonthTitle: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        formatter.timeZone = calendar.timeZone
-        return formatter.string(from: displayedMonth)
+        monthTitleFormatter.string(from: displayedMonth)
     }
 
     /// Short weekday symbols starting from the calendar's first weekday
@@ -278,10 +293,7 @@ final class CalendarViewModel: ObservableObject {
     }
 
     private func dateKey(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = calendar.timeZone
-        return formatter.string(from: date)
+        dateKeyFormatter.string(from: date)
     }
 
     private func mondayKey(for date: Date) -> String {
@@ -298,9 +310,6 @@ final class CalendarViewModel: ObservableObject {
     }
 
     private func parseDate(_ string: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = calendar.timeZone
-        return formatter.date(from: string)
+        dateKeyFormatter.date(from: string)
     }
 }
