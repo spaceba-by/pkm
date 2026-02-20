@@ -40,7 +40,7 @@ final class CalendarViewModelTests: XCTestCase {
 
     // MARK: - Grid Computation
 
-    func test_computeWeeks_januray2024_has5Weeks() {
+    func test_computeWeeks_january2024_has5Weeks() {
         // January 2024: Mon Jan 1 - Wed Jan 31
         // With Sunday start: row 1 starts Dec 31 (Sun), last row ends Feb 3 (Sat)
         XCTAssertEqual(sut.weeks.count, 5)
