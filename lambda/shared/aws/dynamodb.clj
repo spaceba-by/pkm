@@ -351,16 +351,13 @@
     (mapv :document_path results)))
 
 (defn get-documents-modified-since
-  "Get documents modified since a given ISO timestamp"
-  [table-name since-iso & {:keys [limit] :or {limit 1000}}]
-  (let [response (-> (aws/invoke @ddb-client
-                                 {:op :Scan
-                                  :request {:TableName table-name
-                                           :FilterExpression "SK = :sk AND modified >= :since"
-                                           :ExpressionAttributeValues (marshall-item
-                                                                       {":sk" "METADATA"
-                                                                        ":since" since-iso})
-                                           :Limit limit}})
-                     (check-error "Scan"))]
-    (println "Found" (count (:Items response)) "documents modified since" since-iso)
-    (mapv unmarshall-item (:Items response))))
+  "Get documents modified since a given ISO timestamp.
+   Paginates through the full table to avoid missing items when
+   DynamoDB Scan Limit caps scanned (not filtered) item count."
+  [table-name since-iso & {:keys [_limit]}]
+  (let [results (scan-all table-name
+                          :filter-expr "SK = :sk AND modified >= :since"
+                          :expr-attr-values {":sk" "METADATA"
+                                             ":since" since-iso})]
+    (println "Found" (count results) "documents modified since" since-iso)
+    results))
