@@ -33,6 +33,7 @@ final class InsightsScreenTests: XCTestCase {
 
     func test_calendarShowsMonthTitle() throws {
         insightsPage.assertIsDisplayed()
+        insightsPage.assertCalendarIsDisplayed()
 
         let monthTitle = insightsPage.monthTitle
         XCTAssertTrue(monthTitle.waitForExistence(timeout: 5), "Month title not displayed")
@@ -43,6 +44,7 @@ final class InsightsScreenTests: XCTestCase {
 
     func test_previousMonth_navigatesBack() throws {
         insightsPage.assertIsDisplayed()
+        insightsPage.assertCalendarIsDisplayed()
 
         let monthTitle = insightsPage.monthTitle
         XCTAssertTrue(monthTitle.waitForExistence(timeout: 5))
@@ -56,6 +58,7 @@ final class InsightsScreenTests: XCTestCase {
 
     func test_nextMonth_navigatesForward() throws {
         insightsPage.assertIsDisplayed()
+        insightsPage.assertCalendarIsDisplayed()
 
         let monthTitle = insightsPage.monthTitle
         XCTAssertTrue(monthTitle.waitForExistence(timeout: 5))
