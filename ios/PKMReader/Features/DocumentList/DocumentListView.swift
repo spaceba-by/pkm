@@ -85,18 +85,23 @@ struct DocumentListView: View {
 
     private var sortMenu: some View {
         Menu {
-            Picker("Sort Order", selection: $viewModel.sortOrder) {
-                Text("Modified Date").tag(DocumentSortOrder.modifiedDate)
-                Text("Created Date").tag(DocumentSortOrder.createdDate)
+            ForEach(DocumentSortOrder.allCases, id: \.self) { order in
+                Button {
+                    viewModel.sortOrder = order
+                    viewModel.applySortOrder()
+                } label: {
+                    if viewModel.sortOrder == order {
+                        Label(order.displayName, systemImage: "checkmark")
+                    } else {
+                        Text(order.displayName)
+                    }
+                }
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
         }
         .accessibilityLabel("Sort documents")
         .accessibilityIdentifier("SortButton")
-        .onChange(of: viewModel.sortOrder) {
-            viewModel.applySortOrder()
-        }
     }
 
     private var filterButton: some View {

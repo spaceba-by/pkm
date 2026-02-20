@@ -4,4 +4,11 @@ import Foundation
 enum DocumentSortOrder: String, CaseIterable {
     case modifiedDate
     case createdDate
+
+    var displayName: String {
+        switch self {
+        case .modifiedDate: "Modified Date"
+        case .createdDate: "Created Date"
+        }
+    }
 }

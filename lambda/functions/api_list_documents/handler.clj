@@ -85,7 +85,9 @@
           [documents next-cursor] (if classification
                                     [(list-by-classification classification limit) nil]
                                     (list-all-documents limit cursor))
-          formatted (mapv format-document documents)]
+          formatted (sort-by #(get-in % [:metadata :modified])
+                             #(compare %2 %1)
+                             (mapv format-document documents))]
 
       (r/ok {:documents formatted
              :count (count formatted)
