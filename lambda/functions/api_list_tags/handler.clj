@@ -8,15 +8,13 @@
 
 (defn get-all-tags
   "Get all unique tags with document counts from document metadata.
-   Note: This scans up to 1000 documents which is sufficient for most PKM vaults.
-   For very large vaults (1000+ documents), consider implementing pagination
-   or a separate tag aggregation table updated via DynamoDB Streams."
+   Uses scan-all to paginate through the entire table, ensuring all
+   METADATA items are retrieved regardless of table size."
   []
-  ;; Scan all metadata items and extract tags
-  (let [all-docs (ddb/scan ddb-table
-                           :filter-expr "SK = :sk"
-                           :expr-attr-values {":sk" "METADATA"}
-                           :limit 1000)
+  ;; Scan all metadata items with pagination and extract tags
+  (let [all-docs (ddb/scan-all ddb-table
+                               :filter-expr "SK = :sk"
+                               :expr-attr-values {":sk" "METADATA"})
         ;; Flatten all tags from all documents
         all-tags (mapcat #(or (:tags %) []) all-docs)
         ;; Count occurrences of each tag
