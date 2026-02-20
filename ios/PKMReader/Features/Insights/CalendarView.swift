@@ -28,6 +28,7 @@ struct CalendarView: View {
                     }
                 }
         )
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("CalendarView")
     }
 
