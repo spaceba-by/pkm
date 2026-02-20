@@ -53,6 +53,8 @@ struct DocumentListView: View {
                         .accessibilityLabel("Create document")
                         .accessibilityIdentifier("CreateDocumentButton")
 
+                        sortMenu
+
                         filterButton
                     }
                 }
@@ -78,6 +80,22 @@ struct DocumentListView: View {
         }
         .task {
             await viewModel.loadDocuments()
+        }
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("Sort Order", selection: $viewModel.sortOrder) {
+                Text("Modified Date").tag(DocumentSortOrder.modifiedDate)
+                Text("Created Date").tag(DocumentSortOrder.createdDate)
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+        }
+        .accessibilityLabel("Sort documents")
+        .accessibilityIdentifier("SortButton")
+        .onChange(of: viewModel.sortOrder) {
+            viewModel.applySortOrder()
         }
     }
 

@@ -38,6 +38,10 @@ final class DocumentListViewModelTests: XCTestCase {
         XCTAssertEqual(sut.searchText, "")
     }
 
+    func test_initialState_sortOrderIsModifiedDate() {
+        XCTAssertEqual(sut.sortOrder, .modifiedDate)
+    }
+
     // MARK: - Load Documents Tests
 
     func test_loadDocuments_success_updatesStateToLoaded() async {
@@ -53,7 +57,8 @@ final class DocumentListViewModelTests: XCTestCase {
         // Then
         if case .loaded(let loadedDocs) = sut.state {
             XCTAssertEqual(loadedDocs.count, documents.count)
-            XCTAssertEqual(loadedDocs.first?.id, documents.first?.id)
+            // Documents are sorted by modified date descending
+            XCTAssertEqual(loadedDocs.first?.id, "ideas/new-feature.md")
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")
         }
@@ -185,11 +190,11 @@ final class DocumentListViewModelTests: XCTestCase {
         // When
         await sut.loadNextPage()
 
-        // Then
+        // Then: both documents present, sorted by modified date descending
         if case .loaded(let docs) = sut.state {
             XCTAssertEqual(docs.count, 2)
-            XCTAssertEqual(docs[0].id, firstPage[0].id)
-            XCTAssertEqual(docs[1].id, secondPage[0].id)
+            XCTAssertEqual(docs[0].id, secondPage[0].id)  // Jan 2 (newer)
+            XCTAssertEqual(docs[1].id, firstPage[0].id)   // Jan 1 (older)
         } else {
             XCTFail("Expected loaded state")
         }
@@ -318,6 +323,87 @@ final class DocumentListViewModelTests: XCTestCase {
             XCTAssertEqual(docs.count, 1)
         } else {
             XCTFail("Expected loaded state preserved")
+        }
+    }
+
+    // MARK: - Sort Order Tests
+
+    func test_loadDocuments_sortsByModifiedDateDescending() async {
+        // Given: documents in arbitrary order
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
+        )
+
+        // When
+        await sut.loadDocuments()
+
+        // Then: sorted by modified date descending (most recent first)
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
+            XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2
+            XCTAssertEqual(docs[2].id, "test/sample.md")         // Jan 1
+        } else {
+            XCTFail("Expected loaded state")
+        }
+    }
+
+    func test_applySortOrder_resortsByCreatedDate() async {
+        // Given: documents loaded with default modified sort
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
+        )
+        await sut.loadDocuments()
+
+        // When: switch to created date sort
+        sut.sortOrder = .createdDate
+        sut.applySortOrder()
+
+        // Then: sorted by created date descending
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
+            XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2
+            XCTAssertEqual(docs[2].id, "test/sample.md")         // Jan 1
+        } else {
+            XCTFail("Expected loaded state")
+        }
+    }
+
+    func test_applySortOrder_whenNotLoaded_doesNothing() {
+        // Given: loading state
+        XCTAssertEqual(sut.state, .loading)
+
+        // When
+        sut.sortOrder = .createdDate
+        sut.applySortOrder()
+
+        // Then: state unchanged
+        XCTAssertEqual(sut.state, .loading)
+    }
+
+    func test_loadNextPage_maintainsSortOrder() async {
+        // Given: first page loaded
+        let firstPage = [TestFixtures.sampleDocument] // Jan 1
+        let secondPage = [TestFixtures.sampleIdeaDocument] // Jan 3
+
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: firstPage, nextCursor: "page2")
+        )
+        await sut.loadDocuments()
+
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: secondPage, nextCursor: nil)
+        )
+
+        // When
+        await sut.loadNextPage()
+
+        // Then: all documents sorted by modified date descending
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs.count, 2)
+            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
+            XCTAssertEqual(docs[1].id, "test/sample.md")         // Jan 1
+        } else {
+            XCTFail("Expected loaded state")
         }
     }
 }

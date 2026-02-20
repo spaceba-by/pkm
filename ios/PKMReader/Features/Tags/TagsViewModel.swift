@@ -52,7 +52,12 @@ final class TagsViewModel: ObservableObject {
             if tags.isEmpty {
                 state = .empty
             } else {
-                let sorted = tags.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+                let sorted = tags.sorted {
+                    if $0.documentCount != $1.documentCount {
+                        return $0.documentCount > $1.documentCount
+                    }
+                    return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                }
                 state = .loaded(sorted)
             }
         } catch is CancellationError {

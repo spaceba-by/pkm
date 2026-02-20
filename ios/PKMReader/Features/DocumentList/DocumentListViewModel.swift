@@ -32,6 +32,9 @@ final class DocumentListViewModel: ObservableObject {
     /// Currently selected classification filter
     @Published var selectedClassification: DocumentClassification?
 
+    /// Current sort order for documents
+    @Published var sortOrder: DocumentSortOrder = .modifiedDate
+
     /// Current search text
     @Published var searchText = ""
 
@@ -73,7 +76,7 @@ final class DocumentListViewModel: ObservableObject {
 
             if case .loaded(var currentDocs) = state {
                 currentDocs.append(contentsOf: response.documents)
-                state = .loaded(currentDocs)
+                state = .loaded(sortedDocuments(currentDocs))
             }
         } catch is CancellationError {
             return
@@ -105,12 +108,31 @@ final class DocumentListViewModel: ObservableObject {
             if response.documents.isEmpty {
                 state = .empty
             } else {
-                state = .loaded(response.documents)
+                state = .loaded(sortedDocuments(response.documents))
             }
         } catch is CancellationError {
             return
         } catch {
             state = .error(error)
+        }
+    }
+
+    /// Sort documents by the selected sort order (most recent first)
+    private func sortedDocuments(_ documents: [Document]) -> [Document] {
+        documents.sorted { lhs, rhs in
+            switch sortOrder {
+            case .modifiedDate:
+                lhs.metadata.modified > rhs.metadata.modified
+            case .createdDate:
+                lhs.metadata.created > rhs.metadata.created
+            }
+        }
+    }
+
+    /// Re-sort the currently loaded documents when sort order changes
+    func applySortOrder() {
+        if case .loaded(let documents) = state {
+            state = .loaded(sortedDocuments(documents))
         }
     }
 }

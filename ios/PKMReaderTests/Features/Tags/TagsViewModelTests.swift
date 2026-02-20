@@ -28,17 +28,17 @@ final class TagsViewModelTests: XCTestCase {
 
     // MARK: - Load Tags
 
-    func test_loadTags_success_showsLoadedSortedAlphabetically() async {
+    func test_loadTags_success_showsLoadedSortedByCount() async {
         mockAPIClient.listTagsResult = .success(TestFixtures.sampleTags)
         await sut.loadTags()
 
         if case .loaded(let tags) = sut.state {
             XCTAssertEqual(tags.count, 4)
-            // Verify alphabetical sort
-            XCTAssertEqual(tags[0].name, "idea")
-            XCTAssertEqual(tags[1].name, "meeting")
-            XCTAssertEqual(tags[2].name, "project")
-            XCTAssertEqual(tags[3].name, "test")
+            // Verify sort by document count descending (alphabetical tiebreaker)
+            XCTAssertEqual(tags[0].name, "meeting")   // 10
+            XCTAssertEqual(tags[1].name, "project")    // 7
+            XCTAssertEqual(tags[2].name, "test")       // 5
+            XCTAssertEqual(tags[3].name, "idea")       // 3
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")
         }

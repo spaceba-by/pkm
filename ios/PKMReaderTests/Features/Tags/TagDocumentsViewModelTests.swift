@@ -32,12 +32,16 @@ final class TagDocumentsViewModelTests: XCTestCase {
 
     // MARK: - Load Documents
 
-    func test_loadDocuments_success_showsLoaded() async {
+    func test_loadDocuments_success_showsLoadedSortedByModifiedDate() async {
         mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
         await sut.loadDocuments()
 
         if case .loaded(let documents) = sut.state {
             XCTAssertEqual(documents.count, 3)
+            // Verify sorted by modified date descending (most recent first)
+            XCTAssertEqual(documents[0].id, "ideas/new-feature.md")   // Jan 3
+            XCTAssertEqual(documents[1].id, "meetings/weekly.md")     // Jan 2
+            XCTAssertEqual(documents[2].id, "test/sample.md")         // Jan 1
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")
         }

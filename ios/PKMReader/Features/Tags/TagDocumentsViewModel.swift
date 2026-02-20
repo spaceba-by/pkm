@@ -56,7 +56,8 @@ final class TagDocumentsViewModel: ObservableObject {
             if documents.isEmpty {
                 state = .empty
             } else {
-                state = .loaded(documents)
+                let sorted = documents.sorted { $0.metadata.modified > $1.metadata.modified }
+                state = .loaded(sorted)
             }
         } catch is CancellationError {
             return
