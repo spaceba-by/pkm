@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# Development workflow rules
+
+- Always start work in a new git worktree. 
+- Never commit or push changes directly to main, all changes must be submitted via PR.
+- Before opening a new PR or pushing changes to an existing PR: Run all applicable tests and checks, including linting.
+- When work on a PR is complete:
+    - Check for Passing CI.
+    - Assess and respond to any review comments.
+
+
 ## Project Overview
 
 Serverless AWS system for Personal Knowledge Management (PKM). Automatically processes markdown documents from an Obsidian vault: classifies them, extracts entities, and generates daily summaries and weekly reports using Claude models via Amazon Bedrock.
