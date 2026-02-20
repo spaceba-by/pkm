@@ -122,6 +122,7 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
                     isoFormatter.dateFormat = "YYYY-'W'ww"
                     isoFormatter.calendar = Calendar(identifier: .iso8601)
                     isoFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    isoFormatter.timeZone = calendar.timeZone
                     let weekStr = isoFormatter.string(from: monday)
                     reports.append(Report(
                         id: "_agent/reports/weekly/\(weekStr).md",

@@ -64,6 +64,7 @@ final class CalendarViewModel: ObservableObject {
 
     private let dateKeyFormatter: DateFormatter
     private let monthTitleFormatter: DateFormatter
+    private let isoWeekFormatter: DateFormatter
 
     init(
         apiClient: any APIClientProtocol,
@@ -83,6 +84,13 @@ final class CalendarViewModel: ObservableObject {
         mtf.dateFormat = "MMMM yyyy"
         mtf.timeZone = calendar.timeZone
         self.monthTitleFormatter = mtf
+
+        let iwf = DateFormatter()
+        iwf.dateFormat = "YYYY-'W'ww-e"
+        iwf.timeZone = calendar.timeZone
+        iwf.locale = Locale(identifier: "en_US_POSIX")
+        iwf.calendar = Calendar(identifier: .iso8601)
+        self.isoWeekFormatter = iwf
 
         // Start on the first day of the current month
         let components = calendar.dateComponents([.year, .month], from: today)
@@ -327,12 +335,6 @@ final class CalendarViewModel: ObservableObject {
     /// Parse an ISO week string like "2026-W08" into the Monday Date for that week
     private func mondayDate(fromISOWeek isoWeek: String) -> Date? {
         // Append "-1" for Monday (ISO day-of-week 1 = Monday)
-        let isoWeekFormatter = DateFormatter()
-        isoWeekFormatter.dateFormat = "YYYY-'W'ww-e"
-        isoWeekFormatter.timeZone = calendar.timeZone
-        isoWeekFormatter.locale = Locale(identifier: "en_US_POSIX")
-        // ISO 8601 weeks start on Monday
-        isoWeekFormatter.calendar = Calendar(identifier: .iso8601)
-        return isoWeekFormatter.date(from: isoWeek + "-1")
+        isoWeekFormatter.date(from: isoWeek + "-1")
     }
 }
