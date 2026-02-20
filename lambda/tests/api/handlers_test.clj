@@ -144,7 +144,7 @@
       (is (= default-timestamp (:modified result-meta)))
       (is (false? (:hasFrontmatter result-meta))))))
 
-(deftest format-document-sort-test
+(deftest sort-documents-by-modified-descending-test
   (testing "Documents sort by modified date descending"
     (let [docs [{:PK "notes/old.md" :title "Old" :modified "2025-01-01T00:00:00Z"}
                 {:PK "notes/new.md" :title "New" :modified "2025-01-20T00:00:00Z"}
