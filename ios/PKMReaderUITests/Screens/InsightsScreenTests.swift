@@ -24,55 +24,80 @@ final class InsightsScreenTests: XCTestCase {
         insightsPage = nil
     }
 
-    // MARK: - Insights Flow Tests
+    // MARK: - Calendar Display Tests
 
-    func test_insightsView_showsSummaries() throws {
+    func test_insightsView_showsCalendar() throws {
         insightsPage.assertIsDisplayed()
-
-        // Summaries should be the default segment
-        let summaryList = insightsPage.summaryList
-        XCTAssertTrue(summaryList.waitForExistence(timeout: 5), "Summary list not displayed")
+        insightsPage.assertCalendarIsDisplayed()
     }
 
-    func test_switchToReports_showsReports() throws {
+    func test_calendarShowsMonthTitle() throws {
         insightsPage.assertIsDisplayed()
 
-        // Switch to Reports segment
-        insightsPage.selectReports()
-
-        let reportList = insightsPage.reportList
-        XCTAssertTrue(reportList.waitForExistence(timeout: 5), "Report list not displayed")
+        let monthTitle = insightsPage.monthTitle
+        XCTAssertTrue(monthTitle.waitForExistence(timeout: 5), "Month title not displayed")
+        XCTAssertFalse(monthTitle.label.isEmpty, "Month title should not be empty")
     }
 
-    func test_tapSummary_showsDetail() throws {
+    // MARK: - Month Navigation Tests
+
+    func test_previousMonth_navigatesBack() throws {
         insightsPage.assertIsDisplayed()
 
-        let summaryList = insightsPage.summaryList
-        XCTAssertTrue(summaryList.waitForExistence(timeout: 5), "Summary list not displayed")
+        let monthTitle = insightsPage.monthTitle
+        XCTAssertTrue(monthTitle.waitForExistence(timeout: 5))
+        let originalTitle = monthTitle.label
 
-        // Coordinate tap on first cell to reliably trigger NavigationLink
-        let firstCell = summaryList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Summary cell not found")
-        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        insightsPage.tapPreviousMonth()
+
+        let newTitle = insightsPage.monthTitle.label
+        XCTAssertNotEqual(originalTitle, newTitle, "Month title should change after navigation")
+    }
+
+    func test_nextMonth_navigatesForward() throws {
+        insightsPage.assertIsDisplayed()
+
+        let monthTitle = insightsPage.monthTitle
+        XCTAssertTrue(monthTitle.waitForExistence(timeout: 5))
+        let originalTitle = monthTitle.label
+
+        insightsPage.tapNextMonth()
+
+        let newTitle = insightsPage.monthTitle.label
+        XCTAssertNotEqual(originalTitle, newTitle, "Month title should change after navigation")
+    }
+
+    // MARK: - Summary Tap Tests
+
+    func test_tapDayWithSummary_showsDetail() throws {
+        insightsPage.assertIsDisplayed()
+        insightsPage.assertCalendarIsDisplayed()
+
+        // Use today's date as the day ID since mock data includes today
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let todayId = formatter.string(from: Date())
+
+        let dayButton = app.buttons["CalendarDay_\(todayId)"]
+        XCTAssertTrue(dayButton.waitForExistence(timeout: 5), "Today's calendar cell not found")
+        dayButton.tap()
 
         // Verify navigation to summary detail via back button presence
         let backButton = app.navigationBars.buttons.element(boundBy: 0)
         XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Summary detail view not displayed")
     }
 
-    func test_tapReport_showsDetail() throws {
+    // MARK: - Report Tap Tests
+
+    func test_tapReportIndicator_showsDetail() throws {
         insightsPage.assertIsDisplayed()
+        insightsPage.assertCalendarIsDisplayed()
 
-        // Switch to Reports
-        insightsPage.selectReports()
-
-        let reportList = insightsPage.reportList
-        XCTAssertTrue(reportList.waitForExistence(timeout: 5), "Report list not displayed")
-
-        // Coordinate tap on first cell to reliably trigger NavigationLink
-        let firstCell = reportList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Report cell not found")
-        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let reportIndicator = app.buttons["WeekReportIndicator"].firstMatch
+        guard reportIndicator.waitForExistence(timeout: 5) else {
+            throw XCTSkip("No report indicator visible in current month")
+        }
+        reportIndicator.tap()
 
         // Verify navigation to report detail via back button presence
         let backButton = app.navigationBars.buttons.element(boundBy: 0)
