@@ -118,12 +118,15 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
                 let weekday = calendar.component(.weekday, from: weekStart)
                 let daysToMonday = (weekday == 1) ? -6 : 2 - weekday
                 if let monday = calendar.date(byAdding: .day, value: daysToMonday, to: weekStart) {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM-dd"
-                    let dateStr = formatter.string(from: monday)
+                    let isoFormatter = DateFormatter()
+                    isoFormatter.dateFormat = "YYYY-'W'ww"
+                    isoFormatter.calendar = Calendar(identifier: .iso8601)
+                    isoFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    isoFormatter.timeZone = calendar.timeZone
+                    let weekStr = isoFormatter.string(from: monday)
                     reports.append(Report(
-                        id: "_agent/reports/weekly/\(dateStr).md",
-                        weekOf: dateStr,
+                        id: "_agent/reports/weekly/\(weekStr).md",
+                        weekOf: weekStr,
                         modified: monday
                     ))
                 }

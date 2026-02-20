@@ -194,7 +194,7 @@ final class CalendarViewModelTests: XCTestCase {
         let week = sut.weeks[2]
         let report = sut.reportForWeek(week)
         XCTAssertNotNil(report)
-        XCTAssertEqual(report?.weekOf, "2024-01-15")
+        XCTAssertEqual(report?.weekOf, "2024-W03")
     }
 
     // MARK: - hasInsightsThisMonth

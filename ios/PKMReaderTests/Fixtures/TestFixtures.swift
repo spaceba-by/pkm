@@ -170,22 +170,22 @@ enum TestFixtures {
         )
     }
 
-    /// An array of sample reports
+    /// An array of sample reports (weekOf uses ISO week format YYYY-Www)
     static var sampleReports: [Report] {
         [
             Report(
-                id: "_agent/reports/2024-01-15.md",
-                weekOf: "2024-01-15",
+                id: "_agent/reports/weekly/2024-W03.md",
+                weekOf: "2024-W03",
                 modified: Date(timeIntervalSince1970: 1_705_276_800)
             ),
             Report(
-                id: "_agent/reports/2024-01-08.md",
-                weekOf: "2024-01-08",
+                id: "_agent/reports/weekly/2024-W02.md",
+                weekOf: "2024-W02",
                 modified: Date(timeIntervalSince1970: 1_704_672_000)
             ),
             Report(
-                id: "_agent/reports/2024-01-01.md",
-                weekOf: "2024-01-01",
+                id: "_agent/reports/weekly/2024-W01.md",
+                weekOf: "2024-W01",
                 modified: Date(timeIntervalSince1970: 1_704_067_200)
             )
         ]
