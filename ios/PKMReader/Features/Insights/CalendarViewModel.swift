@@ -168,7 +168,7 @@ final class CalendarViewModel: ObservableObject {
             return components.year == monthComponents.year && components.month == monthComponents.month
         }
         let hasReport = reports.contains { report in
-            guard let date = parseDate(report.weekOf) else { return false }
+            guard let date = mondayDate(fromISOWeek: report.weekOf) else { return false }
             // A report's week may overlap with this month
             let components = calendar.dateComponents([.year, .month], from: date)
             return components.year == monthComponents.year && components.month == monthComponents.month
@@ -288,8 +288,19 @@ final class CalendarViewModel: ObservableObject {
         summaryDateSet = Set(summaries.map(\.date))
         summaryByDate = Dictionary(uniqueKeysWithValues: summaries.map { ($0.date, $0) })
 
-        reportWeekSet = Set(reports.map(\.weekOf))
-        reportByWeek = Dictionary(uniqueKeysWithValues: reports.map { ($0.weekOf, $0) })
+        // Reports have weekOf in ISO week format (e.g. "2026-W08").
+        // Convert to Monday date strings so reportForWeek can look up by dateKey.
+        var weekSet = Set<String>()
+        var weekDict = [String: Report]()
+        for report in reports {
+            if let mondayDate = mondayDate(fromISOWeek: report.weekOf) {
+                let key = dateKey(for: mondayDate)
+                weekSet.insert(key)
+                weekDict[key] = report
+            }
+        }
+        reportWeekSet = weekSet
+        reportByWeek = weekDict
     }
 
     private func dateKey(for date: Date) -> String {
@@ -302,7 +313,7 @@ final class CalendarViewModel: ObservableObject {
     }
 
     private func mondayOfWeek(containing date: Date) -> Date {
-        var weekday = calendar.component(.weekday, from: date)
+        let weekday = calendar.component(.weekday, from: date)
         // weekday: 1=Sun, 2=Mon, ..., 7=Sat
         // Days to subtract to reach Monday
         let daysToMonday = (weekday == 1) ? 6 : weekday - 2
@@ -311,5 +322,17 @@ final class CalendarViewModel: ObservableObject {
 
     private func parseDate(_ string: String) -> Date? {
         dateKeyFormatter.date(from: string)
+    }
+
+    /// Parse an ISO week string like "2026-W08" into the Monday Date for that week
+    private func mondayDate(fromISOWeek isoWeek: String) -> Date? {
+        // Append "-1" for Monday (ISO day-of-week 1 = Monday)
+        let isoWeekFormatter = DateFormatter()
+        isoWeekFormatter.dateFormat = "YYYY-'W'ww-e"
+        isoWeekFormatter.timeZone = calendar.timeZone
+        isoWeekFormatter.locale = Locale(identifier: "en_US_POSIX")
+        // ISO 8601 weeks start on Monday
+        isoWeekFormatter.calendar = Calendar(identifier: .iso8601)
+        return isoWeekFormatter.date(from: isoWeek + "-1")
     }
 }
