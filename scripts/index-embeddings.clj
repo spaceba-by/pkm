@@ -57,11 +57,12 @@
                         (do (println "Missing value for --prefix")
                             (assoc opts :mode :help)))
           "--limit"   (if (second remaining)
-                        (try
-                          (recur (drop 2 remaining) (assoc opts :limit (Integer/parseInt (second remaining))))
-                          (catch NumberFormatException _
-                            (println "Invalid value for --limit; must be an integer")
-                            (assoc opts :mode :help)))
+                        (let [parsed (try (Integer/parseInt (second remaining))
+                                         (catch NumberFormatException _ nil))]
+                          (if parsed
+                            (recur (drop 2 remaining) (assoc opts :limit parsed))
+                            (do (println "Invalid value for --limit; must be an integer")
+                                (assoc opts :mode :help))))
                         (do (println "Missing value for --limit")
                             (assoc opts :mode :help)))
           (do (println "Unknown option:" arg)
