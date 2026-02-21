@@ -144,6 +144,19 @@
       (is (= default-timestamp (:modified result-meta)))
       (is (false? (:hasFrontmatter result-meta))))))
 
+(deftest sort-documents-by-modified-descending-test
+  (testing "Documents sort by modified date descending"
+    (let [docs [{:PK "notes/old.md" :title "Old" :modified "2025-01-01T00:00:00Z"}
+                {:PK "notes/new.md" :title "New" :modified "2025-01-20T00:00:00Z"}
+                {:PK "notes/mid.md" :title "Mid" :modified "2025-01-10T00:00:00Z"}]
+          formatted (mapv format-document docs)
+          sorted (sort-by #(get-in % [:metadata :modified])
+                          #(compare %2 %1)
+                          formatted)]
+      (is (= "notes/new.md" (:id (first sorted))))
+      (is (= "notes/mid.md" (:id (second sorted))))
+      (is (= "notes/old.md" (:id (nth sorted 2)))))))
+
 ;; =============================================================================
 ;; api_search tests
 ;; =============================================================================

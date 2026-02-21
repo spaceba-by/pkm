@@ -7,9 +7,9 @@ struct InsightsView: View {
     @State private var selectedSummary: Summary?
     @State private var selectedReport: Report?
 
-    init(apiClient: any APIClientProtocol) {
+    init(apiClient: any APIClientProtocol, today: Date = Date()) {
         self.apiClient = apiClient
-        _viewModel = StateObject(wrappedValue: CalendarViewModel(apiClient: apiClient))
+        _viewModel = StateObject(wrappedValue: CalendarViewModel(apiClient: apiClient, today: today))
     }
 
     var body: some View {

@@ -38,13 +38,14 @@
     [items (encode-cursor last-key)]))
 
 (defn list-by-classification
-  "Query documents by classification using GSI"
+  "Query documents by classification using GSI, ordered by modified date descending"
   [classification limit]
   (ddb/query ddb-table
              :index-name "classification-index"
              :key-condition-expr "classification = :class"
              :expr-attr-values {":class" classification}
-             :limit (min limit max-limit)))
+             :limit (min limit max-limit)
+             :scan-index-forward false))
 
 (def default-timestamp "1970-01-01T00:00:00Z")
 
@@ -85,7 +86,9 @@
           [documents next-cursor] (if classification
                                     [(list-by-classification classification limit) nil]
                                     (list-all-documents limit cursor))
-          formatted (mapv format-document documents)]
+          formatted (sort-by #(get-in % [:metadata :modified])
+                             #(compare %2 %1)
+                             (mapv format-document documents))]
 
       (r/ok {:documents formatted
              :count (count formatted)

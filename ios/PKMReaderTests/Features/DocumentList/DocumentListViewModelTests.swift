@@ -358,11 +358,12 @@ final class DocumentListViewModelTests: XCTestCase {
         sut.sortOrder = .createdDate
         sut.applySortOrder()
 
-        // Then: sorted by created date descending
+        // Then: sorted by created date descending (different order from modified sort)
+        // Created dates: sample=Jan 3, meetings=Jan 2, ideas=Jan 1
         if case .loaded(let docs) = sut.state {
-            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
-            XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2
-            XCTAssertEqual(docs[2].id, "test/sample.md")         // Jan 1
+            XCTAssertEqual(docs[0].id, "test/sample.md")         // Jan 3 created
+            XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2 created
+            XCTAssertEqual(docs[2].id, "ideas/new-feature.md")   // Jan 1 created
         } else {
             XCTFail("Expected loaded state")
         }

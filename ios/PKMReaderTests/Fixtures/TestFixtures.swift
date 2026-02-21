@@ -37,8 +37,8 @@ enum TestFixtures {
                 tags: ["test", "sample"],
                 linksTo: [],
                 entities: nil,
-                created: Date(timeIntervalSince1970: 1_704_067_200), // 2024-01-01
-                modified: Date(timeIntervalSince1970: 1_704_067_200),
+                created: Date(timeIntervalSince1970: 1_704_240_000), // 2024-01-03 (created newest)
+                modified: Date(timeIntervalSince1970: 1_704_067_200), // 2024-01-01 (modified oldest)
                 hasFrontmatter: true
             )
         )
@@ -78,8 +78,8 @@ enum TestFixtures {
                 tags: ["idea", "feature"],
                 linksTo: [],
                 entities: nil,
-                created: Date(timeIntervalSince1970: 1_704_240_000), // 2024-01-03
-                modified: Date(timeIntervalSince1970: 1_704_240_000),
+                created: Date(timeIntervalSince1970: 1_704_067_200), // 2024-01-01 (created oldest)
+                modified: Date(timeIntervalSince1970: 1_704_240_000), // 2024-01-03 (modified newest)
                 hasFrontmatter: false
             )
         )
