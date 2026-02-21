@@ -163,18 +163,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - 6-tab layout: Documents, Search, Tags, Insights, Settings, Graph
   - Navigate documents by entity connections, color-coded by classification/type
 
-### Planned
-
-- **Task 0017: Insights Calendar Design**
+- **Task 0017: Insights Calendar Design** ✅
 
   - See: [0017-insights-calendar-design](tasks/0017-insights-calendar-design.md)
   - Replace Insights tab segmented list with monthly calendar grid view
   - Visual indicators for days with daily summaries and weeks with weekly reports
   - Month-to-month navigation matching iOS Calendar app conventions
-  - UI mockup design phase before implementation
   - Accessibility support for calendar interactions
 
-- **Task 0013: Persistent Search**
+- **Task 0013: Persistent Search** ✅
 
   - See: [0013-persistent-search](tasks/0013-persistent-search.md)
   - Search monitors with configurable terms, schedule, and novelty threshold
