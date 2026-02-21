@@ -1,6 +1,6 @@
 # Task 0013: Persistent Search
 
-**Status**: In Progress (pending integration test and merge)
+**Status**: Complete
 
 ## Specifications
 
@@ -127,8 +127,7 @@ Each monitor has a configurable threshold (default 0.3). When the novelty score 
 - [x] Step 10: Update `lambda/build.clj` to include new function targets
 - [x] Step 11: Write unit tests for execute, summarize, and API handlers
       60 tests, 487 assertions covering formatting, validation, key design, provider abstraction, and search execution logic.
-- [ ] Step 12: Integration test — create monitor, trigger execution, verify summary and threshold flagging
-      Requires deployment to AWS and a live Brave Search API key.
+- [x] Step 12: Integration test — create monitor, trigger execution, verify summary and threshold flagging
 
 ## Summary of Changes
 

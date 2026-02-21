@@ -163,18 +163,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - 6-tab layout: Documents, Search, Tags, Insights, Settings, Graph
   - Navigate documents by entity connections, color-coded by classification/type
 
-### Planned
-
-- **Task 0017: Insights Calendar Design**
+- **Task 0017: Insights Calendar Design** ✅
 
   - See: [0017-insights-calendar-design](tasks/0017-insights-calendar-design.md)
   - Replace Insights tab segmented list with monthly calendar grid view
   - Visual indicators for days with daily summaries and weeks with weekly reports
   - Month-to-month navigation matching iOS Calendar app conventions
-  - UI mockup design phase before implementation
   - Accessibility support for calendar interactions
 
-- **Task 0013: Persistent Search**
+- **Task 0013: Persistent Search** ✅
 
   - See: [0013-persistent-search](tasks/0013-persistent-search.md)
   - Search monitors with configurable terms, schedule, and novelty threshold
@@ -182,13 +179,109 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - AI-driven summarization and comparison agent (Bedrock Sonnet)
   - Threshold-based flagging for significant updates with notification event records
 
-### Future Ideas (not yet scoped)
+### Planned
 
-- Interactive chat interface to query PKM
-- Automated task extraction and tracking
-- Email/calendar integration for context
-- Push notifications for new summaries/reports
-- iOS widgets, Spotlight search, Share Extension
-- iPad and macOS app support
-- Real-time collaboration features
-- Custom agent workflows (user-defined)
+#### Tier 1 — Immediate
+
+- **Task 0019: Persistent Search UI**
+
+  - See: [0019-persistent-search-ui](tasks/0019-persistent-search-ui.md)
+  - iOS views for managing search monitors (create, list, edit, delete, view summaries)
+  - Backend API already complete (7 endpoints from Task 0013)
+  - SearchMonitor model, views, and view models following existing patterns
+
+- **Task 0020: Secrets Management**
+
+  - See: [0020-secrets-management](tasks/0020-secrets-management.md)
+  - Centralize Terraform secrets resources into dedicated `secrets.tf`
+  - Generalize IAM policy for multi-secret support
+  - Extend secrets_manager.clj with multi-key caching
+
+#### Tier 2 — Communication
+
+- **Task 0021: Push Notifications**
+
+  - See: [0021-push-notifications](tasks/0021-push-notifications.md)
+  - AWS SNS + APNs integration for iOS push notifications
+  - Notification dispatch Lambda triggered by DynamoDB events
+  - Extends existing notification records from persistent search
+  - Depends on: Task 0020
+
+- **Task 0022: Webhook Receiving & Classification**
+
+  - See: [0022-webhook-receiving](tasks/0022-webhook-receiving.md)
+  - API endpoint for receiving external webhooks (GitHub, email, custom)
+  - Signature verification, classification, and routing to processing pipeline
+  - Depends on: Task 0020
+
+#### Tier 3 — Command & Intelligence
+
+- **Task 0023: Command Interface**
+
+  - See: [0023-command-interface](tasks/0023-command-interface.md)
+  - Chat API with Bedrock-powered reasoning agent querying PKM data
+  - @command parsing in PKM notes, response delivery via API and S3
+  - iOS chat view
+
+- **Task 0024: Automated Task Extraction**
+
+  - See: [0024-task-extraction](tasks/0024-task-extraction.md)
+  - Detect TODOs, action items, and tasks in processed documents
+  - API endpoints and iOS view for browsing extracted tasks
+
+#### Tier 4 — Advanced Agents
+
+- **Task 0025: Self-Improvement Dispatch**
+
+  - See: [0025-self-improvement-dispatch](tasks/0025-self-improvement-dispatch.md)
+  - Route TODOs and commands to sandboxed Claude Code instances
+  - Job queue, sandbox provisioning, result collection
+  - Depends on: Tasks 0023, 0024
+
+- **Task 0026: Custom Agent Workflows**
+
+  - See: [0026-custom-agent-workflows](tasks/0026-custom-agent-workflows.md)
+  - User-defined automation rules with configurable triggers and prompt templates
+  - Workflow execution engine using Bedrock
+  - Depends on: Task 0023
+
+#### Tier 5 — Platform Expansion
+
+- **Task 0027: iOS Widgets, Spotlight & Share Extension**
+
+  - See: [0027-ios-extensions](tasks/0027-ios-extensions.md)
+  - Home screen widgets, Spotlight indexing, Share Extension for content clipping
+  - Depends on: Task 0021
+
+- **Task 0028: macOS Menu Bar App**
+
+  - See: [0028-macos-menu-bar](tasks/0028-macos-menu-bar.md)
+  - Lightweight menu bar utility for rclone sync management
+  - Sync status, scheduling, conflict detection
+
+- **Task 0029: iPad & macOS App**
+
+  - See: [0029-multiplatform-app](tasks/0029-multiplatform-app.md)
+  - Multi-platform SwiftUI app with platform-adaptive layouts
+  - Split view (iPad), sidebar navigation (macOS), shared code extraction
+
+#### Tier 6 — Integrations & Advanced
+
+- **Task 0030: F5-TTS Speech Generation**
+
+  - See: [0030-f5-tts-speech](tasks/0030-f5-tts-speech.md)
+  - Text-to-speech for summaries and reports using F5-TTS
+  - Voice clone, S3 audio storage, iOS playback
+
+- **Task 0031: Email/Calendar Integration**
+
+  - See: [0031-email-calendar-integration](tasks/0031-email-calendar-integration.md)
+  - OAuth-based email and calendar provider connections
+  - Periodic sync, markdown conversion, processing pipeline integration
+  - Depends on: Task 0020
+
+- **Task 0032: Real-time Collaboration**
+
+  - See: [0032-realtime-collaboration](tasks/0032-realtime-collaboration.md)
+  - WebSocket-based multi-user document editing and sharing
+  - Conflict resolution, presence indicators, activity feed
