@@ -17,6 +17,7 @@
 (require '[search.semantic-test])
 (require '[api.write-handlers-test])
 (require '[api.graph-data-test])
+(require '[shared.secrets-manager-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -33,7 +34,8 @@
                  'search.chunker-test
                  'search.semantic-test
                  'api.write-handlers-test
-                 'api.graph-data-test)]
+                 'api.graph-data-test
+                 'shared.secrets-manager-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))
