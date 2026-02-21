@@ -101,6 +101,50 @@ final class DocumentDetailViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.getDocumentCallCount, 0)
     }
 
+    // MARK: - Reload Content
+
+    func test_reloadContent_forcesReloadWhenAlreadyLoaded() async {
+        let document = TestFixtures.sampleDocument // has content, so starts in .loaded
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        // Verify it starts loaded
+        if case .loaded = sut.contentState {} else {
+            XCTFail("Expected loaded state initially")
+        }
+
+        let updatedDocument = Document(
+            id: document.id,
+            title: document.title,
+            content: "# Updated Content",
+            metadata: document.metadata
+        )
+        mockAPIClient.getDocumentResult = .success(updatedDocument)
+
+        await sut.reloadContent()
+
+        // Should have called the API despite already being loaded
+        XCTAssertEqual(mockAPIClient.getDocumentCallCount, 1)
+        if case .loaded(let content) = sut.contentState {
+            XCTAssertTrue(content.contains("Updated Content"))
+        } else {
+            XCTFail("Expected loaded state after reload")
+        }
+        XCTAssertEqual(sut.rawContent, "# Updated Content")
+    }
+
+    func test_reloadContent_failure_updatesStateToError() async {
+        let document = TestFixtures.sampleDocument
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        mockAPIClient.getDocumentResult = .failure(APIError.networkError)
+
+        await sut.reloadContent()
+
+        if case .error = sut.contentState {} else {
+            XCTFail("Expected error state after failed reload")
+        }
+    }
+
     // MARK: - Classification
 
     func test_initialClassification_matchesDocument() {

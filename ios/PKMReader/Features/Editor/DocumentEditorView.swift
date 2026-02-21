@@ -4,15 +4,17 @@ import Textual
 /// View for creating and editing documents
 struct DocumentEditorView: View {
     @StateObject private var viewModel: DocumentEditorViewModel
+    private var onSave: (() -> Void)?
 
     @Environment(\.dismiss)
     private var dismiss
 
-    init(mode: DocumentEditorViewModel.Mode, apiClient: any APIClientProtocol) {
+    init(mode: DocumentEditorViewModel.Mode, apiClient: any APIClientProtocol, onSave: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: DocumentEditorViewModel(
             mode: mode,
             apiClient: apiClient
         ))
+        self.onSave = onSave
     }
 
     var body: some View {
@@ -76,6 +78,7 @@ struct DocumentEditorView: View {
             }
             .onChange(of: viewModel.saveState) { _, newState in
                 if newState == .saved {
+                    onSave?()
                     dismiss()
                 }
             }

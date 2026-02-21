@@ -59,16 +59,13 @@ struct DocumentListView: View {
                     }
                 }
             }
-            .sheet(
-                isPresented: $showingEditor,
-                onDismiss: { Task { await viewModel.loadDocuments() } },
-                content: {
-                    DocumentEditorView(
-                        mode: .create,
-                        apiClient: viewModel.apiClient
-                    )
-                }
-            )
+            .sheet(isPresented: $showingEditor) {
+                DocumentEditorView(
+                    mode: .create,
+                    apiClient: viewModel.apiClient,
+                    onSave: { Task { await viewModel.loadDocuments() } }
+                )
+            }
             .sheet(isPresented: $showingFilter) {
                 FilterSheet(
                     selectedClassification: $viewModel.selectedClassification,

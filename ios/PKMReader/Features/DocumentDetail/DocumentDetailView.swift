@@ -68,16 +68,13 @@ struct DocumentDetailView: View {
                 .accessibilityLabel("Document actions")
             }
         }
-        .sheet(
-            isPresented: $showEditor,
-            onDismiss: { Task { await viewModel.reloadContent() } },
-            content: {
-                DocumentEditorView(
-                    mode: .edit(viewModel.documentWithContent),
-                    apiClient: apiClient
-                )
-            }
-        )
+        .sheet(isPresented: $showEditor) {
+            DocumentEditorView(
+                mode: .edit(viewModel.documentWithContent),
+                apiClient: apiClient,
+                onSave: { Task { await viewModel.reloadContent() } }
+            )
+        }
         .confirmationDialog(
             "Delete Document",
             isPresented: $showDeleteConfirmation,
