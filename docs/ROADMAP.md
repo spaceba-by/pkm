@@ -189,3 +189,12 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 - iPad and macOS app support
 - Real-time collaboration features
 - Custom agent workflows (user-defined)
+- F5-TTS based speech generation (Amy Archer from Hudsucker Proxy as source)
+- Push notifications for the iOS app
+- macOS menu bar app (trigger syncs, monitor sync status, manage sync jobs)
+- Document view sort ordering
+- Webhook receiving and classification
+- Self-improvement dispatch (route TODOs to sandboxed Claude Code instances)
+- Command direction functionality (chat interface, @commands in PKM notes, command responses)
+- UI/UX for managing persistent searches (create new, manage existing)
+- Secrets management (API key handling, current issues)
