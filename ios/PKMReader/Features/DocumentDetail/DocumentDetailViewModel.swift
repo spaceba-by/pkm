@@ -65,6 +65,12 @@ final class DocumentDetailViewModel: ObservableObject {
         )
     }
 
+    /// Reload the document content from the API, even if already loaded
+    func reloadContent() async {
+        contentState = .loading
+        await fetchContent()
+    }
+
     /// Load the document content from the API
     func loadContent() async {
         // Skip if already loaded
@@ -73,7 +79,10 @@ final class DocumentDetailViewModel: ObservableObject {
         }
 
         contentState = .loading
+        await fetchContent()
+    }
 
+    private func fetchContent() async {
         do {
             let fullDocument = try await apiClient.getDocument(key: document.id)
             if let content = fullDocument.content {

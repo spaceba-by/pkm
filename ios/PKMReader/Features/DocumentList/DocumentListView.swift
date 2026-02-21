@@ -59,12 +59,16 @@ struct DocumentListView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingEditor) {
-                DocumentEditorView(
-                    mode: .create,
-                    apiClient: viewModel.apiClient
-                )
-            }
+            .sheet(
+                isPresented: $showingEditor,
+                onDismiss: { Task { await viewModel.loadDocuments() } },
+                content: {
+                    DocumentEditorView(
+                        mode: .create,
+                        apiClient: viewModel.apiClient
+                    )
+                }
+            )
             .sheet(isPresented: $showingFilter) {
                 FilterSheet(
                     selectedClassification: $viewModel.selectedClassification,
@@ -136,7 +140,9 @@ struct DocumentListView: View {
         }
         .listStyle(.plain)
         .navigationDestination(for: Document.self) { document in
-            DocumentDetailView(document: document, apiClient: viewModel.apiClient)
+            DocumentDetailView(document: document, apiClient: viewModel.apiClient, onDelete: {
+                Task { await viewModel.loadDocuments() }
+            })
         }
         .accessibilityIdentifier("DocumentList")
     }
