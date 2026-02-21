@@ -126,8 +126,8 @@
 (defn get-user-groups
   "Extract Cognito user groups from JWT claims in API Gateway v2 format.
    Returns a set of group names.
-   The groups claim key is 'cognito:groups' which contains a space-separated
-   list of group names (API Gateway v2 flattens the array to a string)."
+   API Gateway v2 serializes the cognito:groups JWT array claim as a string.
+   The format may be bracket-wrapped (e.g. '[admin reader]') or space-separated."
   [event]
   (let [claims (or (get-in event [:requestContext :authorizer :jwt :claims])
                    (get-in event ["requestContext" "authorizer" "jwt" "claims"])
@@ -137,8 +137,12 @@
                          (get claims "cognito:groups"))]
     (cond
       (nil? groups-claim) #{}
-      ;; API Gateway v2 sends groups as space-separated string
-      (string? groups-claim) (set (remove str/blank? (str/split groups-claim #"\s+")))
+      ;; API Gateway v2 may serialize groups as "[admin reader]" (bracket-wrapped)
+      ;; or as "admin reader" (space-separated). Strip brackets before splitting.
+      (string? groups-claim) (let [stripped (-> groups-claim
+                                                (str/replace #"^\[" "")
+                                                (str/replace #"\]$" ""))]
+                               (set (remove str/blank? (str/split stripped #"[,\s]+"))))
       (sequential? groups-claim) (set groups-claim)
       :else #{})))
 
