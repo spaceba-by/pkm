@@ -32,6 +32,20 @@
     (let [event {:requestContext {:authorizer {:jwt {:claims {:sub "user-123"}}}}}]
       (is (empty? (r/get-user-groups event)))))
 
+  (testing "Extracts groups from bracket-wrapped string (API Gateway v2 format)"
+    (let [event {:requestContext {:authorizer {:jwt {:claims {(keyword "cognito:groups") "[admin]"}}}}}]
+      (is (contains? (r/get-user-groups event) "admin"))))
+
+  (testing "Extracts multiple groups from bracket-wrapped string"
+    (let [event {:requestContext {:authorizer {:jwt {:claims {(keyword "cognito:groups") "[admin reader]"}}}}}]
+      (is (contains? (r/get-user-groups event) "admin"))
+      (is (contains? (r/get-user-groups event) "reader"))))
+
+  (testing "Extracts groups from comma-separated bracket-wrapped string"
+    (let [event {:requestContext {:authorizer {:jwt {:claims {(keyword "cognito:groups") "[admin, reader]"}}}}}]
+      (is (contains? (r/get-user-groups event) "admin"))
+      (is (contains? (r/get-user-groups event) "reader"))))
+
   (testing "Handles nil event gracefully"
     (is (empty? (r/get-user-groups {})))))
 
