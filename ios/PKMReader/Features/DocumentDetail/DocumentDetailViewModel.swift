@@ -80,6 +80,7 @@ final class DocumentDetailViewModel: ObservableObject {
                 rawContent = content
                 contentState = .loaded(processContent(content))
             } else {
+                rawContent = ""
                 contentState = .loaded("*No content available*")
             }
         } catch {

@@ -362,5 +362,29 @@ final class DocumentDetailViewModelTests: XCTestCase {
         } else {
             XCTFail("Expected loaded state with placeholder")
         }
+        XCTAssertEqual(sut.rawContent, "")
+    }
+
+    func test_documentWithContent_returnsEmptyStringContent_whenDocumentHasNoContent() async {
+        let document = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+        let fullDocument = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+
+        mockAPIClient.getDocumentResult = .success(fullDocument)
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        await sut.loadContent()
+
+        XCTAssertEqual(sut.documentWithContent.id, "test.md")
+        XCTAssertEqual(sut.documentWithContent.content, "")
     }
 }
