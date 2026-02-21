@@ -61,9 +61,9 @@ Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock
                               _agent/ outputs ← rclone ←─┘
 ```
 
-**17 Lambda Functions** (all Babashka/Clojure):
+**28 Lambda Functions** (all Babashka/Clojure):
 
-Processing (7):
+Processing (11):
 - `extract_metadata` - Parse frontmatter, tags, links
 - `classify_document` - AI classification (meeting/idea/reference/journal/project)
 - `extract_entities` - Named entity extraction (people, orgs, concepts, locations)
@@ -71,11 +71,15 @@ Processing (7):
 - `generate_weekly_report` - Weekly analysis (8 PM UTC Sunday)
 - `update_classification_index` - Maintain classification index (scheduled every 6 hours)
 - `bulk_reclassify` - Bulk reclassification with dry-run mode and filtering
+- `delete_document` - Cascade-delete DynamoDB records on S3 object deletion
+- `index_embeddings` - Generate vector embeddings for semantic search
+- `persistent_search_execute` - Execute persistent search monitors via Brave Search API
+- `persistent_search_summarize` - AI-driven summarization of search results
 
-Mobile API (10):
+Mobile API (17):
 - `api_list_documents` - List documents with optional classification filter
 - `api_get_document` - Get document with content
-- `api_search` - Search by title, path, tags
+- `api_search` - Search by title, path, tags (keyword and semantic modes)
 - `api_list_tags` - List all tags with counts
 - `api_documents_by_tag` - Get documents by specific tag
 - `api_list_classifications` - List classification types with counts
@@ -83,6 +87,13 @@ Mobile API (10):
 - `api_list_reports` - List weekly AI reports
 - `api_update_classification` - Classification feedback/correction (PUT)
 - `api_bulk_reclassify` - Trigger bulk reclassification (POST)
+- `api_create_document` - Create new document (admin only, POST)
+- `api_update_document` - Update existing document (admin only, PUT)
+- `api_delete_document` - Delete document (admin only, DELETE)
+- `api_graph_data` - Entity relationship graph data (GET)
+- `api_search_monitors` - List persistent search monitors (GET)
+- `api_search_monitor_detail` - Get search monitor detail (GET)
+- `api_search_summaries` - List search result summaries (GET)
 
 **Bedrock Models** (defined in `terraform/variables.tf`):
 - Haiku 4.5: Fast classification and extraction
@@ -95,8 +106,8 @@ lambda/
 ├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj)
 ├── shared/api/           # API response utilities (response.clj)
 ├── shared/markdown/      # Markdown parsing utilities
-├── functions/            # 17 Lambda function implementations
-└── tests/                # Unit tests (38 tests, 298 assertions)
+├── functions/            # 28 Lambda function implementations
+└── tests/                # Unit tests (99 tests, 646 assertions)
 
 terraform/                # All AWS infrastructure
 ├── lambda.tf             # Processing Lambda functions
@@ -112,7 +123,10 @@ scripts/                  # Deployment and testing
 ├── configure-ios.sh      # iOS app configuration
 ├── cleanup-old-builds.sh # Remove old Lambda build artifacts
 ├── backfill.clj          # Backfill unprocessed S3 documents
-└── bulk-reclassify.sh    # CLI for bulk reclassification
+├── bulk-reclassify.sh    # CLI for bulk reclassification
+├── cleanup-orphans.clj   # Remove orphaned DynamoDB records
+├── fix-dates.clj         # Fix document date metadata
+└── index-embeddings.clj  # Build/update vector search index
 
 ios/                      # iOS app (PKMReader)
 ├── PKMReader/            # SwiftUI app source

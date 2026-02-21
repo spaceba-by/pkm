@@ -14,15 +14,16 @@ If you see an error, verify your credentials and check your internet connection.
 
 ### Navigation
 
-The app uses a tab bar at the bottom of the screen with five tabs:
+The app uses a tab bar at the bottom of the screen with six tabs:
 
 | Tab | Purpose |
 |-----|---------|
-| **Documents** | Browse all documents in your vault |
-| **Search** | Find documents by title, path, or tags |
+| **Documents** | Browse, create, edit, and delete documents in your vault |
+| **Search** | Find documents by keyword or semantic similarity |
 | **Tags** | Browse documents organized by tag |
-| **Insights** | View AI-generated daily summaries and weekly reports |
+| **Insights** | Monthly calendar view with daily summaries and weekly reports |
 | **Settings** | Manage preferences, cache, and your account |
+| **Graph** | Interactive knowledge graph of entity relationships |
 
 ## Documents
 
@@ -60,22 +61,31 @@ When a filter is active, the filter icon appears filled in.
 
 Tapping a document opens the detail view, which shows:
 
-- **Classification badge** -- the AI-assigned category for this document.
+- **Classification badge** -- the AI-assigned category for this document. Tap the badge to change the classification.
 - **Tags** -- any tags from the document's frontmatter, displayed as chips.
 - **Extracted entities** -- people, organizations, concepts, and locations that the AI identified in the document.
 - **Dates** -- when the document was created and when it was last modified.
-- **Content** -- the full markdown content of the document, rendered with formatting.
+- **Content** -- the full markdown content of the document, rendered with formatting. Internal `[[wikilinks]]` are rendered as tappable navigation links. Checkboxes are rendered visually.
 
 You can select and copy text from the document content.
 
+### Creating and Editing Documents
+
+Admin users can create and edit documents directly from the app:
+
+- **Create**: Tap the **+** button in the Documents tab to open the editor. Enter a title and markdown content, then save.
+- **Edit**: In the document detail view, tap the edit button to modify the document content.
+- **Delete**: In the document detail view, use the delete option. A confirmation prompt appears before deletion.
+
 ## Search
 
-The Search tab lets you find documents by title, path, or tags.
+The Search tab lets you find documents using keyword or semantic search.
 
 1. Tap the search bar at the top of the screen.
 2. Type at least 2 characters to begin searching.
 3. Results appear automatically as you type (with a short delay to avoid excessive requests).
 4. Tap a result to open the document detail view.
+5. Toggle between **Keyword** and **Semantic** search modes. Keyword matches titles, paths, and tags. Semantic search finds conceptually related documents using AI embeddings.
 
 Pull down on the results to refresh the search.
 
@@ -89,21 +99,31 @@ The Tags tab shows all tags used across your vault, along with a count of how ma
 
 ## Insights
 
-The Insights tab provides AI-generated analysis of your vault activity, split into two sections accessible via the segmented control at the top.
+The Insights tab displays a monthly calendar grid showing your vault activity at a glance.
+
+### Calendar View
+
+- Navigate between months using the left/right arrows.
+- Days with **daily summaries** are indicated with a dot. Tap a day to view its summary.
+- Weeks with **weekly reports** are indicated with a bar along the week row. Tap the bar to view the report.
+- The current day is highlighted.
 
 ### Daily Summaries
 
 Summaries are generated every day at 6 AM UTC. Each summary covers the previous day's vault activity, highlighting new and modified documents, key themes, and notable changes.
 
-- Tap a summary to read the full content.
-- Pull down to refresh.
-
 ### Weekly Reports
 
 Reports are generated every Sunday at 8 PM UTC. Each report provides a broader analysis of the week, including trends, patterns, and connections across your documents.
 
-- Tap a report to read the full content.
-- Pull down to refresh.
+## Graph
+
+The Graph tab displays an interactive knowledge graph showing relationships between entities extracted from your documents.
+
+- Nodes represent entities (people, organizations, concepts, locations) and are color-coded by type or classification.
+- Edges connect entities that appear together in documents.
+- Tap a node to see related documents and navigate to them.
+- Pinch to zoom and drag to pan the graph.
 
 ## Settings
 
