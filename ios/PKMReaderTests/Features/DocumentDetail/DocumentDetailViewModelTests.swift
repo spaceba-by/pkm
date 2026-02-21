@@ -268,6 +268,74 @@ final class DocumentDetailViewModelTests: XCTestCase {
         )
     }
 
+    // MARK: - Raw Content for Editor
+
+    func test_rawContent_setOnInit_whenContentPresent() {
+        let document = TestFixtures.sampleDocument
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        XCTAssertEqual(sut.rawContent, document.content)
+    }
+
+    func test_rawContent_nilOnInit_whenContentNil() {
+        let document = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        XCTAssertNil(sut.rawContent)
+    }
+
+    func test_rawContent_setAfterLoadContent() async {
+        let document = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+        let fullDocument = Document(
+            id: "test.md",
+            title: "Test",
+            content: "# Full Content",
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+
+        mockAPIClient.getDocumentResult = .success(fullDocument)
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        await sut.loadContent()
+
+        XCTAssertEqual(sut.rawContent, "# Full Content")
+    }
+
+    func test_documentWithContent_includesRawContent() async {
+        let document = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+        let rawContent = "---\ntitle: Test\n---\n# Hello"
+        let fullDocument = Document(
+            id: "test.md",
+            title: "Test",
+            content: rawContent,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+
+        mockAPIClient.getDocumentResult = .success(fullDocument)
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        await sut.loadContent()
+
+        let docForEditor = sut.documentWithContent
+        XCTAssertEqual(docForEditor.id, "test.md")
+        XCTAssertEqual(docForEditor.content, rawContent)
+    }
+
     // MARK: - Content Placeholder
 
     func test_loadContent_documentWithNoContent_showsPlaceholder() async {
@@ -294,5 +362,29 @@ final class DocumentDetailViewModelTests: XCTestCase {
         } else {
             XCTFail("Expected loaded state with placeholder")
         }
+        XCTAssertEqual(sut.rawContent, "")
+    }
+
+    func test_documentWithContent_returnsEmptyStringContent_whenDocumentHasNoContent() async {
+        let document = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+        let fullDocument = Document(
+            id: "test.md",
+            title: "Test",
+            content: nil,
+            metadata: TestFixtures.sampleDocument.metadata
+        )
+
+        mockAPIClient.getDocumentResult = .success(fullDocument)
+        sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
+
+        await sut.loadContent()
+
+        XCTAssertEqual(sut.documentWithContent.id, "test.md")
+        XCTAssertEqual(sut.documentWithContent.content, "")
     }
 }

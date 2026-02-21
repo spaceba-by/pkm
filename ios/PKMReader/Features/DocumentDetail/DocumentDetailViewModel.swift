@@ -35,6 +35,9 @@ final class DocumentDetailViewModel: ObservableObject {
     /// Error from the last classification update attempt
     @Published var classificationUpdateError: Error?
 
+    /// The raw (unprocessed) content for use by the editor
+    @Published private(set) var rawContent: String?
+
     /// The document being displayed
     let document: Document
 
@@ -47,8 +50,19 @@ final class DocumentDetailViewModel: ObservableObject {
 
         // If content already loaded, use it
         if let content = document.content {
+            rawContent = content
             contentState = .loaded(processContent(content))
         }
+    }
+
+    /// The document with raw content populated, for use by the editor
+    var documentWithContent: Document {
+        Document(
+            id: document.id,
+            title: document.title,
+            content: rawContent,
+            metadata: document.metadata
+        )
     }
 
     /// Load the document content from the API
@@ -63,8 +77,10 @@ final class DocumentDetailViewModel: ObservableObject {
         do {
             let fullDocument = try await apiClient.getDocument(key: document.id)
             if let content = fullDocument.content {
+                rawContent = content
                 contentState = .loaded(processContent(content))
             } else {
+                rawContent = ""
                 contentState = .loaded("*No content available*")
             }
         } catch {

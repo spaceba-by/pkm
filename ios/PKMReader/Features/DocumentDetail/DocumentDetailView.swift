@@ -53,6 +53,7 @@ struct DocumentDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
+                    .disabled(viewModel.contentState == .loading)
 
                     Button(role: .destructive) {
                         showDeleteConfirmation = true
@@ -67,7 +68,7 @@ struct DocumentDetailView: View {
         }
         .sheet(isPresented: $showEditor) {
             DocumentEditorView(
-                mode: .edit(document),
+                mode: .edit(viewModel.documentWithContent),
                 apiClient: apiClient
             )
         }
