@@ -62,7 +62,8 @@ struct DocumentListView: View {
             .sheet(isPresented: $showingEditor) {
                 DocumentEditorView(
                     mode: .create,
-                    apiClient: viewModel.apiClient
+                    apiClient: viewModel.apiClient,
+                    onSave: { Task { await viewModel.loadDocuments() } }
                 )
             }
             .sheet(isPresented: $showingFilter) {
@@ -136,7 +137,9 @@ struct DocumentListView: View {
         }
         .listStyle(.plain)
         .navigationDestination(for: Document.self) { document in
-            DocumentDetailView(document: document, apiClient: viewModel.apiClient)
+            DocumentDetailView(document: document, apiClient: viewModel.apiClient, onDelete: {
+                Task { await viewModel.loadDocuments() }
+            })
         }
         .accessibilityIdentifier("DocumentList")
     }

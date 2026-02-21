@@ -5,6 +5,7 @@ import Textual
 struct DocumentDetailView: View {
     let document: Document
     let apiClient: any APIClientProtocol
+    var onDelete: (() -> Void)?
     @StateObject private var viewModel: DocumentDetailViewModel
 
     @Environment(\.dismiss)
@@ -15,9 +16,10 @@ struct DocumentDetailView: View {
     @State private var isDeleting = false
     @State private var deleteError: String?
 
-    init(document: Document, apiClient: any APIClientProtocol) {
+    init(document: Document, apiClient: any APIClientProtocol, onDelete: (() -> Void)? = nil) {
         self.document = document
         self.apiClient = apiClient
+        self.onDelete = onDelete
         _viewModel = StateObject(wrappedValue: DocumentDetailViewModel(
             document: document,
             apiClient: apiClient
@@ -69,7 +71,8 @@ struct DocumentDetailView: View {
         .sheet(isPresented: $showEditor) {
             DocumentEditorView(
                 mode: .edit(viewModel.documentWithContent),
-                apiClient: apiClient
+                apiClient: apiClient,
+                onSave: { Task { await viewModel.reloadContent() } }
             )
         }
         .confirmationDialog(
@@ -83,6 +86,7 @@ struct DocumentDetailView: View {
                     defer { isDeleting = false }
                     do {
                         try await apiClient.deleteDocument(key: document.id)
+                        onDelete?()
                         dismiss()
                     } catch {
                         deleteError = error.localizedDescription
