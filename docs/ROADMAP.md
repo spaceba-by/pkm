@@ -189,7 +189,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 - iPad and macOS app support
 - Real-time collaboration features
 - Custom agent workflows (user-defined)
-- F5-TTS based speech generation (Amy Archer from Hudsucker Proxy as source)
+- F5-TTS based speech generation using generic or properly licensed/consented voices
 - Push notifications for the iOS app
 - macOS menu bar app (trigger syncs, monitor sync status, manage sync jobs)
 - Webhook receiving and classification
