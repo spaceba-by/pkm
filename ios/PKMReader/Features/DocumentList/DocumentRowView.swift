@@ -37,7 +37,7 @@ struct DocumentRowView: View {
             }
 
             // Modified date
-            Text(document.metadata.modified, style: .relative)
+            Text(document.metadata.modified, format: .dateTime.month(.abbreviated).day().year())
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
