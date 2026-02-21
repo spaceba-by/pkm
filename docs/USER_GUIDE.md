@@ -73,9 +73,9 @@ You can select and copy text from the document content.
 
 Admin users can create and edit documents directly from the app:
 
-- **Create**: Tap the **+** button in the Documents tab to open the editor. Enter a title and markdown content, then save.
-- **Edit**: In the document detail view, tap the edit button to modify the document content.
-- **Delete**: In the document detail view, use the delete option. A confirmation prompt appears before deletion.
+- **Create**: Tap the **+** button in the Documents tab to open the editor. Enter the document path (for example, `notes/my-note.md`), optionally a title, and the markdown content, then save.
+- **Edit**: In the document detail view, tap the **...** actions menu in the top-right corner and choose **Edit** to modify the document content.
+- **Delete**: In the document detail view, tap the **...** actions menu in the top-right corner and choose **Delete**. A confirmation prompt appears before deletion.
 
 ## Search
 

@@ -28,7 +28,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │  │  • markdown-events  │       │    API Gateway (HTTP)    │  │
 │  │  • daily-schedule   │       │  • JWT Authorizer        │  │
 │  │  • weekly-schedule  │       │  • CORS enabled          │  │
-│  └───┬─────────────────┘       │  • 24 REST endpoints     │  │
+│  └───┬─────────────────┘       │  • 21 REST endpoints     │  │
 │      │                          └────────────┬─────────────┘  │
 │      ▼                                       │                │
 │  ┌────────────────────┐       ┌──────────────▼─────────────┐ │
@@ -123,9 +123,14 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `update-classification-index` | Babashka | 256 MB | 30s | Scheduled (every 6 hours) | Update classification index |
 | `bulk-reclassify` | Babashka | 512 MB | 300s | API invoke | Bulk reclassification with dry-run |
 | `delete-document` | Babashka | 256 MB | 10s | S3 DELETE | Cascade-delete DynamoDB records |
-| `index-embeddings` | Babashka | 1024 MB | 300s | CLI script | Generate vector embeddings for search |
 | `persistent-search-execute` | Babashka | 512 MB | 60s | Scheduled | Execute search monitors via Brave API |
 | `persistent-search-summarize` | Babashka | 1024 MB | 60s | Invoke | Summarize search results with AI |
+
+**CLI Utilities** (run locally, not deployed as Lambda):
+
+| Script | Purpose |
+|--------|---------|
+| `index-embeddings` | Generate vector embeddings for semantic search index |
 
 **API Functions (17):**
 
@@ -145,9 +150,9 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `api-update-document` | Babashka | 256 MB | 10s | PUT /documents/{key+} | Update document (admin) |
 | `api-delete-document` | Babashka | 256 MB | 10s | DELETE /documents/{key+} | Delete document (admin) |
 | `api-graph-data` | Babashka | 256 MB | 10s | GET /graph | Entity relationship graph |
-| `api-search-monitors` | Babashka | 256 MB | 10s | GET /search-monitors | List search monitors |
-| `api-search-monitor-detail` | Babashka | 256 MB | 10s | GET /search-monitors/{id} | Search monitor detail |
-| `api-search-summaries` | Babashka | 256 MB | 10s | GET /search/summaries | List search summaries |
+| `api-search-monitors` | Babashka | 256 MB | 10s | GET /searches | List search monitors |
+| `api-search-monitor-detail` | Babashka | 256 MB | 10s | GET /searches/{id} | Search monitor detail |
+| `api-search-summaries` | Babashka | 256 MB | 10s | GET /searches/{id}/summaries | List search summaries |
 
 **Shared Code:**
 - Common utilities in `lambda/shared/`: `aws/bedrock.clj`, `aws/dynamodb.clj`, `aws/s3.clj`, `markdown/utils.clj`
@@ -179,23 +184,27 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 - **Throttling:** 100 burst, 50 requests/second
 - **Endpoints:**
   ```
-  GET    /documents                       - List with optional classification filter
-  GET    /documents/{key+}                - Get document with content
-  POST   /documents                       - Create document (admin)
-  PUT    /documents/{key+}                - Update document (admin)
-  DELETE /documents/{key+}                - Delete document (admin)
-  GET    /search?q=...                    - Search documents (keyword/semantic)
-  GET    /tags                            - List all tags
-  GET    /tags/{tag}/documents            - Get documents by tag
-  GET    /classifications                 - List classification types
-  GET    /summaries                       - List daily summaries
-  GET    /reports                         - List weekly reports
-  PUT    /documents/classification/{key+} - Update classification
-  POST   /admin/reclassify                - Trigger bulk reclassification
-  GET    /graph                           - Entity relationship graph data
-  GET    /search-monitors                 - List search monitors
-  GET    /search-monitors/{id}            - Search monitor detail
-  GET    /search/summaries                - List search summaries
+  GET    /documents                            - List with optional classification filter
+  GET    /documents/{key+}                     - Get document with content
+  POST   /documents                            - Create document (admin)
+  PUT    /documents/{key+}                     - Update document (admin)
+  DELETE /documents/{key+}                     - Delete document (admin)
+  GET    /search?q=...                         - Search documents (keyword/semantic)
+  GET    /tags                                 - List all tags
+  GET    /tags/{tag}/documents                 - Get documents by tag
+  GET    /classifications                      - List classification types
+  GET    /summaries                            - List daily summaries
+  GET    /reports                              - List weekly reports
+  PUT    /documents/classification/{key+}      - Update classification
+  POST   /admin/reclassify                     - Trigger bulk reclassification
+  GET    /graph                                - Entity relationship graph data
+  POST   /searches                             - Create search monitor
+  GET    /searches                             - List search monitors
+  GET    /searches/{id}                        - Search monitor detail
+  PUT    /searches/{id}                        - Update search monitor
+  DELETE /searches/{id}                        - Delete search monitor
+  GET    /searches/{id}/summaries              - List search summaries
+  GET    /searches/{id}/summaries/{timestamp}  - Search summary detail
   ```
 
 ### 4. Event-Driven Processing
