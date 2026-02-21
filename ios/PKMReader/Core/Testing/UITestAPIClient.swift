@@ -225,6 +225,120 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
         return GraphDataResponse(nodes: nodes, edges: edges, nodeCount: nodes.count, edgeCount: edges.count)
     }
 
+    // MARK: - Search Monitors
+
+    private let fixtureMonitors: [SearchMonitor] = [
+        SearchMonitor(
+            id: "monitor-1",
+            name: "Swift Concurrency Updates",
+            description: "Track Swift concurrency developments",
+            searchTerms: ["swift concurrency", "async await", "structured concurrency"],
+            intervalHours: 12,
+            noveltyThreshold: 0.3,
+            status: .active,
+            lastExecuted: "2026-02-20T10:00:00Z",
+            nextExecution: "2026-02-20T22:00:00Z",
+            created: "2026-02-01T00:00:00Z",
+            modified: "2026-02-20T10:00:00Z"
+        ),
+        SearchMonitor(
+            id: "monitor-2",
+            name: "AI Research",
+            description: "Monitor AI research papers and news",
+            searchTerms: ["large language models", "AI safety"],
+            intervalHours: 24,
+            noveltyThreshold: 0.5,
+            status: .paused,
+            lastExecuted: "2026-02-19T08:00:00Z",
+            nextExecution: "2026-02-21T08:00:00Z",
+            created: "2026-01-15T00:00:00Z",
+            modified: "2026-02-19T08:00:00Z"
+        )
+    ]
+
+    private let fixtureSummariesForMonitor: [SearchSummary] = [
+        SearchSummary(
+            timestamp: "2026-02-20T10:00:00Z",
+            summary: "New developments in Swift concurrency with isolation regions.",
+            topics: ["Swift", "Concurrency", "Isolation"],
+            noveltyScore: 0.7,
+            significantUpdate: true,
+            newItems: ["Isolation regions RFC", "Task executor improvements"],
+            changedItems: ["Actor reentrancy proposal updated"],
+            removedItems: [],
+            analysis: "Significant progress on isolation regions for safer concurrency."
+        ),
+        SearchSummary(
+            timestamp: "2026-02-19T10:00:00Z",
+            summary: "Minor updates to async sequence proposals.",
+            topics: ["Swift", "AsyncSequence"],
+            noveltyScore: 0.2,
+            significantUpdate: false,
+            newItems: [],
+            changedItems: ["AsyncSequence docs updated"],
+            removedItems: [],
+            analysis: nil
+        )
+    ]
+
+    func listSearchMonitors() async throws -> [SearchMonitor] {
+        fixtureMonitors
+    }
+
+    func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
+        let monitor = fixtureMonitors.first { $0.id == id } ?? fixtureMonitors[0]
+        return SearchMonitorDetailResponse(
+            monitor: monitor,
+            summaries: fixtureSummariesForMonitor,
+            summaryCount: fixtureSummariesForMonitor.count
+        )
+    }
+
+    func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
+        SearchMonitor(
+            id: "monitor-new",
+            name: request.name ?? "",
+            description: request.description ?? "",
+            searchTerms: request.searchTerms ?? [],
+            intervalHours: request.intervalHours ?? 6,
+            noveltyThreshold: request.noveltyThreshold ?? 0.3,
+            status: .active,
+            lastExecuted: nil,
+            nextExecution: "2026-02-21T00:00:00Z",
+            created: "2026-02-20T12:00:00Z",
+            modified: "2026-02-20T12:00:00Z"
+        )
+    }
+
+    func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
+        let existing = fixtureMonitors.first { $0.id == id } ?? fixtureMonitors[0]
+        return SearchMonitor(
+            id: existing.id,
+            name: request.name ?? existing.name,
+            description: request.description ?? existing.description,
+            searchTerms: request.searchTerms ?? existing.searchTerms,
+            intervalHours: request.intervalHours ?? existing.intervalHours,
+            noveltyThreshold: request.noveltyThreshold ?? existing.noveltyThreshold,
+            status: request.status.flatMap(SearchMonitorStatus.init(rawValue:)) ?? existing.status,
+            lastExecuted: existing.lastExecuted,
+            nextExecution: existing.nextExecution,
+            created: existing.created,
+            modified: "2026-02-20T12:00:00Z"
+        )
+    }
+
+    func deleteSearchMonitor(id: String) async throws {
+        // No-op for UI tests
+    }
+
+    func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] {
+        fixtureSummariesForMonitor
+    }
+
+    func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
+        fixtureSummariesForMonitor.first { $0.timestamp == timestamp } ?? fixtureSummariesForMonitor[0]
+    }
+
     // swiftlint:disable line_length
     private static let fixtureGraphNodes: [GraphNode] = [
         GraphNode(id: "doc:notes/meeting-notes.md", type: "document", label: "Team Meeting Notes", path: "notes/meeting-notes.md", classification: "meeting", entityType: nil),

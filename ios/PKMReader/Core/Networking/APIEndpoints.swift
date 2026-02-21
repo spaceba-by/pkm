@@ -58,4 +58,22 @@ enum APIEndpoints {
 
     /// Knowledge graph data endpoint
     static let graph = "/graph"
+
+    /// Search monitors endpoint
+    static let searchMonitors = "/searches"
+
+    /// Single search monitor endpoint
+    static func searchMonitor(id: String) -> String {
+        "/searches/\(id)"
+    }
+
+    /// Search monitor summaries endpoint
+    static func searchMonitorSummaries(monitorId: String, limit: Int = 20) -> String {
+        "/searches/\(monitorId)/summaries?limit=\(limit)"
+    }
+
+    /// Single search monitor summary endpoint
+    static func searchMonitorSummary(monitorId: String, timestamp: String) -> String {
+        "/searches/\(monitorId)/summaries/\(timestamp)"
+    }
 }

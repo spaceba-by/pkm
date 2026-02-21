@@ -13,11 +13,25 @@ struct SearchView: View {
             Group {
                 switch viewModel.state {
                 case .idle:
-                    EmptyStateView(
-                        icon: "magnifyingglass",
-                        title: "Search Documents",
-                        message: "Enter at least 2 characters to search"
-                    )
+                    List {
+                        Section {
+                            NavigationLink {
+                                SearchMonitorListView(apiClient: viewModel.apiClient)
+                            } label: {
+                                Label("Search Monitors", systemImage: "binoculars")
+                            }
+                            .accessibilityIdentifier("SearchMonitorsLink")
+                        }
+
+                        Section {
+                            EmptyStateView(
+                                icon: "magnifyingglass",
+                                title: "Search Documents",
+                                message: "Enter at least 2 characters to search"
+                            )
+                        }
+                    }
+                    .listStyle(.insetGrouped)
 
                 case .loading:
                     LoadingView(message: "Searching...")

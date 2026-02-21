@@ -1,7 +1,8 @@
+// swiftlint:disable file_length
 import Foundation
 
 /// HTTP client for PKM API with authentication and retry logic
-actor APIClient: APIClientProtocol {
+actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     private let baseURL: URL
     private let authService: any AuthServiceProtocol
     private let session: URLSession
@@ -187,6 +188,54 @@ actor APIClient: APIClientProtocol {
 
     func getGraphData() async throws -> GraphDataResponse {
         let url = baseURL.appendingPathComponent("graph")
+        return try await performRequestWithRetry(url: url)
+    }
+
+    // MARK: - Search Monitors
+
+    func listSearchMonitors() async throws -> [SearchMonitor] {
+        let url = baseURL.appendingPathComponent("searches")
+        let response: SearchMonitorListResponse = try await performRequestWithRetry(url: url)
+        return response.monitors
+    }
+
+    func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
+        let url = baseURL.appendingPathComponent("searches/\(id)")
+        return try await performRequestWithRetry(url: url)
+    }
+
+    func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
+        let url = baseURL.appendingPathComponent("searches")
+        return try await performEncodablePostWithRetry(url: url, body: request)
+    }
+
+    func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
+        let url = baseURL.appendingPathComponent("searches/\(id)")
+        return try await performEncodablePutWithRetry(url: url, body: request)
+    }
+
+    func deleteSearchMonitor(id: String) async throws {
+        let url = baseURL.appendingPathComponent("searches/\(id)")
+        try await performDeleteRequestWithRetry(url: url)
+    }
+
+    func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] {
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("searches/\(monitorId)/summaries"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+        guard let url = components?.url else {
+            throw APIError.invalidURL
+        }
+        let response: SearchSummaryListResponse = try await performRequestWithRetry(url: url)
+        return response.summaries
+    }
+
+    func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
+        let url = baseURL.appendingPathComponent("searches/\(monitorId)/summaries/\(timestamp)")
         return try await performRequestWithRetry(url: url)
     }
 
@@ -394,6 +443,118 @@ actor APIClient: APIClientProtocol {
             throw APIError.unauthorized
         case 404:
             throw APIError.httpError(statusCode: 404)
+        default:
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+    }
+
+    private func performEncodablePostWithRetry<Body: Encodable, T: Decodable>(
+        url: URL, body: Body
+    ) async throws -> T {
+        guard await networkMonitor.isConnected else {
+            throw APIError.networkError
+        }
+
+        var lastError: Error = APIError.networkError
+
+        for attempt in 0...maxRetries {
+            do {
+                return try await performEncodableMutatingRequest(url: url, method: "POST", body: body)
+            } catch let error as APIError where error.isRetryable && attempt < maxRetries {
+                lastError = error
+                guard await networkMonitor.isConnected else {
+                    throw APIError.networkError
+                }
+                let delay = baseRetryDelay * pow(2.0, Double(attempt))
+                try await Task.sleep(for: .seconds(delay))
+                continue
+            } catch {
+                throw error
+            }
+        }
+
+        throw lastError
+    }
+
+    private func performEncodablePutWithRetry<Body: Encodable, T: Decodable>(
+        url: URL, body: Body
+    ) async throws -> T {
+        guard await networkMonitor.isConnected else {
+            throw APIError.networkError
+        }
+
+        var lastError: Error = APIError.networkError
+
+        for attempt in 0...maxRetries {
+            do {
+                return try await performEncodableMutatingRequest(url: url, method: "PUT", body: body)
+            } catch let error as APIError where error.isRetryable && attempt < maxRetries {
+                lastError = error
+                guard await networkMonitor.isConnected else {
+                    throw APIError.networkError
+                }
+                let delay = baseRetryDelay * pow(2.0, Double(attempt))
+                try await Task.sleep(for: .seconds(delay))
+                continue
+            } catch {
+                throw error
+            }
+        }
+
+        throw lastError
+    }
+
+    private func performEncodableMutatingRequest<Body: Encodable, T: Decodable>(
+        url: URL, method: String, body: Body
+    ) async throws -> T {
+        let token = try await authService.getAccessToken()
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 30
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let urlError as URLError {
+            switch urlError.code {
+            case .timedOut:
+                throw APIError.timeout
+            case .notConnectedToInternet,
+                 .networkConnectionLost,
+                 .cannotConnectToHost,
+                 .cannotFindHost,
+                 .dnsLookupFailed:
+                throw APIError.networkError
+            default:
+                throw APIError.networkError
+            }
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decodingError
+            }
+        case 401:
+            throw APIError.unauthorized
+        case 403:
+            throw APIError.httpError(statusCode: 403)
+        case 404:
+            throw APIError.httpError(statusCode: 404)
+        case 409:
+            throw APIError.httpError(statusCode: 409)
         default:
             throw APIError.httpError(statusCode: httpResponse.statusCode)
         }
