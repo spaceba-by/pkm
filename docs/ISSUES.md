@@ -32,22 +32,7 @@ This document tracks known limitations, technical debt, and planned enhancements
 - **Solution**: Implement continuation token pagination if needed
 - **Priority**: Low - will not be an issue for years
 
-### Test Stability
-
-#### InsightsViewSnapshotTests.test_summariesTab() flaky in CI
-- **Issue**: `InsightsViewSnapshotTests.test_summariesTab()` snapshot test fails intermittently in CI
-- **Location**: `ios/PKMReaderTests/Snapshots/Screens/InsightsViewSnapshotTests.swift`
-- **Impact**: CI pipeline produces false-negative test failures, requiring manual re-runs
-- **Likely Cause**: The test calls `assertDeviceSnapshotAfterTask` which waits for async tasks to complete before capturing a snapshot. Timing differences in CI (slower runners, resource contention) may cause the view to be captured before the mock data has fully rendered.
-- **Priority**: Medium - reduces confidence in CI results
-
 ### Security
-
-#### Admin Routes Authorization
-- **Issue**: Future admin routes (write operations, user management) will need authorization beyond JWT validation
-- **Impact**: Current read-only API is secure, but write operations need additional controls
-- **Solution**: Implement Cognito user groups with group-based access control for admin operations
-- **Priority**: Medium - needed before implementing write endpoints
 
 #### Password Auth Flow
 - **Issue**: `ALLOW_USER_PASSWORD_AUTH` is less secure than SRP auth
@@ -61,6 +46,16 @@ This document tracks known limitations, technical debt, and planned enhancements
 - [x] Converted `extract_metadata` from `ddb/put-item` (full replace) to `ddb/update-item-attrs` (field-level SET)
 - [x] Added `update-item-attrs` helper to `dynamodb.clj` that builds SET expressions from a map, using `ExpressionAttributeNames` to avoid DynamoDB reserved word conflicts
 - [x] Parser-derived fields (title, tags, links_to, etc.) are now updated without clobbering classification/entity attributes written by other Lambdas
+
+### Snapshot Test Flakiness (PR #100)
+- [x] InsightsViewSnapshotTests failed intermittently due to timezone-dependent date resolution
+- [x] Fixed by using noon UTC timestamp and injecting a deterministic UTC calendar into snapshot tests
+- [x] Pinned `firstWeekday`, locale, and timezone for consistent rendering across CI and local environments
+
+### Admin Routes Authorization (Task 0010)
+- [x] Implemented Cognito user groups (admin, reader) for role-based access control
+- [x] Added group-based authorization in Lambda handlers via JWT claims
+- [x] Three admin-only endpoints: create, update, delete documents
 
 ### Phase 1 Review Fixes (PR #18)
 - [x] Terraform conditional resources respect `enable_mobile_api` flag

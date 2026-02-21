@@ -28,7 +28,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │  │  • markdown-events  │       │    API Gateway (HTTP)    │  │
 │  │  • daily-schedule   │       │  • JWT Authorizer        │  │
 │  │  • weekly-schedule  │       │  • CORS enabled          │  │
-│  └───┬─────────────────┘       │  • 10 REST endpoints     │  │
+│  └───┬─────────────────┘       │  • 21 REST endpoints     │  │
 │      │                          └────────────┬─────────────┘  │
 │      ▼                                       │                │
 │  ┌────────────────────┐       ┌──────────────▼─────────────┐ │
@@ -40,9 +40,12 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │  │ • weekly-report    │       │ • api-documents-by-tag     │ │
 │  │ • update-index     │       │ • api-list-classifications │ │
 │  │ • bulk-reclassify  │       │ • api-list-summaries       │ │
-│  └─────────┬──────────┘       │ • api-list-reports         │ │
-│            │                   │ • api-update-classification│ │
-│            │                   │ • api-bulk-reclassify      │ │
+│  │ • delete-document  │       │ • api-list-reports         │ │
+│  │ • index-embeddings │       │ • api-update-classification│ │
+│  │ • persistent-search│       │ • api-bulk-reclassify      │ │
+│  └─────────┬──────────┘       │ • api-create/update/delete │ │
+│            │                   │ • api-graph-data           │ │
+│            │                   │ • api-search-monitors      │ │
 │            │                   └──────────────┬─────────────┘ │
 │            │                                  │                │
 │            ▼                                  ▼                │
@@ -108,7 +111,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 #### Lambda Functions
 
-**Processing Functions (7):**
+**Processing Functions (11):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
@@ -119,14 +122,23 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `generate-weekly-report` | Babashka | 2048 MB | 120s | Step Function | Generate weekly report |
 | `update-classification-index` | Babashka | 256 MB | 30s | Scheduled (every 6 hours) | Update classification index |
 | `bulk-reclassify` | Babashka | 512 MB | 300s | API invoke | Bulk reclassification with dry-run |
+| `delete-document` | Babashka | 256 MB | 10s | S3 DELETE | Cascade-delete DynamoDB records |
+| `persistent-search-execute` | Babashka | 512 MB | 60s | Scheduled | Execute search monitors via Brave API |
+| `persistent-search-summarize` | Babashka | 1024 MB | 60s | Invoke | Summarize search results with AI |
 
-**API Functions (10):**
+**CLI Utilities** (run locally, not deployed as Lambda):
+
+| Script | Purpose |
+|--------|---------|
+| `index-embeddings` | Generate vector embeddings for semantic search index |
+
+**API Functions (17):**
 
 | Function | Runtime | Memory | Timeout | Endpoint | Purpose |
 |----------|---------|--------|---------|----------|---------|
 | `api-list-documents` | Babashka | 256 MB | 10s | GET /documents | List documents with filters |
 | `api-get-document` | Babashka | 256 MB | 10s | GET /documents/{key+} | Get document with content |
-| `api-search` | Babashka | 256 MB | 10s | GET /search | Search by title/path/tags |
+| `api-search` | Babashka | 256 MB | 10s | GET /search | Search by title/path/tags/semantic |
 | `api-list-tags` | Babashka | 256 MB | 10s | GET /tags | List all tags with counts |
 | `api-documents-by-tag` | Babashka | 256 MB | 10s | GET /tags/{tag}/documents | Get docs by tag |
 | `api-list-classifications` | Babashka | 256 MB | 10s | GET /classifications | List classification counts |
@@ -134,6 +146,13 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `api-list-reports` | Babashka | 256 MB | 10s | GET /reports | List weekly reports |
 | `api-update-classification` | Babashka | 256 MB | 10s | PUT /documents/classification/{key+} | Update classification |
 | `api-bulk-reclassify` | Babashka | 256 MB | 10s | POST /admin/reclassify | Trigger bulk reclassification |
+| `api-create-document` | Babashka | 256 MB | 10s | POST /documents | Create document (admin) |
+| `api-update-document` | Babashka | 256 MB | 10s | PUT /documents/{key+} | Update document (admin) |
+| `api-delete-document` | Babashka | 256 MB | 10s | DELETE /documents/{key+} | Delete document (admin) |
+| `api-graph-data` | Babashka | 256 MB | 10s | GET /graph | Entity relationship graph |
+| `api-search-monitors` | Babashka | 256 MB | 10s | GET /searches | List search monitors |
+| `api-search-monitor-detail` | Babashka | 256 MB | 10s | GET /searches/{id} | Search monitor detail |
+| `api-search-summaries` | Babashka | 256 MB | 10s | GET /searches/{id}/summaries | List search summaries |
 
 **Shared Code:**
 - Common utilities in `lambda/shared/`: `aws/bedrock.clj`, `aws/dynamodb.clj`, `aws/s3.clj`, `markdown/utils.clj`
@@ -165,16 +184,27 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 - **Throttling:** 100 burst, 50 requests/second
 - **Endpoints:**
   ```
-  GET /documents              - List with optional classification filter
-  GET /documents/{key+}       - Get document with content
-  GET /search?q=...           - Search documents
-  GET /tags                   - List all tags
-  GET /tags/{tag}/documents   - Get documents by tag
-  GET /classifications        - List classification types
-  GET /summaries              - List daily summaries
-  GET /reports                - List weekly reports
-  PUT /documents/classification/{key+} - Update classification
-  POST /admin/reclassify      - Trigger bulk reclassification
+  GET    /documents                            - List with optional classification filter
+  GET    /documents/{key+}                     - Get document with content
+  POST   /documents                            - Create document (admin)
+  PUT    /documents/{key+}                     - Update document (admin)
+  DELETE /documents/{key+}                     - Delete document (admin)
+  GET    /search?q=...                         - Search documents (keyword/semantic)
+  GET    /tags                                 - List all tags
+  GET    /tags/{tag}/documents                 - Get documents by tag
+  GET    /classifications                      - List classification types
+  GET    /summaries                            - List daily summaries
+  GET    /reports                              - List weekly reports
+  PUT    /documents/classification/{key+}      - Update classification
+  POST   /admin/reclassify                     - Trigger bulk reclassification
+  GET    /graph                                - Entity relationship graph data
+  POST   /searches                             - Create search monitor
+  GET    /searches                             - List search monitors
+  GET    /searches/{id}                        - Search monitor detail
+  PUT    /searches/{id}                        - Update search monitor
+  DELETE /searches/{id}                        - Delete search monitor
+  GET    /searches/{id}/summaries              - List search summaries
+  GET    /searches/{id}/summaries/{timestamp}  - Search summary detail
   ```
 
 ### 4. Event-Driven Processing
@@ -381,8 +411,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 ## Future Enhancements
 
-1. **Semantic Search:** Add OpenSearch for full-text search
+1. ~~**Semantic Search:** Add OpenSearch for full-text search~~ ✅ Implemented (Task 0009) — in-memory vector index with cosine similarity
 2. **Real-time Notifications:** SNS/email for summaries
 3. **Custom Workflows:** User-defined processing rules
-4. **Knowledge Graph:** Visualization of entity relationships
+4. ~~**Knowledge Graph:** Visualization of entity relationships~~ ✅ Implemented (Task 0011) — interactive force-directed graph in iOS
 5. **Multi-user Support:** Separate vaults per user
