@@ -14,6 +14,8 @@ final class InsightsViewSnapshotTests: SnapshotTestCase {
         // swiftlint:disable:next force_unwrapping
         cal.timeZone = TimeZone(identifier: "UTC")!
         cal.locale = Locale(identifier: "en_US_POSIX")
+        cal.firstWeekday = 1 // Sunday
+        cal.minimumDaysInFirstWeek = 1
         return cal
     }()
 
