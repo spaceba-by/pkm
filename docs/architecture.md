@@ -111,7 +111,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 #### Lambda Functions
 
-**Processing Functions (11):**
+**Processing Functions (10):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|

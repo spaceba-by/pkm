@@ -16,7 +16,7 @@ Serverless AWS system for Personal Knowledge Management (PKM). Automatically pro
 
 ## Common Commands
 
-All Lambda development happens in the `lambda/` directory:
+### Lambda (from `lambda/` directory)
 
 ```bash
 cd lambda
@@ -31,6 +31,17 @@ bb build.clj                      # Build all functions
 bb build.clj extract_metadata     # Build single function
 ```
 Output ZIPs are placed in `lambda/target/`.
+
+### iOS (from `ios/` directory)
+
+```bash
+cd ios
+mise run test          # Run all tests (unit + UI)
+mise run test:unit     # Run unit tests only (faster)
+mise run lint          # Check code with SwiftLint
+mise run lint:fix      # Auto-fix SwiftLint issues
+mise run generate      # Regenerate Xcode project from project.yml
+```
 
 ## Deployment
 
@@ -47,11 +58,8 @@ aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 
 ## Architecture
 
-** Development Context **
-
-- See @docs/ROADMAP.md for current status and next steps.
-- Task based development workflow with numbered tasks in `docs/tasks` directory
-- ** Current Status **: In progress functional implementation. 
+- See `docs/ROADMAP.md` for current status and next steps.
+- Task-based development workflow with numbered tasks in `docs/tasks/` directory.
 
 ```
 Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock (Claude)
@@ -61,38 +69,7 @@ Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock
                               _agent/ outputs ← rclone ←─┘
 ```
 
-**27 Lambda Functions** (all Babashka/Clojure):
-
-Processing (10):
-- `extract_metadata` - Parse frontmatter, tags, links
-- `classify_document` - AI classification (meeting/idea/reference/journal/project)
-- `extract_entities` - Named entity extraction (people, orgs, concepts, locations)
-- `generate_daily_summary` - Daily activity summaries (6 AM UTC)
-- `generate_weekly_report` - Weekly analysis (8 PM UTC Sunday)
-- `update_classification_index` - Maintain classification index (scheduled every 6 hours)
-- `bulk_reclassify` - Bulk reclassification with dry-run mode and filtering
-- `delete_document` - Cascade-delete DynamoDB records on S3 object deletion
-- `persistent_search_execute` - Execute persistent search monitors via Brave Search API
-- `persistent_search_summarize` - AI-driven summarization of search results
-
-Mobile API (17):
-- `api_list_documents` - List documents with optional classification filter
-- `api_get_document` - Get document with content
-- `api_search` - Search by title, path, tags (keyword and semantic modes)
-- `api_list_tags` - List all tags with counts
-- `api_documents_by_tag` - Get documents by specific tag
-- `api_list_classifications` - List classification types with counts
-- `api_list_summaries` - List daily AI summaries
-- `api_list_reports` - List weekly AI reports
-- `api_update_classification` - Classification feedback/correction (PUT)
-- `api_bulk_reclassify` - Trigger bulk reclassification (POST)
-- `api_create_document` - Create new document (admin only, POST)
-- `api_update_document` - Update existing document (admin only, PUT)
-- `api_delete_document` - Delete document (admin only, DELETE)
-- `api_graph_data` - Entity relationship graph data (GET)
-- `api_search_monitors` - Manage persistent search monitors (CRUD via `/searches`)
-- `api_search_monitor_detail` - Single search monitor operations via `/searches/{id}`
-- `api_search_summaries` - Search result summaries via `/searches/{id}/summaries`
+**28 functions** in `lambda/functions/` (all Babashka/Clojure): 10 processing + 17 API + 1 CLI utility (`index_embeddings`). See `docs/architecture.md` for the complete function list with endpoints, memory, and timeout details.
 
 **Bedrock Models** (defined in `terraform/variables.tf`):
 - Haiku 4.5: Fast classification and extraction
@@ -102,10 +79,10 @@ Mobile API (17):
 
 ```
 lambda/
-├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj)
+├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj, lambda.clj, secrets_manager.clj, brave_search.clj)
 ├── shared/api/           # API response utilities (response.clj)
 ├── shared/markdown/      # Markdown parsing utilities
-├── functions/            # 27 Lambda functions + 1 CLI utility
+├── functions/            # 28 functions (10 processing + 17 API + 1 CLI utility)
 └── tests/                # Unit tests (99 tests, 646 assertions)
 
 terraform/                # All AWS infrastructure

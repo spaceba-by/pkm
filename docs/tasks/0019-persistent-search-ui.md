@@ -1,6 +1,6 @@
 # Task 0019: Persistent Search UI
 
-**Status**: Planned
+**Status**: Complete ✅
 
 ## Specifications
 
@@ -80,6 +80,12 @@ analysis: String?
 - `ios/PKMReader/Features/Search/SearchSummaryView.swift` — Summary detail rendering
 - `ios/PKMReaderTests/Features/Search/SearchMonitorListViewModelTests.swift` — List VM tests
 - `ios/PKMReaderTests/Features/Search/SearchMonitorDetailViewModelTests.swift` — Detail VM tests
+- `ios/PKMReaderTests/Models/SearchMonitorModelTests.swift` — Model encoding/decoding tests
+- `ios/PKMReaderTests/Snapshots/Screens/SearchMonitorDetailViewSnapshotTests.swift` — Detail view snapshots
+- `ios/PKMReaderTests/Snapshots/Screens/SearchSummaryViewSnapshotTests.swift` — Summary view snapshots
+- `ios/PKMReaderTests/Snapshots/Components/SearchMonitorComponentSnapshotTests.swift` — Component snapshots
+- `ios/PKMReaderUITests/Screens/SearchMonitorScreenTests.swift` — UI tests
+- `ios/PKMReaderUITests/PageObjects/SearchMonitorPage.swift` — Page object for UI tests
 
 ### Modified Files
 - `ios/PKMReader/Core/Networking/APIClientProtocol.swift` — Add 7 search monitor methods
@@ -96,37 +102,54 @@ analysis: String?
 
 ## Acceptance Criteria
 
-- [ ] SearchMonitor and SearchSummary models created as Codable/Sendable structs
-- [ ] APIClientProtocol extended with 7 search monitor methods
-- [ ] APIClient implements all search monitor API calls following existing patterns
-- [ ] Monitor list view displays all monitors with status, next execution, and novelty indicators
-- [ ] Monitor detail view shows configuration and chronological summaries
-- [ ] Create form validates: non-blank name, non-empty search terms, intervalHours 1-168, threshold 0.0-1.0
-- [ ] Edit form pre-populates existing values and supports partial updates
-- [ ] Pause/resume toggle on monitor detail view
-- [ ] Swipe-to-delete with confirmation dialog
-- [ ] Summary detail view renders summary text, topics, novelty score, new/changed/removed items
-- [ ] Significant updates visually highlighted in summary list
-- [ ] Pull-to-refresh on monitor list and detail views
-- [ ] UITestAPIClient provides fixture search monitor data
-- [ ] MockAPIClient supports configurable results for all 7 methods
-- [ ] Unit tests for SearchMonitorListViewModel (list, create, delete, error states)
-- [ ] Unit tests for SearchMonitorDetailViewModel (load, update, pause/resume, summaries)
-- [ ] All existing tests continue to pass
+- [x] SearchMonitor and SearchSummary models created as Codable/Sendable structs
+- [x] APIClientProtocol extended with 7 search monitor methods
+- [x] APIClient implements all search monitor API calls following existing patterns
+- [x] Monitor list view displays all monitors with status, next execution, and novelty indicators
+- [x] Monitor detail view shows configuration and chronological summaries
+- [x] Create form validates: non-blank name, non-empty search terms, intervalHours 1-168, threshold 0.0-1.0
+- [x] Edit form pre-populates existing values and supports partial updates
+- [x] Pause/resume toggle on monitor detail view
+- [x] Swipe-to-delete with confirmation dialog
+- [x] Summary detail view renders summary text, topics, novelty score, new/changed/removed items
+- [x] Significant updates visually highlighted in summary list
+- [x] Pull-to-refresh on monitor list and detail views
+- [x] UITestAPIClient provides fixture search monitor data
+- [x] MockAPIClient supports configurable results for all 7 methods
+- [x] Unit tests for SearchMonitorListViewModel (list, create, delete, error states)
+- [x] Unit tests for SearchMonitorDetailViewModel (load, update, pause/resume, summaries)
+- [x] All existing tests continue to pass
 
 ## Implementation Steps
 
-- [ ] Step 1: Create SearchMonitor and SearchSummary models with response wrapper structs
-- [ ] Step 2: Add search monitor methods to APIClientProtocol
-- [ ] Step 3: Implement API calls in APIClient following existing GET/POST/PUT/DELETE patterns
-- [ ] Step 4: Add endpoints to APIEndpoints
-- [ ] Step 5: Create SearchMonitorListViewModel with list, create, and delete operations
-- [ ] Step 6: Create SearchMonitorListView with monitor cards showing status, terms, schedule
-- [ ] Step 7: Create SearchMonitorFormView for create and edit with input validation
-- [ ] Step 8: Create SearchMonitorDetailViewModel with load, update, pause/resume, and summary fetching
-- [ ] Step 9: Create SearchMonitorDetailView showing monitor config and summary timeline
-- [ ] Step 10: Create SearchSummaryView for rendering individual summary details
-- [ ] Step 11: Integrate monitor list into SearchView (section or navigation link)
-- [ ] Step 12: Add fixture data to UITestAPIClient and MockAPIClient
-- [ ] Step 13: Write unit tests for both view models
-- [ ] Step 14: Verify all existing tests pass, run linting
+- [x] Step 1: Create SearchMonitor and SearchSummary models with response wrapper structs
+- [x] Step 2: Add search monitor methods to APIClientProtocol
+- [x] Step 3: Implement API calls in APIClient following existing GET/POST/PUT/DELETE patterns
+- [x] Step 4: Add endpoints to APIEndpoints
+- [x] Step 5: Create SearchMonitorListViewModel with list, create, and delete operations
+- [x] Step 6: Create SearchMonitorListView with monitor cards showing status, terms, schedule
+- [x] Step 7: Create SearchMonitorFormView for create and edit with input validation
+- [x] Step 8: Create SearchMonitorDetailViewModel with load, update, pause/resume, and summary fetching
+- [x] Step 9: Create SearchMonitorDetailView showing monitor config and summary timeline
+- [x] Step 10: Create SearchSummaryView for rendering individual summary details
+- [x] Step 11: Integrate monitor list into SearchView (section or navigation link)
+- [x] Step 12: Add fixture data to UITestAPIClient and MockAPIClient
+- [x] Step 13: Write unit tests for both view models
+- [x] Step 14: Verify all existing tests pass, run linting
+
+## Summary of Changes
+
+### PR #103: feat: add persistent search monitor UI for iOS (Task 0019)
+
+- 7 new API client methods for search monitor CRUD with retry logic and authentication
+- 4 new SwiftUI views (list, detail, form, summary) with state management and error handling
+- 2 view models with comprehensive state management (loading/loaded/error/empty)
+- URL encoding via successive `appendingPathComponent` calls (avoids double-encoding)
+- Type-safe `SearchMonitorStatus` enum used in request models
+- Error handling with user-facing alerts for delete and toggle actions
+- Static DateFormatter caching for performance
+- Empty/error states wrapped in ScrollView for consistent pull-to-refresh
+- Snapshot tests for detail view, summary view, and components (NoveltyIndicator, StatusBadge)
+- Model unit tests for all Codable types and response wrappers
+- 10 UI tests for monitor list and form views
+- Code coverage: 75.58% (above 74% threshold)

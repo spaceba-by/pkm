@@ -158,9 +158,7 @@ Coverage threshold is 78% (enforced in CI).
 
 ## Implementation Plan Reference
 
-See `docs/tasks/` for task specifications and `docs/ROADMAP.md` for current status.
-
-Completed tasks include: CI/CD (0003-0004), backend API (0005), app scaffold (0006), enhanced features (0007), test coverage (0012), classification improvements (0014), polish & release (0008), backfill (0016), UI improvements (0018), document deletion (0015), semantic search (0009), write support (0010), knowledge graph (0011), and insights calendar (0017).
+See `docs/tasks/` for task specifications and `docs/ROADMAP.md` for current status and completed tasks.
 
 ## Deployment Target
 

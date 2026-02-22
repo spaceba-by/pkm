@@ -35,9 +35,11 @@ terraform plan -var="lambda_source_type=s3" -var="lambda_build_tag=main-abc123"
 | `s3.tf` | Vault S3 bucket |
 | `s3_artifacts.tf` | Lambda artifacts bucket |
 | `dynamodb.tf` | Metadata table |
-| `lambda.tf` | Processing Lambda functions (6) |
-| `api_lambda.tf` | API Lambda functions (8) |
+| `lambda.tf` | Processing Lambda functions |
+| `api_lambda.tf` | API Lambda functions |
+| `persistent_search_lambda.tf` | Persistent search Lambda functions |
 | `api_gateway.tf` | HTTP API Gateway with routes |
+| `api_persistent_search.tf` | Persistent search API routes |
 | `cognito.tf` | User Pool, App Client, Identity Pool |
 | `eventbridge.tf` | Event rules and schedules |
 | `stepfunctions.tf` | Weekly report workflow |

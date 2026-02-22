@@ -25,6 +25,11 @@ lambda/
 │   ├── update_classification_index/
 │   ├── generate_daily_summary/
 │   ├── generate_weekly_report/
+│   ├── bulk_reclassify/
+│   ├── delete_document/
+│   ├── persistent_search_execute/
+│   ├── persistent_search_summarize/
+│   ├── index_embeddings/          # CLI utility (not deployed)
 │   ├── api_list_documents/
 │   ├── api_get_document/
 │   ├── api_search/
@@ -35,7 +40,13 @@ lambda/
 │   ├── api_list_reports/
 │   ├── api_update_classification/
 │   ├── api_bulk_reclassify/
-│   └── bulk_reclassify/
+│   ├── api_create_document/
+│   ├── api_update_document/
+│   ├── api_delete_document/
+│   ├── api_graph_data/
+│   ├── api_search_monitors/
+│   ├── api_search_monitor_detail/
+│   └── api_search_summaries/
 └── tests/                # Unit tests
 
 ```
@@ -82,7 +93,7 @@ Output ZIPs are placed in `target/`.
 
 ## Lambda Functions
 
-### Processing (7)
+### Processing (10)
 
 | Function | Description |
 |----------|-------------|
@@ -93,14 +104,17 @@ Output ZIPs are placed in `target/`.
 | generate-daily-summary | Daily activity summaries |
 | generate-weekly-report | Weekly analysis reports |
 | bulk-reclassify | Bulk reclassification with dry-run mode and filtering |
+| delete-document | Cascade-delete DynamoDB records on S3 object deletion |
+| persistent-search-execute | Execute search monitors via Brave Search API |
+| persistent-search-summarize | AI-driven summarization of search results |
 
-### Mobile API (10)
+### Mobile API (17)
 
 | Function | Description |
 |----------|-------------|
 | api-list-documents | List documents with optional classification filter |
 | api-get-document | Get document with content |
-| api-search | Search by title, path, tags |
+| api-search | Search by title, path, tags (keyword/semantic) |
 | api-list-tags | List all tags with counts |
 | api-documents-by-tag | Get documents by specific tag |
 | api-list-classifications | List classification types with counts |
@@ -108,6 +122,13 @@ Output ZIPs are placed in `target/`.
 | api-list-reports | List weekly AI reports |
 | api-update-classification | Classification feedback/correction (PUT) |
 | api-bulk-reclassify | Trigger bulk reclassification (POST) |
+| api-create-document | Create new document (admin only, POST) |
+| api-update-document | Update existing document (admin only, PUT) |
+| api-delete-document | Delete document (admin only, DELETE) |
+| api-graph-data | Entity relationship graph data (GET) |
+| api-search-monitors | Manage persistent search monitors (CRUD) |
+| api-search-monitor-detail | Single search monitor operations |
+| api-search-summaries | Search result summaries |
 
 ## Advantages over Python
 

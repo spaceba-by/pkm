@@ -29,7 +29,7 @@ iOS App → API Gateway (JWT) → Lambda → DynamoDB/S3
 **AWS Services Used:**
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
-- **Lambda:** 17 serverless functions (7 processing + 10 API)
+- **Lambda:** 28 serverless functions (10 processing + 17 API + 1 CLI utility)
 - **Bedrock:** Claude Haiku 4.5 and Sonnet 4.5 for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
@@ -118,7 +118,10 @@ The system includes a REST API for iOS app access:
 |----------|-------------|
 | `GET /documents` | List documents with optional classification filter |
 | `GET /documents/{key+}` | Get document with content |
-| `GET /search?q=...` | Search documents by title, path, tags |
+| `POST /documents` | Create document (admin only) |
+| `PUT /documents/{key+}` | Update document (admin only) |
+| `DELETE /documents/{key+}` | Delete document (admin only) |
+| `GET /search?q=...` | Search documents by title, path, tags (keyword/semantic) |
 | `GET /tags` | List all tags with counts |
 | `GET /tags/{tag}/documents` | Get documents by tag |
 | `GET /classifications` | List classification types with counts |
@@ -126,6 +129,13 @@ The system includes a REST API for iOS app access:
 | `GET /reports` | List weekly AI reports |
 | `PUT /documents/classification/{key+}` | Update document classification |
 | `POST /admin/reclassify` | Trigger bulk reclassification |
+| `GET /graph` | Entity relationship graph data |
+| `GET /searches` | List search monitors |
+| `GET /searches/{id}` | Search monitor detail |
+| `PUT /searches/{id}` | Update search monitor |
+| `DELETE /searches/{id}` | Delete search monitor |
+| `POST /searches` | Create search monitor |
+| `GET /searches/{id}/summaries` | List search summaries |
 
 **Authentication:** Cognito User Pool with JWT tokens
 
@@ -191,6 +201,11 @@ pkm-agent-system/
 │   │   ├── generate_daily_summary/
 │   │   ├── generate_weekly_report/
 │   │   ├── update_classification_index/
+│   │   ├── bulk_reclassify/
+│   │   ├── delete_document/
+│   │   ├── persistent_search_execute/
+│   │   ├── persistent_search_summarize/
+│   │   ├── index_embeddings/          # CLI utility (not deployed)
 │   │   ├── api_list_documents/
 │   │   ├── api_get_document/
 │   │   ├── api_search/
@@ -201,7 +216,13 @@ pkm-agent-system/
 │   │   ├── api_list_reports/
 │   │   ├── api_update_classification/
 │   │   ├── api_bulk_reclassify/
-│   │   └── bulk_reclassify/
+│   │   ├── api_create_document/
+│   │   ├── api_update_document/
+│   │   ├── api_delete_document/
+│   │   ├── api_graph_data/
+│   │   ├── api_search_monitors/
+│   │   ├── api_search_monitor_detail/
+│   │   └── api_search_summaries/
 │   └── tests/             # Unit tests
 ├── ios/                   # iOS app (SwiftUI)
 ├── scripts/               # Deployment and setup scripts
@@ -210,8 +231,13 @@ pkm-agent-system/
 │   ├── test-workflow.sh
 │   ├── test-api.sh        # API integration tests
 │   ├── create-cognito-user.sh
+│   ├── configure-ios.sh   # iOS app configuration
+│   ├── cleanup-old-builds.sh # Remove old Lambda build artifacts
 │   ├── backfill.clj       # Backfill unprocessed documents
-│   └── bulk-reclassify.sh # Bulk reclassification CLI
+│   ├── bulk-reclassify.sh # Bulk reclassification CLI
+│   ├── cleanup-orphans.clj # Remove orphaned DynamoDB records
+│   ├── fix-dates.clj      # Fix document date metadata
+│   └── index-embeddings.clj # Build/update vector search index
 └── sync/                  # Sync configuration
     └── README.md
 ```
@@ -380,12 +406,21 @@ terraform apply
 - [x] iOS enhanced features (Search, Tags, Insights, Settings)
 - [x] iOS test coverage (unit tests, UI tests, mock API)
 - [x] Classification system improvements (enhanced prompts, feedback API, bulk reclassify)
-- [ ] iOS polish & release (Phase 4) — in progress
-- [ ] Semantic search with OpenSearch
-- [ ] Persistent search monitors
+- [x] iOS polish & release (error handling, accessibility, snapshot tests, App Store)
+- [x] Backfill pre-existing documents
+- [x] Document deletion cleanup
+- [x] Semantic search (in-memory vector index with cosine similarity)
+- [x] Write support & admin API (create, update, delete documents)
+- [x] Knowledge graph visualization (force-directed graph in iOS)
+- [x] Insights calendar design (monthly calendar grid)
+- [x] Persistent search monitors (Brave Search API, AI summarization)
+- [x] Persistent search UI (iOS views for search monitors)
+- [x] iOS UI improvements (front matter stripping, checkboxes, wikilinks)
+- [ ] Secrets management
+- [ ] Push notifications
+- [ ] Webhook receiving & classification
 - [ ] Interactive chat interface
 - [ ] Task extraction and tracking
-- [ ] Knowledge graph visualization
 - [ ] Email/calendar integration
 
 ## Contributing
