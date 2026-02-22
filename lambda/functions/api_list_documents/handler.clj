@@ -27,7 +27,9 @@
         nil))))
 
 (def sort-index
-  "Map sort parameter to GSI name"
+  "Map sort parameter to GSI name.
+   Note: all-documents-created-index only includes items that have a 'created'
+   attribute. Items missing 'created' are not projected into the GSI."
   {"modified" "all-documents-modified-index"
    "created"  "all-documents-created-index"})
 
@@ -47,7 +49,9 @@
     [items (encode-cursor last-key)]))
 
 (defn list-by-classification
-  "Query documents by classification using GSI, ordered by modified date descending"
+  "Query documents by classification using GSI, ordered by modified date descending.
+   Note: classification-index only supports modified as range key. The sort param
+   is ignored here; client-side re-sort handles created ordering for filtered results."
   [classification limit cursor]
   (let [start-key (decode-cursor cursor)
         [items last-key] (ddb/query-to-limit ddb-table

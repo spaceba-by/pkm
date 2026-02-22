@@ -47,6 +47,9 @@ final class DocumentListViewModel: ObservableObject {
     /// API client for fetching documents
     let apiClient: any APIClientProtocol
 
+    /// In-flight load task, cancelled when a new load begins
+    private var loadTask: Task<Void, Never>?
+
     /// Initialize with an API client
     /// - Parameter apiClient: The API client to use for fetching documents
     init(apiClient: any APIClientProtocol) {
@@ -55,9 +58,12 @@ final class DocumentListViewModel: ObservableObject {
 
     /// Load the initial page of documents
     func loadDocuments() async {
+        loadTask?.cancel()
         state = .loading
         nextCursor = nil
-        await fetchDocuments()
+        let task = Task { await fetchDocuments() }
+        loadTask = task
+        await task.value
     }
 
     /// Load the next page of documents
@@ -71,6 +77,9 @@ final class DocumentListViewModel: ObservableObject {
                 cursor: cursor,
                 sort: sortOrder
             )
+
+            // Don't update state if a new load was started while we were awaiting
+            guard !Task.isCancelled else { return }
 
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
@@ -103,6 +112,9 @@ final class DocumentListViewModel: ObservableObject {
                 cursor: nil,
                 sort: sortOrder
             )
+
+            // Don't update state if a new load was started while we were awaiting
+            guard !Task.isCancelled else { return }
 
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
