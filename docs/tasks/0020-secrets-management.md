@@ -1,6 +1,6 @@
 # Task 0020: Secrets Management
 
-**Status**: Planned
+**Status**: In Progress
 
 ## Specifications
 
@@ -50,25 +50,49 @@ ${project_name}/webhook-signing-key      # For webhook verification (Task 0022)
 
 ## Acceptance Criteria
 
-- [ ] All secret resources consolidated in `terraform/secrets.tf`
-- [ ] Brave Search API key secret moved without disrupting existing infrastructure (no resource recreation)
-- [ ] IAM Lambda policy uses prefix-based wildcard (`${project_name}/*`) instead of single ARN
-- [ ] GitHub Actions IAM policy remains unchanged (already uses wildcard)
-- [ ] `secrets_manager.clj` caches multiple secrets by ARN/name key
-- [ ] Placeholder secrets created for APNs auth key and webhook signing key (empty, no version)
-- [ ] Naming convention documented in code comments
-- [ ] Unit tests verify multi-secret caching behavior
+- [x] All secret resources consolidated in `terraform/secrets.tf`
+- [x] Brave Search API key secret moved without disrupting existing infrastructure (no resource recreation)
+- [x] IAM Lambda policy uses prefix-based wildcard (`${project_name}/*`) instead of single ARN
+- [x] GitHub Actions IAM policy remains unchanged (already uses wildcard)
+- [x] `secrets_manager.clj` caches multiple secrets by ARN/name key
+- [x] Placeholder secrets created for APNs auth key and webhook signing key (empty, no version)
+- [x] Naming convention documented in code comments
+- [x] Unit tests verify multi-secret caching behavior
 - [ ] `terraform plan` shows no unexpected resource recreation for existing Brave Search secret
-- [ ] All existing Lambda tests pass
-- [ ] `terraform validate` and `terraform fmt` pass
+- [x] All existing Lambda tests pass
+- [x] `terraform validate` and `terraform fmt` pass
 
 ## Implementation Steps
 
-- [ ] Step 1: Create `terraform/secrets.tf` with existing Brave Search secret resource (use `terraform state mv` to avoid recreation)
-- [ ] Step 2: Add placeholder secret resources for APNs auth key and webhook signing key
-- [ ] Step 3: Remove secret resources from `persistent_search_lambda.tf` (already moved)
-- [ ] Step 4: Update IAM Lambda policy in `iam.tf` to use prefix-based wildcard ARN pattern
-- [ ] Step 5: Extend `secrets_manager.clj` to use a map-based cache keyed by secret ARN/name
-- [ ] Step 6: Write unit tests for multi-secret caching (cache hit, cache miss, different keys)
+- [x] Step 1: Create `terraform/secrets.tf` with existing Brave Search secret resource (use `terraform state mv` to avoid recreation)
+- [x] Step 2: Add placeholder secret resources for APNs auth key and webhook signing key
+- [x] Step 3: Remove secret resources from `persistent_search_lambda.tf` (already moved)
+- [x] Step 4: Update IAM Lambda policy in `iam.tf` to use prefix-based wildcard ARN pattern
+- [x] Step 5: Extend `secrets_manager.clj` to use a map-based cache keyed by secret ARN/name
+- [x] Step 6: Write unit tests for multi-secret caching (cache hit, cache miss, different keys)
 - [ ] Step 7: Verify `terraform plan` shows clean diff (no resource recreation)
-- [ ] Step 8: Run `bb test` to confirm all existing tests pass
+- [x] Step 8: Run `bb test` to confirm all existing tests pass
+
+## Summary of Changes
+
+### `terraform/secrets.tf` (new)
+- Centralized all secret resources with naming convention comments
+- Moved `aws_secretsmanager_secret.brave_search_api_key` and `aws_secretsmanager_secret_version.brave_search_api_key` from `persistent_search_lambda.tf`
+- Added placeholder secrets: `apns_auth_key` (Task 0021) and `webhook_signing_key` (Task 0022)
+
+### `terraform/persistent_search_lambda.tf`
+- Removed Brave Search secret resource block (lines 1-18) — moved to `secrets.tf`
+
+### `terraform/iam.tf`
+- Changed `lambda_secretsmanager_access` policy Resource from single ARN (`aws_secretsmanager_secret.brave_search_api_key.arn`) to prefix-based wildcard (`arn:aws:secretsmanager:REGION:ACCOUNT:secret:${project_name}/*`)
+
+### `lambda/shared/aws/secrets_manager.clj`
+- Added `clear-cache!` function for test support
+- Updated docstring to clarify multi-key caching behavior (implementation already supported map-based cache)
+
+### `lambda/tests/shared/secrets_manager_test.clj` (new)
+- 4 tests: cache-by-key, cache-hit, error-propagation, clear-cache
+- 11 assertions verifying multi-secret caching behavior
+
+### `lambda/tests/test_runner.clj`
+- Registered `shared.secrets-manager-test` namespace

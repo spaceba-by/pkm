@@ -1,23 +1,4 @@
 # =============================================================================
-# Brave Search API Key (Secrets Manager)
-# =============================================================================
-
-resource "aws_secretsmanager_secret" "brave_search_api_key" {
-  name        = "${var.project_name}/brave-search-api-key"
-  description = "Brave Search API key for persistent search feature"
-
-  tags = {
-    Name = "${var.project_name}-brave-search-api-key"
-  }
-}
-
-resource "aws_secretsmanager_secret_version" "brave_search_api_key" {
-  count         = var.brave_search_api_key != "" ? 1 : 0
-  secret_id     = aws_secretsmanager_secret.brave_search_api_key.id
-  secret_string = var.brave_search_api_key
-}
-
-# =============================================================================
 # Persistent Search Lambda Functions
 # =============================================================================
 

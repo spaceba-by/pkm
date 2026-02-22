@@ -169,7 +169,7 @@ resource "aws_iam_role_policy" "lambda_sqs_access" {
   })
 }
 
-# Policy for Secrets Manager access (Brave Search API key)
+# Policy for Secrets Manager access (all project secrets via prefix wildcard)
 resource "aws_iam_role_policy" "lambda_secretsmanager_access" {
   name = "secretsmanager-access"
   role = aws_iam_role.lambda_execution.id
@@ -182,7 +182,7 @@ resource "aws_iam_role_policy" "lambda_secretsmanager_access" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = aws_secretsmanager_secret.brave_search_api_key.arn
+        Resource = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/*"
       }
     ]
   })
