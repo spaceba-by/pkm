@@ -47,8 +47,8 @@ final class DocumentListViewModel: ObservableObject {
     /// API client for fetching documents
     let apiClient: any APIClientProtocol
 
-    /// In-flight load task, cancelled when a new load begins
-    private var loadTask: Task<Void, Never>?
+    /// Monotonic counter incremented on each load; used to discard stale responses
+    private var loadGeneration: UInt64 = 0
 
     /// Initialize with an API client
     /// - Parameter apiClient: The API client to use for fetching documents
@@ -58,17 +58,16 @@ final class DocumentListViewModel: ObservableObject {
 
     /// Load the initial page of documents
     func loadDocuments() async {
-        loadTask?.cancel()
+        loadGeneration &+= 1
         state = .loading
         nextCursor = nil
-        let task = Task { await fetchDocuments() }
-        loadTask = task
-        await task.value
+        await fetchDocuments()
     }
 
     /// Load the next page of documents
     func loadNextPage() async {
         guard hasMorePages, let cursor = nextCursor else { return }
+        let generation = loadGeneration
 
         do {
             let response = try await apiClient.listDocuments(
@@ -78,8 +77,8 @@ final class DocumentListViewModel: ObservableObject {
                 sort: sortOrder
             )
 
-            // Don't update state if a new load was started while we were awaiting
-            guard !Task.isCancelled else { return }
+            // Discard stale response if a newer load was started while awaiting
+            guard generation == loadGeneration else { return }
 
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
@@ -105,6 +104,7 @@ final class DocumentListViewModel: ObservableObject {
     }
 
     private func fetchDocuments() async {
+        let generation = loadGeneration
         do {
             let response = try await apiClient.listDocuments(
                 classification: selectedClassification,
@@ -113,8 +113,8 @@ final class DocumentListViewModel: ObservableObject {
                 sort: sortOrder
             )
 
-            // Don't update state if a new load was started while we were awaiting
-            guard !Task.isCancelled else { return }
+            // Discard stale response if a newer load was started while awaiting
+            guard generation == loadGeneration else { return }
 
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
@@ -127,6 +127,7 @@ final class DocumentListViewModel: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
+            guard generation == loadGeneration else { return }
             state = .error(error)
         }
     }
