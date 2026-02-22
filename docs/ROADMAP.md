@@ -190,6 +190,13 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 #### Tier 1 — Immediate
 
+- **Task 0033: Unified Documents View**
+
+  - See: [0033-unified-documents-view](tasks/0033-unified-documents-view.md)
+  - Consolidate Documents, Search, and Tags tabs into a single Documents tab
+  - Integrated search bar with keyword/semantic mode, expanded FilterSheet with tags
+  - Reduce tab bar from 6 tabs to 4: Documents, Insights, Settings, Graph
+
 - **Task 0020: Secrets Management**
 
   - See: [0020-secrets-management](tasks/0020-secrets-management.md)
