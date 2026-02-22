@@ -436,4 +436,39 @@
     (let [key {:PK "path/to/document with spaces.md" :SK "METADATA"}
           encoded (encode-cursor key)
           decoded (decode-cursor encoded)]
-      (is (= key decoded)))))
+      (is (= key decoded))))
+
+  (testing "GSI cursor round-trip preserves SK and range key"
+    (let [key {:SK "METADATA" :modified "2025-01-20T00:00:00Z" :PK "notes/recent.md"}
+          encoded (encode-cursor key)
+          decoded (decode-cursor encoded)]
+      (is (some? encoded))
+      (is (= key decoded) "GSI cursor with SK + modified + PK should round-trip")))
+
+  (testing "GSI cursor with created range key"
+    (let [key {:SK "METADATA" :created "2025-01-15T00:00:00Z" :PK "notes/created.md"}
+          encoded (encode-cursor key)
+          decoded (decode-cursor encoded)]
+      (is (= key decoded) "GSI cursor with SK + created + PK should round-trip"))))
+
+;; =============================================================================
+;; api_list_documents sort-index tests
+;; =============================================================================
+
+(def sort-index
+  "Map sort parameter to GSI name (from api_list_documents)"
+  {"modified" "all-documents-modified-index"
+   "created"  "all-documents-created-index"})
+
+(deftest sort-index-test
+  (testing "sort parameter maps to correct GSI"
+    (is (= "all-documents-modified-index" (get sort-index "modified")))
+    (is (= "all-documents-created-index" (get sort-index "created"))))
+
+  (testing "default sort falls back to modified index"
+    (is (= "all-documents-modified-index"
+           (get sort-index (or nil "modified") "all-documents-modified-index"))))
+
+  (testing "unknown sort value falls back to default"
+    (is (= "all-documents-modified-index"
+           (get sort-index "unknown" "all-documents-modified-index")))))

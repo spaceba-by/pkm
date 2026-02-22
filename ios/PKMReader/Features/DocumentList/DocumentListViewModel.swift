@@ -68,7 +68,8 @@ final class DocumentListViewModel: ObservableObject {
             let response = try await apiClient.listDocuments(
                 classification: selectedClassification,
                 limit: 50,
-                cursor: cursor
+                cursor: cursor,
+                sort: sortOrder
             )
 
             hasMorePages = response.nextCursor != nil
@@ -99,7 +100,8 @@ final class DocumentListViewModel: ObservableObject {
             let response = try await apiClient.listDocuments(
                 classification: selectedClassification,
                 limit: 50,
-                cursor: nil
+                cursor: nil,
+                sort: sortOrder
             )
 
             hasMorePages = response.nextCursor != nil
@@ -129,10 +131,8 @@ final class DocumentListViewModel: ObservableObject {
         }
     }
 
-    /// Re-sort the currently loaded documents when sort order changes
-    func applySortOrder() {
-        if case .loaded(let documents) = state {
-            state = .loaded(sortedDocuments(documents))
-        }
+    /// Reload documents from API when sort order changes
+    func applySortOrder() async {
+        await loadDocuments()
     }
 }

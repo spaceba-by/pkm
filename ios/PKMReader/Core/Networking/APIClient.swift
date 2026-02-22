@@ -35,7 +35,8 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     func listDocuments(
         classification: DocumentClassification?,
         limit: Int,
-        cursor: String?
+        cursor: String?,
+        sort: DocumentSortOrder? = nil
     ) async throws -> DocumentListResponse {
         var components = URLComponents(
             url: baseURL.appendingPathComponent("documents"),
@@ -52,6 +53,14 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         if let cursor {
             queryItems.append(URLQueryItem(name: "cursor", value: cursor))
+        }
+
+        if let sort {
+            let sortValue: String = switch sort {
+            case .modifiedDate: "modified"
+            case .createdDate: "created"
+            }
+            queryItems.append(URLQueryItem(name: "sort", value: sortValue))
         }
 
         components?.queryItems = queryItems

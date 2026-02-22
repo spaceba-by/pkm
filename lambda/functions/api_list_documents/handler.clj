@@ -26,26 +26,38 @@
       (catch Exception _
         nil))))
 
+(def sort-index
+  "Map sort parameter to GSI name"
+  {"modified" "all-documents-modified-index"
+   "created"  "all-documents-created-index"})
+
 (defn list-all-documents
-  "Scan all document metadata items with cursor-based pagination"
-  [limit cursor]
+  "Query all document metadata items using a GSI, ordered by date descending.
+   Uses the sort param to select the appropriate GSI (modified or created)."
+  [limit cursor sort]
   (let [start-key (decode-cursor cursor)
-        [items last-key] (ddb/scan-to-limit ddb-table
-                                            :filter-expr "SK = :sk"
-                                            :expr-attr-values {":sk" "METADATA"}
-                                            :limit (min limit max-limit)
-                                            :exclusive-start-key start-key)]
+        index-name (get sort-index (or sort "modified") "all-documents-modified-index")
+        [items last-key] (ddb/query-to-limit ddb-table
+                                             :index-name index-name
+                                             :key-condition-expr "SK = :sk"
+                                             :expr-attr-values {":sk" "METADATA"}
+                                             :limit (min limit max-limit)
+                                             :scan-index-forward false
+                                             :exclusive-start-key start-key)]
     [items (encode-cursor last-key)]))
 
 (defn list-by-classification
   "Query documents by classification using GSI, ordered by modified date descending"
-  [classification limit]
-  (ddb/query ddb-table
-             :index-name "classification-index"
-             :key-condition-expr "classification = :class"
-             :expr-attr-values {":class" classification}
-             :limit (min limit max-limit)
-             :scan-index-forward false))
+  [classification limit cursor]
+  (let [start-key (decode-cursor cursor)
+        [items last-key] (ddb/query-to-limit ddb-table
+                                             :index-name "classification-index"
+                                             :key-condition-expr "classification = :class"
+                                             :expr-attr-values {":class" classification}
+                                             :limit (min limit max-limit)
+                                             :scan-index-forward false
+                                             :exclusive-start-key start-key)]
+    [items (encode-cursor last-key)]))
 
 (def default-timestamp "1970-01-01T00:00:00Z")
 
@@ -79,16 +91,16 @@
           limit (r/parse-int-param params "limit" default-limit)
           cursor (or (get params :cursor)
                      (get params "cursor"))
+          sort (or (get params :sort)
+                   (get params "sort"))
           user-sub (r/get-user-sub event)
 
-          _ (println "User" user-sub "listing documents, classification:" classification "limit:" limit)
+          _ (println "User" user-sub "listing documents, classification:" classification "limit:" limit "sort:" sort)
 
           [documents next-cursor] (if classification
-                                    [(list-by-classification classification limit) nil]
-                                    (list-all-documents limit cursor))
-          formatted (sort-by #(get-in % [:metadata :modified])
-                             #(compare %2 %1)
-                             (mapv format-document documents))]
+                                    (list-by-classification classification limit cursor)
+                                    (list-all-documents limit cursor sort))
+          formatted (mapv format-document documents)]
 
       (r/ok {:documents formatted
              :count (count formatted)

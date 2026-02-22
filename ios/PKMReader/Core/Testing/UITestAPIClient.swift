@@ -140,7 +140,8 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
     func listDocuments(
         classification: DocumentClassification?,
         limit: Int,
-        cursor: String?
+        cursor: String?,
+        sort: DocumentSortOrder? = nil
     ) async throws -> DocumentListResponse {
         let filtered: [Document]
         if let classification {

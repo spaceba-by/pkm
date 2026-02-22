@@ -85,6 +85,9 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Last cursor passed to listDocuments
     private(set) var lastListDocumentsCursor: String?
 
+    /// Last sort order passed to listDocuments
+    private(set) var lastListDocumentsSort: DocumentSortOrder?
+
     /// Number of times getDocument was called
     private(set) var getDocumentCallCount = 0
 
@@ -183,12 +186,14 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     func listDocuments(
         classification: DocumentClassification?,
         limit: Int,
-        cursor: String?
+        cursor: String?,
+        sort: DocumentSortOrder? = nil
     ) async throws -> DocumentListResponse {
         listDocumentsCallCount += 1
         lastListDocumentsClassification = classification
         lastListDocumentsLimit = limit
         lastListDocumentsCursor = cursor
+        lastListDocumentsSort = sort
         return try listDocumentsResult.get()
     }
 
@@ -336,6 +341,7 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         lastListDocumentsClassification = nil
         lastListDocumentsLimit = nil
         lastListDocumentsCursor = nil
+        lastListDocumentsSort = nil
         getDocumentCallCount = 0
         lastGetDocumentKey = nil
         searchCallCount = 0

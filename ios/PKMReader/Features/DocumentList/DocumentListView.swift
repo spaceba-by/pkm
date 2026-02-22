@@ -89,7 +89,9 @@ struct DocumentListView: View {
             ForEach(DocumentSortOrder.allCases, id: \.self) { order in
                 Button {
                     viewModel.sortOrder = order
-                    viewModel.applySortOrder()
+                    Task {
+                        await viewModel.applySortOrder()
+                    }
                 } label: {
                     if viewModel.sortOrder == order {
                         Label(order.displayName, systemImage: "checkmark")
@@ -154,7 +156,8 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listDocuments(
         classification: DocumentClassification?,
         limit: Int,
-        cursor: String?
+        cursor: String?,
+        sort: DocumentSortOrder? = nil
     ) async throws -> DocumentListResponse {
         DocumentListResponse(documents: [], nextCursor: nil)
     }

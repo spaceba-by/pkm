@@ -106,6 +106,7 @@ final class DocumentListViewModelTests: XCTestCase {
         XCTAssertNil(mockAPIClient.lastListDocumentsClassification)
         XCTAssertEqual(mockAPIClient.lastListDocumentsLimit, 50)
         XCTAssertNil(mockAPIClient.lastListDocumentsCursor)
+        XCTAssertEqual(mockAPIClient.lastListDocumentsSort, .modifiedDate)
     }
 
     // MARK: - Classification Filter Tests
@@ -347,38 +348,37 @@ final class DocumentListViewModelTests: XCTestCase {
         }
     }
 
-    func test_applySortOrder_resortsByCreatedDate() async {
+    func test_applySortOrder_reloadsFromAPI() async {
         // Given: documents loaded with default modified sort
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
         await sut.loadDocuments()
+        mockAPIClient.reset()
 
         // When: switch to created date sort
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
+        )
         sut.sortOrder = .createdDate
-        sut.applySortOrder()
+        await sut.applySortOrder()
 
-        // Then: sorted by created date descending (different order from modified sort)
-        // Created dates: sample=Jan 3, meetings=Jan 2, ideas=Jan 1
-        if case .loaded(let docs) = sut.state {
-            XCTAssertEqual(docs[0].id, "test/sample.md")         // Jan 3 created
-            XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2 created
-            XCTAssertEqual(docs[2].id, "ideas/new-feature.md")   // Jan 1 created
-        } else {
-            XCTFail("Expected loaded state")
-        }
+        // Then: API was called again with createdDate sort
+        XCTAssertEqual(mockAPIClient.listDocumentsCallCount, 1)
+        XCTAssertEqual(mockAPIClient.lastListDocumentsSort, .createdDate)
     }
 
-    func test_applySortOrder_whenNotLoaded_doesNothing() {
-        // Given: loading state
-        XCTAssertEqual(sut.state, .loading)
+    func test_applySortOrder_passesModifiedSortToAPI() async {
+        // Given
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: [], nextCursor: nil)
+        )
 
-        // When
-        sut.sortOrder = .createdDate
-        sut.applySortOrder()
+        // When: load with default modified sort
+        await sut.loadDocuments()
 
-        // Then: state unchanged
-        XCTAssertEqual(sut.state, .loading)
+        // Then: API was called with modifiedDate sort
+        XCTAssertEqual(mockAPIClient.lastListDocumentsSort, .modifiedDate)
     }
 
     func test_loadNextPage_maintainsSortOrder() async {
