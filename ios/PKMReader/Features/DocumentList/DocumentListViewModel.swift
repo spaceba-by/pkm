@@ -47,6 +47,9 @@ final class DocumentListViewModel: ObservableObject {
     /// API client for fetching documents
     let apiClient: any APIClientProtocol
 
+    /// Monotonic counter incremented on each load; used to discard stale responses
+    private var loadGeneration: UInt64 = 0
+
     /// Initialize with an API client
     /// - Parameter apiClient: The API client to use for fetching documents
     init(apiClient: any APIClientProtocol) {
@@ -55,6 +58,7 @@ final class DocumentListViewModel: ObservableObject {
 
     /// Load the initial page of documents
     func loadDocuments() async {
+        loadGeneration &+= 1
         state = .loading
         nextCursor = nil
         await fetchDocuments()
@@ -63,13 +67,18 @@ final class DocumentListViewModel: ObservableObject {
     /// Load the next page of documents
     func loadNextPage() async {
         guard hasMorePages, let cursor = nextCursor else { return }
+        let generation = loadGeneration
 
         do {
             let response = try await apiClient.listDocuments(
                 classification: selectedClassification,
                 limit: 50,
-                cursor: cursor
+                cursor: cursor,
+                sort: sortOrder
             )
+
+            // Discard stale response if a newer load was started while awaiting
+            guard generation == loadGeneration else { return }
 
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
@@ -95,12 +104,17 @@ final class DocumentListViewModel: ObservableObject {
     }
 
     private func fetchDocuments() async {
+        let generation = loadGeneration
         do {
             let response = try await apiClient.listDocuments(
                 classification: selectedClassification,
                 limit: 50,
-                cursor: nil
+                cursor: nil,
+                sort: sortOrder
             )
+
+            // Discard stale response if a newer load was started while awaiting
+            guard generation == loadGeneration else { return }
 
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
@@ -113,6 +127,7 @@ final class DocumentListViewModel: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
+            guard generation == loadGeneration else { return }
             state = .error(error)
         }
     }
@@ -129,10 +144,8 @@ final class DocumentListViewModel: ObservableObject {
         }
     }
 
-    /// Re-sort the currently loaded documents when sort order changes
-    func applySortOrder() {
-        if case .loaded(let documents) = state {
-            state = .loaded(sortedDocuments(documents))
-        }
+    /// Reload documents from API when sort order changes
+    func applySortOrder() async {
+        await loadDocuments()
     }
 }

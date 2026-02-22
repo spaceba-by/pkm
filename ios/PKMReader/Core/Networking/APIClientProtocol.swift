@@ -20,11 +20,13 @@ protocol APIClientProtocol: Sendable {
     ///   - classification: Optional classification to filter by
     ///   - limit: Maximum number of documents to return
     ///   - cursor: Pagination cursor from previous response
+    ///   - sort: Sort order for results (modified or created)
     /// - Returns: Response containing documents and optional next cursor
     func listDocuments(
         classification: DocumentClassification?,
         limit: Int,
-        cursor: String?
+        cursor: String?,
+        sort: DocumentSortOrder?
     ) async throws -> DocumentListResponse
 
     /// Get a single document by its key
@@ -119,6 +121,14 @@ protocol APIClientProtocol: Sendable {
 }
 
 extension APIClientProtocol {
+    func listDocuments(
+        classification: DocumentClassification?,
+        limit: Int,
+        cursor: String?
+    ) async throws -> DocumentListResponse {
+        try await listDocuments(classification: classification, limit: limit, cursor: cursor, sort: nil)
+    }
+
     func search(query: String, limit: Int) async throws -> [Document] {
         try await search(query: query, limit: limit, mode: .keyword)
     }

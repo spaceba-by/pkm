@@ -219,6 +219,35 @@
         :else
         (recur new-acc last-key)))))
 
+(defn query-to-limit
+  "Queries DynamoDB table with a single Query call and returns [items last-key] tuple.
+   Returns unmarshalled items and the LastEvaluatedKey (or nil if no more pages).
+   Options:
+     :index-name - Name of GSI to query
+     :key-condition-expr - Key condition expression
+     :expr-attr-values - Expression attribute values map
+     :limit - Maximum items to return (default 50)
+     :scan-index-forward - Sort direction: true for ascending, false for descending (default false)
+     :exclusive-start-key - Optional start key for cursor-based resumption"
+  [table-name & {:keys [index-name key-condition-expr expr-attr-values limit scan-index-forward exclusive-start-key]
+                 :or {limit 50 scan-index-forward false}}]
+  (let [request (cond-> {:TableName table-name
+                         :KeyConditionExpression key-condition-expr
+                         :ExpressionAttributeValues (marshall-item expr-attr-values)
+                         :Limit limit
+                         :ScanIndexForward scan-index-forward}
+                  index-name (assoc :IndexName index-name)
+                  exclusive-start-key (assoc :ExclusiveStartKey
+                                             (marshall-item exclusive-start-key)))
+        response (-> (aws/invoke @ddb-client
+                                 {:op :Query
+                                  :request request})
+                     (check-error "Query"))
+        items (mapv unmarshall-item (:Items response))
+        last-key (when-let [lek (:LastEvaluatedKey response)]
+                   (unmarshall-item lek))]
+    [items last-key]))
+
 (defn query-all
   "Queries DynamoDB table with pagination, handling LastEvaluatedKey.
    Returns all matching items across all pages.

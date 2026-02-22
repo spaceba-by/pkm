@@ -279,7 +279,8 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listDocuments(
         classification: DocumentClassification?,
         limit: Int,
-        cursor: String?
+        cursor: String?,
+        sort: DocumentSortOrder? = nil
     ) async throws -> DocumentListResponse {
         DocumentListResponse(documents: [], nextCursor: nil)
     }

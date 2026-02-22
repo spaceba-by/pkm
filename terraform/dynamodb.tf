@@ -36,6 +36,11 @@ resource "aws_dynamodb_table" "metadata" {
   }
 
   attribute {
+    name = "created"
+    type = "S"
+  }
+
+  attribute {
     name = "monitor_status"
     type = "S"
   }
@@ -43,6 +48,22 @@ resource "aws_dynamodb_table" "metadata" {
   attribute {
     name = "next_execution"
     type = "S"
+  }
+
+  # GSI for listing all documents by modified date
+  global_secondary_index {
+    name            = "all-documents-modified-index"
+    hash_key        = "SK"
+    range_key       = "modified"
+    projection_type = "ALL"
+  }
+
+  # GSI for listing all documents by created date
+  global_secondary_index {
+    name            = "all-documents-created-index"
+    hash_key        = "SK"
+    range_key       = "created"
+    projection_type = "ALL"
   }
 
   # GSI for tag-based queries
