@@ -58,4 +58,26 @@ enum APIEndpoints {
 
     /// Knowledge graph data endpoint
     static let graph = "/graph"
+
+    /// Search monitors endpoint
+    static let searchMonitors = "/searches"
+
+    /// Single search monitor endpoint
+    static func searchMonitor(id: String) -> String {
+        let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        return "/searches/\(encodedId)"
+    }
+
+    /// Search monitor summaries endpoint
+    static func searchMonitorSummaries(monitorId: String, limit: Int = 20) -> String {
+        let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? monitorId
+        return "/searches/\(encodedId)/summaries?limit=\(limit)"
+    }
+
+    /// Single search monitor summary endpoint
+    static func searchMonitorSummary(monitorId: String, timestamp: String) -> String {
+        let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? monitorId
+        let encodedTs = timestamp.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? timestamp
+        return "/searches/\(encodedId)/summaries/\(encodedTs)"
+    }
 }

@@ -50,6 +50,27 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         GraphDataResponse(nodes: [], edges: [], nodeCount: 0, edgeCount: 0)
     )
 
+    /// Result to return from listSearchMonitors
+    var listSearchMonitorsResult: Result<[SearchMonitor], Error> = .success([])
+
+    /// Result to return from getSearchMonitor
+    var getSearchMonitorResult: Result<SearchMonitorDetailResponse, Error>?
+
+    /// Result to return from createSearchMonitor
+    var createSearchMonitorResult: Result<SearchMonitor, Error>?
+
+    /// Result to return from updateSearchMonitor
+    var updateSearchMonitorResult: Result<SearchMonitor, Error>?
+
+    /// Result to return from deleteSearchMonitor
+    var deleteSearchMonitorResult: Result<Void, Error> = .success(())
+
+    /// Result to return from listSearchMonitorSummaries
+    var listSearchMonitorSummariesResult: Result<[SearchSummary], Error> = .success([])
+
+    /// Result to return from getSearchMonitorSummary
+    var getSearchMonitorSummaryResult: Result<SearchSummary, Error>?
+
     // MARK: - Call Tracking
 
     /// Number of times listDocuments was called
@@ -108,6 +129,54 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     /// Number of times deleteDocument was called
     private(set) var deleteDocumentCallCount = 0
+
+    /// Number of times listSearchMonitors was called
+    private(set) var listSearchMonitorsCallCount = 0
+
+    /// Number of times getSearchMonitor was called
+    private(set) var getSearchMonitorCallCount = 0
+
+    /// Last ID passed to getSearchMonitor
+    private(set) var lastGetSearchMonitorId: String?
+
+    /// Number of times createSearchMonitor was called
+    private(set) var createSearchMonitorCallCount = 0
+
+    /// Last request passed to createSearchMonitor
+    private(set) var lastCreateSearchMonitorRequest: SearchMonitorRequest?
+
+    /// Number of times updateSearchMonitor was called
+    private(set) var updateSearchMonitorCallCount = 0
+
+    /// Last ID passed to updateSearchMonitor
+    private(set) var lastUpdateSearchMonitorId: String?
+
+    /// Last request passed to updateSearchMonitor
+    private(set) var lastUpdateSearchMonitorRequest: SearchMonitorRequest?
+
+    /// Number of times deleteSearchMonitor was called
+    private(set) var deleteSearchMonitorCallCount = 0
+
+    /// Last ID passed to deleteSearchMonitor
+    private(set) var lastDeleteSearchMonitorId: String?
+
+    /// Number of times listSearchMonitorSummaries was called
+    private(set) var listSearchMonitorSummariesCallCount = 0
+
+    /// Last monitorId passed to listSearchMonitorSummaries
+    private(set) var lastListSearchMonitorSummariesMonitorId: String?
+
+    /// Last limit passed to listSearchMonitorSummaries
+    private(set) var lastListSearchMonitorSummariesLimit: Int?
+
+    /// Number of times getSearchMonitorSummary was called
+    private(set) var getSearchMonitorSummaryCallCount = 0
+
+    /// Last monitorId passed to getSearchMonitorSummary
+    private(set) var lastGetSearchMonitorSummaryMonitorId: String?
+
+    /// Last timestamp passed to getSearchMonitorSummary
+    private(set) var lastGetSearchMonitorSummaryTimestamp: String?
 
     // MARK: - APIClientProtocol
 
@@ -201,6 +270,64 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         return try getGraphDataResult.get()
     }
 
+    // MARK: - Search Monitors
+
+    func listSearchMonitors() async throws -> [SearchMonitor] {
+        listSearchMonitorsCallCount += 1
+        return try listSearchMonitorsResult.get()
+    }
+
+    func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
+        getSearchMonitorCallCount += 1
+        lastGetSearchMonitorId = id
+        if let result = getSearchMonitorResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
+        createSearchMonitorCallCount += 1
+        lastCreateSearchMonitorRequest = request
+        if let result = createSearchMonitorResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
+        updateSearchMonitorCallCount += 1
+        lastUpdateSearchMonitorId = id
+        lastUpdateSearchMonitorRequest = request
+        if let result = updateSearchMonitorResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func deleteSearchMonitor(id: String) async throws {
+        deleteSearchMonitorCallCount += 1
+        lastDeleteSearchMonitorId = id
+        try deleteSearchMonitorResult.get()
+    }
+
+    func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] {
+        listSearchMonitorSummariesCallCount += 1
+        lastListSearchMonitorSummariesMonitorId = monitorId
+        lastListSearchMonitorSummariesLimit = limit
+        return try listSearchMonitorSummariesResult.get()
+    }
+
+    func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
+        getSearchMonitorSummaryCallCount += 1
+        lastGetSearchMonitorSummaryMonitorId = monitorId
+        lastGetSearchMonitorSummaryTimestamp = timestamp
+        if let result = getSearchMonitorSummaryResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -226,5 +353,21 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         updateDocumentCallCount = 0
         deleteDocumentCallCount = 0
         getGraphDataCallCount = 0
+        listSearchMonitorsCallCount = 0
+        getSearchMonitorCallCount = 0
+        lastGetSearchMonitorId = nil
+        createSearchMonitorCallCount = 0
+        lastCreateSearchMonitorRequest = nil
+        updateSearchMonitorCallCount = 0
+        lastUpdateSearchMonitorId = nil
+        lastUpdateSearchMonitorRequest = nil
+        deleteSearchMonitorCallCount = 0
+        lastDeleteSearchMonitorId = nil
+        listSearchMonitorSummariesCallCount = 0
+        lastListSearchMonitorSummariesMonitorId = nil
+        lastListSearchMonitorSummariesLimit = nil
+        getSearchMonitorSummaryCallCount = 0
+        lastGetSearchMonitorSummaryMonitorId = nil
+        lastGetSearchMonitorSummaryTimestamp = nil
     }
 }

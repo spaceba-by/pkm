@@ -19,9 +19,15 @@
 
 (defonce ^:private secret-cache (atom {}))
 
+(defn clear-cache!
+  "Clears the in-memory secret cache. Intended for testing."
+  []
+  (reset! secret-cache {}))
+
 (defn get-secret-value
-  "Retrieves a secret value by ARN or name. Caches the result in-memory
-   for the lifetime of the Lambda container."
+  "Retrieves a secret value by ARN or name. Caches results in-memory keyed
+   by secret-id, supporting multiple distinct secrets simultaneously.
+   Cache persists for the lifetime of the Lambda container."
   [secret-id]
   (if-let [cached (get @secret-cache secret-id)]
     cached

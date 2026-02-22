@@ -93,6 +93,29 @@ protocol APIClientProtocol: Sendable {
     /// Get knowledge graph data (nodes and edges)
     /// - Returns: Graph data with nodes and edges for visualization
     func getGraphData() async throws -> GraphDataResponse
+
+    // MARK: - Search Monitors
+
+    /// List all search monitors
+    func listSearchMonitors() async throws -> [SearchMonitor]
+
+    /// Get a search monitor with recent summaries
+    func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse
+
+    /// Create a new search monitor
+    func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor
+
+    /// Update an existing search monitor
+    func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor
+
+    /// Delete a search monitor
+    func deleteSearchMonitor(id: String) async throws
+
+    /// List summaries for a search monitor
+    func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary]
+
+    /// Get a specific summary for a search monitor
+    func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary
 }
 
 extension APIClientProtocol {

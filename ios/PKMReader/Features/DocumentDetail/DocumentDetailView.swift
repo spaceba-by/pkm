@@ -316,4 +316,19 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func getGraphData() async throws -> GraphDataResponse {
         GraphDataResponse(nodes: [], edges: [], nodeCount: 0, edgeCount: 0)
     }
+    func listSearchMonitors() async throws -> [SearchMonitor] { [] }
+    func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
+        throw APIError.invalidResponse
+    }
+    func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
+        throw APIError.invalidResponse
+    }
+    func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
+        throw APIError.invalidResponse
+    }
+    func deleteSearchMonitor(id: String) async throws {}
+    func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] { [] }
+    func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
+        throw APIError.invalidResponse
+    }
 }
