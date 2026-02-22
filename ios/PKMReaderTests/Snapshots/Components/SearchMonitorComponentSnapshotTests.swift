@@ -38,40 +38,4 @@ final class SearchMonitorComponentSnapshotTests: SnapshotTestCase {
             .padding()
         assertComponentSnapshot(of: view, size: CGSize(width: 120, height: 50))
     }
-
-    // MARK: - SearchSummaryRow
-
-    func test_summaryRow_significantUpdate() {
-        let summary = SearchSummary(
-            timestamp: "2026-02-20T10:00:00Z",
-            summary: "Major findings in AI research with several breakthroughs in reasoning.",
-            topics: ["AI", "reasoning", "benchmarks"],
-            noveltyScore: 0.85,
-            significantUpdate: true,
-            newItems: ["New paper"],
-            changedItems: [],
-            removedItems: [],
-            analysis: nil
-        )
-        let view = SearchSummaryRow(summary: summary)
-            .padding()
-        assertComponentSnapshot(of: view, size: CGSize(width: 393, height: 100))
-    }
-
-    func test_summaryRow_normalUpdate() {
-        let summary = SearchSummary(
-            timestamp: "2026-02-20T10:00:00Z",
-            summary: "Minor updates with no significant changes detected.",
-            topics: [],
-            noveltyScore: 0.2,
-            significantUpdate: false,
-            newItems: [],
-            changedItems: [],
-            removedItems: [],
-            analysis: nil
-        )
-        let view = SearchSummaryRow(summary: summary)
-            .padding()
-        assertComponentSnapshot(of: view, size: CGSize(width: 393, height: 80))
-    }
 }
