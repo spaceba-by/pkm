@@ -179,16 +179,16 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - AI-driven summarization and comparison agent (Bedrock Sonnet)
   - Threshold-based flagging for significant updates with notification event records
 
-### Planned
-
-#### Tier 1 — Immediate
-
-- **Task 0019: Persistent Search UI**
+- **Task 0019: Persistent Search UI** ✅
 
   - See: [0019-persistent-search-ui](tasks/0019-persistent-search-ui.md)
   - iOS views for managing search monitors (create, list, edit, delete, view summaries)
   - Backend API already complete (7 endpoints from Task 0013)
   - SearchMonitor model, views, and view models following existing patterns
+
+### Planned
+
+#### Tier 1 — Immediate
 
 - **Task 0020: Secrets Management**
 

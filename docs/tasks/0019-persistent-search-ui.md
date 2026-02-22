@@ -1,6 +1,6 @@
 # Task 0019: Persistent Search UI
 
-**Status**: Complete
+**Status**: Complete ✅
 
 ## Specifications
 
@@ -80,6 +80,12 @@ analysis: String?
 - `ios/PKMReader/Features/Search/SearchSummaryView.swift` — Summary detail rendering
 - `ios/PKMReaderTests/Features/Search/SearchMonitorListViewModelTests.swift` — List VM tests
 - `ios/PKMReaderTests/Features/Search/SearchMonitorDetailViewModelTests.swift` — Detail VM tests
+- `ios/PKMReaderTests/Models/SearchMonitorModelTests.swift` — Model encoding/decoding tests
+- `ios/PKMReaderTests/Snapshots/Screens/SearchMonitorDetailViewSnapshotTests.swift` — Detail view snapshots
+- `ios/PKMReaderTests/Snapshots/Screens/SearchSummaryViewSnapshotTests.swift` — Summary view snapshots
+- `ios/PKMReaderTests/Snapshots/Components/SearchMonitorComponentSnapshotTests.swift` — Component snapshots
+- `ios/PKMReaderUITests/Screens/SearchMonitorScreenTests.swift` — UI tests
+- `ios/PKMReaderUITests/PageObjects/SearchMonitorPage.swift` — Page object for UI tests
 
 ### Modified Files
 - `ios/PKMReader/Core/Networking/APIClientProtocol.swift` — Add 7 search monitor methods
@@ -130,3 +136,20 @@ analysis: String?
 - [x] Step 12: Add fixture data to UITestAPIClient and MockAPIClient
 - [x] Step 13: Write unit tests for both view models
 - [x] Step 14: Verify all existing tests pass, run linting
+
+## Summary of Changes
+
+### PR #103: feat: add persistent search monitor UI for iOS (Task 0019)
+
+- 7 new API client methods for search monitor CRUD with retry logic and authentication
+- 4 new SwiftUI views (list, detail, form, summary) with state management and error handling
+- 2 view models with comprehensive state management (loading/loaded/error/empty)
+- URL encoding via successive `appendingPathComponent` calls (avoids double-encoding)
+- Type-safe `SearchMonitorStatus` enum used in request models
+- Error handling with user-facing alerts for delete and toggle actions
+- Static DateFormatter caching for performance
+- Empty/error states wrapped in ScrollView for consistent pull-to-refresh
+- Snapshot tests for detail view, summary view, and components (NoveltyIndicator, StatusBadge)
+- Model unit tests for all Codable types and response wrappers
+- 10 UI tests for monitor list and form views
+- Code coverage: 75.58% (above 74% threshold)
