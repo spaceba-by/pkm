@@ -4,6 +4,7 @@ import SwiftUI
 struct SearchMonitorDetailView: View {
     @StateObject private var viewModel: SearchMonitorDetailViewModel
     @State private var showingEditForm = false
+    @State private var actionError: Error?
 
     init(monitorId: String, apiClient: any APIClientProtocol) {
         _viewModel = StateObject(
@@ -41,7 +42,13 @@ struct SearchMonitorDetailView: View {
                         }
 
                         Button {
-                            Task { try? await viewModel.togglePauseResume() }
+                            Task {
+                                do {
+                                    try await viewModel.togglePauseResume()
+                                } catch {
+                                    actionError = error
+                                }
+                            }
                         } label: {
                             if viewModel.monitor?.status == .active {
                                 Label("Pause", systemImage: "pause.circle")
@@ -73,6 +80,17 @@ struct SearchMonitorDetailView: View {
         }
         .task {
             await viewModel.loadDetail()
+        }
+        .alert(
+            "Action Failed",
+            isPresented: Binding(
+                get: { actionError != nil },
+                set: { if !$0 { actionError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(actionError?.localizedDescription ?? "An unknown error occurred.")
         }
         .accessibilityIdentifier("SearchMonitorDetailView")
     }
@@ -172,19 +190,30 @@ struct SearchSummaryRow: View {
         .padding(.vertical, 2)
     }
 
-    private func formatTimestamp(_ isoDate: String) -> String {
+    private static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        var date = formatter.date(from: isoDate)
-        if date == nil {
-            formatter.formatOptions = [.withInternetDateTime]
-            date = formatter.date(from: isoDate)
-        }
+        return formatter
+    }()
+
+    private static let isoFormatterNoFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    private static let displayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    private func formatTimestamp(_ isoDate: String) -> String {
+        let date = Self.isoFormatter.date(from: isoDate)
+            ?? Self.isoFormatterNoFractional.date(from: isoDate)
         guard let date else { return isoDate }
-        let display = DateFormatter()
-        display.dateStyle = .medium
-        display.timeStyle = .short
-        return display.string(from: date)
+        return Self.displayFormatter.string(from: date)
     }
 }
 

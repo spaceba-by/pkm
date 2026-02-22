@@ -57,7 +57,7 @@ final class SearchMonitorDetailViewModel: ObservableObject {
     func loadMoreSummaries() async {
         do {
             let result = try await apiClient.listSearchMonitorSummaries(monitorId: monitorId, limit: 50)
-            summaries = result
+            summaries.append(contentsOf: result)
         } catch is CancellationError {
             return
         } catch {

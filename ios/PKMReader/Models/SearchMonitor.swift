@@ -58,12 +58,6 @@ struct SearchSummaryListResponse: Codable, Sendable {
     let monitorId: String
 }
 
-/// Response from DELETE /searches/{id}
-struct SearchMonitorDeleteResponse: Codable, Sendable {
-    let deleted: Bool
-    let id: String
-}
-
 /// Request body for creating/updating a search monitor
 struct SearchMonitorRequest: Codable, Sendable {
     var name: String?

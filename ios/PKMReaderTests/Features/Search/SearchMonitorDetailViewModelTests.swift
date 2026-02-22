@@ -20,7 +20,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
 
     // MARK: - Load Detail
 
-    func testLoadDetail_success_setsLoadedState() async {
+    func test_loadDetail_success_setsLoadedState() async {
         let monitor = makeMonitor(id: "test-id")
         let summaries = [makeSummary(timestamp: "2026-02-20T10:00:00Z")]
         mockAPIClient.getSearchMonitorResult = .success(
@@ -36,7 +36,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastGetSearchMonitorId, "test-id")
     }
 
-    func testLoadDetail_error_setsErrorState() async {
+    func test_loadDetail_error_setsErrorState() async {
         mockAPIClient.getSearchMonitorResult = .failure(APIError.networkError)
 
         await sut.loadDetail()
@@ -49,9 +49,25 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         XCTAssertNil(sut.monitor)
     }
 
+    func test_loadDetail_setsMonitorAndSummaries() async {
+        let monitor = makeMonitor(id: "test-id", name: "My Monitor")
+        let summaries = [
+            makeSummary(timestamp: "2026-02-20T10:00:00Z"),
+            makeSummary(timestamp: "2026-02-19T10:00:00Z")
+        ]
+        mockAPIClient.getSearchMonitorResult = .success(
+            SearchMonitorDetailResponse(monitor: monitor, summaries: summaries, summaryCount: 2)
+        )
+
+        await sut.loadDetail()
+
+        XCTAssertEqual(sut.monitor?.name, "My Monitor")
+        XCTAssertEqual(sut.summaries.count, 2)
+    }
+
     // MARK: - Toggle Pause/Resume
 
-    func testTogglePauseResume_activeTopaused() async throws {
+    func test_togglePauseResume_activeToPaused() async throws {
         let monitor = makeMonitor(id: "test-id", status: .active)
         mockAPIClient.getSearchMonitorResult = .success(
             SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
@@ -68,7 +84,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorRequest?.status, "paused")
     }
 
-    func testTogglePauseResume_pausedToActive() async throws {
+    func test_togglePauseResume_pausedToActive() async throws {
         let monitor = makeMonitor(id: "test-id", status: .paused)
         mockAPIClient.getSearchMonitorResult = .success(
             SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
@@ -84,9 +100,34 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorRequest?.status, "active")
     }
 
+    func test_togglePauseResume_noMonitor_doesNothing() async throws {
+        // No monitor loaded, togglePauseResume should return early
+        try await sut.togglePauseResume()
+
+        XCTAssertEqual(mockAPIClient.updateSearchMonitorCallCount, 0)
+    }
+
+    func test_togglePauseResume_error_throws() async {
+        let monitor = makeMonitor(id: "test-id", status: .active)
+        mockAPIClient.getSearchMonitorResult = .success(
+            SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
+        )
+        await sut.loadDetail()
+
+        mockAPIClient.updateSearchMonitorResult = .failure(APIError.networkError)
+
+        do {
+            try await sut.togglePauseResume()
+            XCTFail("Expected error")
+        } catch {
+            // Expected - monitor should remain active
+            XCTAssertEqual(sut.monitor?.status, .active)
+        }
+    }
+
     // MARK: - Update Monitor
 
-    func testUpdateMonitor_success_updatesMonitor() async throws {
+    func test_updateMonitor_success_updatesMonitor() async throws {
         let monitor = makeMonitor(id: "test-id", name: "Old Name")
         mockAPIClient.getSearchMonitorResult = .success(
             SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
@@ -105,30 +146,68 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorId, "test-id")
     }
 
-    // MARK: - Load More Summaries
-
-    func testLoadMoreSummaries_success_updatesSummaries() async {
+    func test_updateMonitor_error_throws() async {
         let monitor = makeMonitor(id: "test-id")
         mockAPIClient.getSearchMonitorResult = .success(
             SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
         )
         await sut.loadDetail()
 
+        mockAPIClient.updateSearchMonitorResult = .failure(APIError.networkError)
+
+        let request = SearchMonitorRequest(name: "New Name")
+        do {
+            _ = try await sut.updateMonitor(request: request)
+            XCTFail("Expected error")
+        } catch {
+            // Expected - monitor should remain unchanged
+            XCTAssertEqual(sut.monitor?.name, "Test Monitor")
+        }
+    }
+
+    // MARK: - Load More Summaries
+
+    func test_loadMoreSummaries_success_appendsSummaries() async {
+        let monitor = makeMonitor(id: "test-id")
+        let initialSummaries = [makeSummary(timestamp: "2026-02-20T10:00:00Z")]
+        mockAPIClient.getSearchMonitorResult = .success(
+            SearchMonitorDetailResponse(monitor: monitor, summaries: initialSummaries, summaryCount: 1)
+        )
+        await sut.loadDetail()
+        XCTAssertEqual(sut.summaries.count, 1)
+
         let moreSummaries = [
-            makeSummary(timestamp: "2026-02-20T10:00:00Z"),
-            makeSummary(timestamp: "2026-02-19T10:00:00Z")
+            makeSummary(timestamp: "2026-02-19T10:00:00Z"),
+            makeSummary(timestamp: "2026-02-18T10:00:00Z")
         ]
         mockAPIClient.listSearchMonitorSummariesResult = .success(moreSummaries)
 
         await sut.loadMoreSummaries()
 
-        XCTAssertEqual(sut.summaries.count, 2)
+        XCTAssertEqual(sut.summaries.count, 3)
         XCTAssertEqual(mockAPIClient.listSearchMonitorSummariesCallCount, 1)
+        XCTAssertEqual(mockAPIClient.lastListSearchMonitorSummariesMonitorId, "test-id")
+        XCTAssertEqual(mockAPIClient.lastListSearchMonitorSummariesLimit, 50)
+    }
+
+    func test_loadMoreSummaries_error_keepsPreviousSummaries() async {
+        let monitor = makeMonitor(id: "test-id")
+        let initialSummaries = [makeSummary(timestamp: "2026-02-20T10:00:00Z")]
+        mockAPIClient.getSearchMonitorResult = .success(
+            SearchMonitorDetailResponse(monitor: monitor, summaries: initialSummaries, summaryCount: 1)
+        )
+        await sut.loadDetail()
+
+        mockAPIClient.listSearchMonitorSummariesResult = .failure(APIError.networkError)
+
+        await sut.loadMoreSummaries()
+
+        XCTAssertEqual(sut.summaries.count, 1)
     }
 
     // MARK: - Refresh
 
-    func testRefresh_reloadsData() async {
+    func test_refresh_reloadsData() async {
         let monitor = makeMonitor(id: "test-id")
         mockAPIClient.getSearchMonitorResult = .success(
             SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
@@ -138,6 +217,55 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         await sut.refresh()
 
         XCTAssertEqual(mockAPIClient.getSearchMonitorCallCount, 2)
+    }
+
+    func test_refresh_updatesMonitorData() async {
+        let monitor = makeMonitor(id: "test-id", name: "Original")
+        mockAPIClient.getSearchMonitorResult = .success(
+            SearchMonitorDetailResponse(monitor: monitor, summaries: [], summaryCount: 0)
+        )
+        await sut.loadDetail()
+        XCTAssertEqual(sut.monitor?.name, "Original")
+
+        let updatedMonitor = makeMonitor(id: "test-id", name: "Updated")
+        mockAPIClient.getSearchMonitorResult = .success(
+            SearchMonitorDetailResponse(monitor: updatedMonitor, summaries: [], summaryCount: 0)
+        )
+        await sut.refresh()
+
+        XCTAssertEqual(sut.monitor?.name, "Updated")
+    }
+
+    // MARK: - Initial State
+
+    func test_initialState_isLoading() {
+        XCTAssertEqual(sut.state, .loading)
+        XCTAssertNil(sut.monitor)
+        XCTAssertTrue(sut.summaries.isEmpty)
+    }
+
+    func test_monitorId_isSet() {
+        XCTAssertEqual(sut.monitorId, "test-id")
+    }
+
+    // MARK: - State Equality
+
+    func test_state_loaded_equalsLoaded() {
+        let state1 = SearchMonitorDetailViewModel.State.loaded
+        let state2 = SearchMonitorDetailViewModel.State.loaded
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_error_equalsError() {
+        let state1 = SearchMonitorDetailViewModel.State.error(APIError.networkError)
+        let state2 = SearchMonitorDetailViewModel.State.error(APIError.networkError)
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_different_notEqual() {
+        let state1 = SearchMonitorDetailViewModel.State.loading
+        let state2 = SearchMonitorDetailViewModel.State.loaded
+        XCTAssertNotEqual(state1, state2)
     }
 
     // MARK: - Helpers

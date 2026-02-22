@@ -200,28 +200,40 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     }
 
     func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
-        let url = baseURL.appendingPathComponent("searches/\(id)")
+        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
+        let url = baseURL.appendingPathComponent("searches/\(encodedId)")
         return try await performRequestWithRetry(url: url)
     }
 
     func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
         let url = baseURL.appendingPathComponent("searches")
-        return try await performEncodablePostWithRetry(url: url, body: request)
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "POST", body: request)
     }
 
     func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
-        let url = baseURL.appendingPathComponent("searches/\(id)")
-        return try await performEncodablePutWithRetry(url: url, body: request)
+        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
+        let url = baseURL.appendingPathComponent("searches/\(encodedId)")
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "PUT", body: request)
     }
 
     func deleteSearchMonitor(id: String) async throws {
-        let url = baseURL.appendingPathComponent("searches/\(id)")
+        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
+        let url = baseURL.appendingPathComponent("searches/\(encodedId)")
         try await performDeleteRequestWithRetry(url: url)
     }
 
     func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] {
+        guard let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
         var components = URLComponents(
-            url: baseURL.appendingPathComponent("searches/\(monitorId)/summaries"),
+            url: baseURL.appendingPathComponent("searches/\(encodedId)/summaries"),
             resolvingAgainstBaseURL: false
         )
         components?.queryItems = [
@@ -235,7 +247,13 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     }
 
     func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
-        let url = baseURL.appendingPathComponent("searches/\(monitorId)/summaries/\(timestamp)")
+        guard let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
+        guard let encodedTs = timestamp.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIError.invalidURL
+        }
+        let url = baseURL.appendingPathComponent("searches/\(encodedId)/summaries/\(encodedTs)")
         return try await performRequestWithRetry(url: url)
     }
 
@@ -448,8 +466,8 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
     }
 
-    private func performEncodablePostWithRetry<Body: Encodable, T: Decodable>(
-        url: URL, body: Body
+    private func performEncodableMutatingRequestWithRetry<Body: Encodable, T: Decodable>(
+        url: URL, method: String, body: Body
     ) async throws -> T {
         guard await networkMonitor.isConnected else {
             throw APIError.networkError
@@ -459,35 +477,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         for attempt in 0...maxRetries {
             do {
-                return try await performEncodableMutatingRequest(url: url, method: "POST", body: body)
-            } catch let error as APIError where error.isRetryable && attempt < maxRetries {
-                lastError = error
-                guard await networkMonitor.isConnected else {
-                    throw APIError.networkError
-                }
-                let delay = baseRetryDelay * pow(2.0, Double(attempt))
-                try await Task.sleep(for: .seconds(delay))
-                continue
-            } catch {
-                throw error
-            }
-        }
-
-        throw lastError
-    }
-
-    private func performEncodablePutWithRetry<Body: Encodable, T: Decodable>(
-        url: URL, body: Body
-    ) async throws -> T {
-        guard await networkMonitor.isConnected else {
-            throw APIError.networkError
-        }
-
-        var lastError: Error = APIError.networkError
-
-        for attempt in 0...maxRetries {
-            do {
-                return try await performEncodableMutatingRequest(url: url, method: "PUT", body: body)
+                return try await performEncodableMutatingRequest(url: url, method: method, body: body)
             } catch let error as APIError where error.isRetryable && attempt < maxRetries {
                 lastError = error
                 guard await networkMonitor.isConnected else {

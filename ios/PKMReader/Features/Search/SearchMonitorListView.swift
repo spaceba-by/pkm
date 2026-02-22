@@ -5,6 +5,7 @@ struct SearchMonitorListView: View {
     @StateObject private var viewModel: SearchMonitorListViewModel
     @State private var showingCreateForm = false
     @State private var monitorToDelete: SearchMonitor?
+    @State private var deleteError: Error?
 
     init(apiClient: any APIClientProtocol) {
         _viewModel = StateObject(wrappedValue: SearchMonitorListViewModel(apiClient: apiClient))
@@ -60,12 +61,27 @@ struct SearchMonitorListView: View {
         ) { monitor in
             Button("Delete", role: .destructive) {
                 Task {
-                    try? await viewModel.deleteMonitor(id: monitor.id)
+                    do {
+                        try await viewModel.deleteMonitor(id: monitor.id)
+                    } catch {
+                        deleteError = error
+                    }
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: { monitor in
             Text("Are you sure you want to delete \"\(monitor.name)\"? This cannot be undone.")
+        }
+        .alert(
+            "Delete Failed",
+            isPresented: Binding(
+                get: { deleteError != nil },
+                set: { if !$0 { deleteError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteError?.localizedDescription ?? "An unknown error occurred.")
         }
         .refreshable {
             await viewModel.refresh()
@@ -132,20 +148,30 @@ struct SearchMonitorRow: View {
         .padding(.vertical, 2)
     }
 
-    private func formatRelativeDate(_ isoDate: String) -> String {
+    private static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: isoDate) {
-            let relative = RelativeDateTimeFormatter()
-            relative.unitsStyle = .abbreviated
-            return relative.localizedString(for: date, relativeTo: Date())
-        }
-        // Try without fractional seconds
+        return formatter
+    }()
+
+    private static let isoFormatterNoFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: isoDate) {
-            let relative = RelativeDateTimeFormatter()
-            relative.unitsStyle = .abbreviated
-            return relative.localizedString(for: date, relativeTo: Date())
+        return formatter
+    }()
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter
+    }()
+
+    private func formatRelativeDate(_ isoDate: String) -> String {
+        if let date = Self.isoFormatter.date(from: isoDate) {
+            return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
+        }
+        if let date = Self.isoFormatterNoFractional.date(from: isoDate) {
+            return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
         }
         return isoDate
     }

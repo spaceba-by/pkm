@@ -64,16 +64,20 @@ enum APIEndpoints {
 
     /// Single search monitor endpoint
     static func searchMonitor(id: String) -> String {
-        "/searches/\(id)"
+        let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        return "/searches/\(encodedId)"
     }
 
     /// Search monitor summaries endpoint
     static func searchMonitorSummaries(monitorId: String, limit: Int = 20) -> String {
-        "/searches/\(monitorId)/summaries?limit=\(limit)"
+        let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? monitorId
+        return "/searches/\(encodedId)/summaries?limit=\(limit)"
     }
 
     /// Single search monitor summary endpoint
     static func searchMonitorSummary(monitorId: String, timestamp: String) -> String {
-        "/searches/\(monitorId)/summaries/\(timestamp)"
+        let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? monitorId
+        let encodedTs = timestamp.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? timestamp
+        return "/searches/\(encodedId)/summaries/\(encodedTs)"
     }
 }

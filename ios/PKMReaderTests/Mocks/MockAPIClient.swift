@@ -163,8 +163,20 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     /// Number of times listSearchMonitorSummaries was called
     private(set) var listSearchMonitorSummariesCallCount = 0
 
+    /// Last monitorId passed to listSearchMonitorSummaries
+    private(set) var lastListSearchMonitorSummariesMonitorId: String?
+
+    /// Last limit passed to listSearchMonitorSummaries
+    private(set) var lastListSearchMonitorSummariesLimit: Int?
+
     /// Number of times getSearchMonitorSummary was called
     private(set) var getSearchMonitorSummaryCallCount = 0
+
+    /// Last monitorId passed to getSearchMonitorSummary
+    private(set) var lastGetSearchMonitorSummaryMonitorId: String?
+
+    /// Last timestamp passed to getSearchMonitorSummary
+    private(set) var lastGetSearchMonitorSummaryTimestamp: String?
 
     // MARK: - APIClientProtocol
 
@@ -301,11 +313,15 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] {
         listSearchMonitorSummariesCallCount += 1
+        lastListSearchMonitorSummariesMonitorId = monitorId
+        lastListSearchMonitorSummariesLimit = limit
         return try listSearchMonitorSummariesResult.get()
     }
 
     func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
         getSearchMonitorSummaryCallCount += 1
+        lastGetSearchMonitorSummaryMonitorId = monitorId
+        lastGetSearchMonitorSummaryTimestamp = timestamp
         if let result = getSearchMonitorSummaryResult {
             return try result.get()
         }
@@ -348,6 +364,10 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         deleteSearchMonitorCallCount = 0
         lastDeleteSearchMonitorId = nil
         listSearchMonitorSummariesCallCount = 0
+        lastListSearchMonitorSummariesMonitorId = nil
+        lastListSearchMonitorSummariesLimit = nil
         getSearchMonitorSummaryCallCount = 0
+        lastGetSearchMonitorSummaryMonitorId = nil
+        lastGetSearchMonitorSummaryTimestamp = nil
     }
 }

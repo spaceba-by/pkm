@@ -20,7 +20,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
 
     // MARK: - Load Monitors
 
-    func testLoadMonitors_success_setsLoadedState() async {
+    func test_loadMonitors_success_setsLoadedState() async {
         let monitors = [makeMonitor(id: "1"), makeMonitor(id: "2")]
         mockAPIClient.listSearchMonitorsResult = .success(monitors)
 
@@ -31,7 +31,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.listSearchMonitorsCallCount, 1)
     }
 
-    func testLoadMonitors_empty_setsEmptyState() async {
+    func test_loadMonitors_empty_setsEmptyState() async {
         mockAPIClient.listSearchMonitorsResult = .success([])
 
         await sut.loadMonitors()
@@ -40,7 +40,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         XCTAssertTrue(sut.monitors.isEmpty)
     }
 
-    func testLoadMonitors_error_setsErrorState() async {
+    func test_loadMonitors_error_setsErrorState() async {
         mockAPIClient.listSearchMonitorsResult = .failure(APIError.networkError)
 
         await sut.loadMonitors()
@@ -54,7 +54,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
 
     // MARK: - Create Monitor
 
-    func testCreateMonitor_success_addsToList() async throws {
+    func test_createMonitor_success_addsToList() async throws {
         let newMonitor = makeMonitor(id: "new-1", name: "New Monitor")
         mockAPIClient.createSearchMonitorResult = .success(newMonitor)
 
@@ -71,7 +71,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.createSearchMonitorCallCount, 1)
     }
 
-    func testCreateMonitor_error_throws() async {
+    func test_createMonitor_error_throws() async {
         mockAPIClient.createSearchMonitorResult = .failure(APIError.networkError)
 
         let request = SearchMonitorRequest(name: "Test")
@@ -83,9 +83,44 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         }
     }
 
+    func test_createMonitor_setsLoadedState_whenEmpty() async throws {
+        mockAPIClient.listSearchMonitorsResult = .success([])
+        await sut.loadMonitors()
+        XCTAssertEqual(sut.state, .empty)
+
+        let newMonitor = makeMonitor(id: "new-1")
+        mockAPIClient.createSearchMonitorResult = .success(newMonitor)
+
+        let request = SearchMonitorRequest(name: "Test", searchTerms: ["test"])
+        _ = try await sut.createMonitor(request: request)
+
+        XCTAssertEqual(sut.state, .loaded)
+        XCTAssertEqual(sut.monitors.count, 1)
+    }
+
+    func test_createMonitor_passesRequestToAPI() async throws {
+        let newMonitor = makeMonitor(id: "new-1")
+        mockAPIClient.createSearchMonitorResult = .success(newMonitor)
+
+        let request = SearchMonitorRequest(
+            name: "My Monitor",
+            description: "A description",
+            searchTerms: ["term1", "term2"],
+            intervalHours: 12,
+            noveltyThreshold: 0.5
+        )
+        _ = try await sut.createMonitor(request: request)
+
+        XCTAssertEqual(mockAPIClient.lastCreateSearchMonitorRequest?.name, "My Monitor")
+        XCTAssertEqual(mockAPIClient.lastCreateSearchMonitorRequest?.description, "A description")
+        XCTAssertEqual(mockAPIClient.lastCreateSearchMonitorRequest?.searchTerms, ["term1", "term2"])
+        XCTAssertEqual(mockAPIClient.lastCreateSearchMonitorRequest?.intervalHours, 12)
+        XCTAssertEqual(mockAPIClient.lastCreateSearchMonitorRequest?.noveltyThreshold, 0.5)
+    }
+
     // MARK: - Delete Monitor
 
-    func testDeleteMonitor_success_removesFromList() async throws {
+    func test_deleteMonitor_success_removesFromList() async throws {
         let monitors = [makeMonitor(id: "1"), makeMonitor(id: "2")]
         mockAPIClient.listSearchMonitorsResult = .success(monitors)
         await sut.loadMonitors()
@@ -98,7 +133,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastDeleteSearchMonitorId, "1")
     }
 
-    func testDeleteMonitor_lastItem_setsEmptyState() async throws {
+    func test_deleteMonitor_lastItem_setsEmptyState() async throws {
         mockAPIClient.listSearchMonitorsResult = .success([makeMonitor(id: "only")])
         await sut.loadMonitors()
 
@@ -108,7 +143,7 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         XCTAssertTrue(sut.monitors.isEmpty)
     }
 
-    func testDeleteMonitor_error_throws() async {
+    func test_deleteMonitor_error_throws() async {
         mockAPIClient.deleteSearchMonitorResult = .failure(APIError.networkError)
         mockAPIClient.listSearchMonitorsResult = .success([makeMonitor(id: "1")])
         await sut.loadMonitors()
@@ -122,9 +157,19 @@ final class SearchMonitorListViewModelTests: XCTestCase {
         }
     }
 
+    func test_deleteMonitor_nonExistentId_doesNotChangeList() async throws {
+        mockAPIClient.listSearchMonitorsResult = .success([makeMonitor(id: "1")])
+        await sut.loadMonitors()
+
+        try await sut.deleteMonitor(id: "nonexistent")
+
+        XCTAssertEqual(sut.monitors.count, 1)
+        XCTAssertEqual(sut.monitors.first?.id, "1")
+    }
+
     // MARK: - Refresh
 
-    func testRefresh_updatesMonitors() async {
+    func test_refresh_updatesMonitors() async {
         mockAPIClient.listSearchMonitorsResult = .success([makeMonitor(id: "1")])
         await sut.loadMonitors()
         XCTAssertEqual(sut.monitors.count, 1)
@@ -134,6 +179,45 @@ final class SearchMonitorListViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.monitors.count, 2)
         XCTAssertEqual(mockAPIClient.listSearchMonitorsCallCount, 2)
+    }
+
+    func test_refresh_doesNotResetStateToLoading() async {
+        mockAPIClient.listSearchMonitorsResult = .success([makeMonitor(id: "1")])
+        await sut.loadMonitors()
+        XCTAssertEqual(sut.state, .loaded)
+
+        // Refresh should not set state to loading before fetching
+        mockAPIClient.listSearchMonitorsResult = .success([makeMonitor(id: "1")])
+        await sut.refresh()
+
+        XCTAssertEqual(sut.state, .loaded)
+    }
+
+    // MARK: - Initial State
+
+    func test_initialState_isLoading() {
+        XCTAssertEqual(sut.state, .loading)
+        XCTAssertTrue(sut.monitors.isEmpty)
+    }
+
+    // MARK: - State Equality
+
+    func test_state_loaded_equalsLoaded() {
+        let state1 = SearchMonitorListViewModel.State.loaded
+        let state2 = SearchMonitorListViewModel.State.loaded
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_error_equalsError() {
+        let state1 = SearchMonitorListViewModel.State.error(APIError.networkError)
+        let state2 = SearchMonitorListViewModel.State.error(APIError.networkError)
+        XCTAssertEqual(state1, state2)
+    }
+
+    func test_state_different_notEqual() {
+        let state1 = SearchMonitorListViewModel.State.loading
+        let state2 = SearchMonitorListViewModel.State.loaded
+        XCTAssertNotEqual(state1, state2)
     }
 
     // MARK: - Helpers

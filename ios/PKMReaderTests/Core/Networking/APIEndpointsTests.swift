@@ -76,4 +76,62 @@ final class APIEndpointsTests: XCTestCase {
     func test_reports_endpoint() {
         XCTAssertEqual(APIEndpoints.reports, "/reports")
     }
+
+    // MARK: - Graph Endpoint
+
+    func test_graph_endpoint() {
+        XCTAssertEqual(APIEndpoints.graph, "/graph")
+    }
+
+    // MARK: - Search Monitor Endpoints
+
+    func test_searchMonitors_endpoint() {
+        XCTAssertEqual(APIEndpoints.searchMonitors, "/searches")
+    }
+
+    func test_searchMonitor_withId() {
+        let path = APIEndpoints.searchMonitor(id: "mon-123")
+        XCTAssertEqual(path, "/searches/mon-123")
+    }
+
+    func test_searchMonitor_withSpecialCharacters_encodesId() {
+        let path = APIEndpoints.searchMonitor(id: "mon with spaces")
+        XCTAssertTrue(path.contains("/searches/"))
+        XCTAssertTrue(path.contains("mon%20with%20spaces"))
+    }
+
+    func test_searchMonitorSummaries_defaultLimit() {
+        let path = APIEndpoints.searchMonitorSummaries(monitorId: "mon-1")
+        XCTAssertTrue(path.contains("/searches/mon-1/summaries"))
+        XCTAssertTrue(path.contains("limit=20"))
+    }
+
+    func test_searchMonitorSummaries_customLimit() {
+        let path = APIEndpoints.searchMonitorSummaries(monitorId: "mon-1", limit: 50)
+        XCTAssertTrue(path.contains("limit=50"))
+    }
+
+    func test_searchMonitorSummaries_encodesMonitorId() {
+        let path = APIEndpoints.searchMonitorSummaries(monitorId: "mon special")
+        XCTAssertFalse(path.contains("mon special"))
+        XCTAssertTrue(path.contains("mon%20special"))
+    }
+
+    func test_searchMonitorSummary_withTimestamp() {
+        let path = APIEndpoints.searchMonitorSummary(
+            monitorId: "mon-1",
+            timestamp: "2026-02-20T10:00:00Z"
+        )
+        XCTAssertTrue(path.contains("/searches/mon-1/summaries/"))
+        XCTAssertTrue(path.contains("2026-02-20T10"))
+    }
+
+    func test_searchMonitorSummary_encodesTimestamp() {
+        let path = APIEndpoints.searchMonitorSummary(
+            monitorId: "mon-1",
+            timestamp: "2026-02-20T10:00:00+05:00"
+        )
+        // Colon in timezone offset should be encoded
+        XCTAssertTrue(path.contains("/searches/mon-1/summaries/"))
+    }
 }
