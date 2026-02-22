@@ -67,8 +67,7 @@ struct SearchMonitorDetailView: View {
             if let monitor = viewModel.monitor {
                 NavigationStack {
                     SearchMonitorFormView(
-                        monitor: monitor,
-                        apiClient: viewModel.apiClient
+                        monitor: monitor
                     ) { request in
                         try await viewModel.updateMonitor(request: request)
                     }

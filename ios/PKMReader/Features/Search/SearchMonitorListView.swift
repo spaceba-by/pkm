@@ -50,7 +50,7 @@ struct SearchMonitorListView: View {
         }
         .sheet(isPresented: $showingCreateForm) {
             NavigationStack {
-                SearchMonitorFormView(apiClient: viewModel.apiClient) { request in
+                SearchMonitorFormView { request in
                     try await viewModel.createMonitor(request: request)
                 }
             }

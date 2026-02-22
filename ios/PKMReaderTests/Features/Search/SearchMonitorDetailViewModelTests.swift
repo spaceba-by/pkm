@@ -81,7 +81,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.monitor?.status, .paused)
         XCTAssertEqual(mockAPIClient.updateSearchMonitorCallCount, 1)
-        XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorRequest?.status, "paused")
+        XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorRequest?.status, .paused)
     }
 
     func test_togglePauseResume_pausedToActive() async throws {
@@ -97,7 +97,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         try await sut.togglePauseResume()
 
         XCTAssertEqual(sut.monitor?.status, .active)
-        XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorRequest?.status, "active")
+        XCTAssertEqual(mockAPIClient.lastUpdateSearchMonitorRequest?.status, .active)
     }
 
     func test_togglePauseResume_noMonitor_doesNothing() async throws {

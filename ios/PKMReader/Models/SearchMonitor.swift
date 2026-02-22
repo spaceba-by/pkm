@@ -65,5 +65,5 @@ struct SearchMonitorRequest: Codable, Sendable {
     var searchTerms: [String]?
     var intervalHours: Int?
     var noveltyThreshold: Double?
-    var status: String?
+    var status: SearchMonitorStatus?
 }

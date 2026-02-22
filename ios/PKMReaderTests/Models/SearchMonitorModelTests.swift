@@ -261,7 +261,7 @@ final class SearchMonitorModelTests: XCTestCase {
             searchTerms: ["a", "b"],
             intervalHours: 12,
             noveltyThreshold: 0.5,
-            status: "active"
+            status: .active
         )
 
         let data = try JSONEncoder().encode(request)
@@ -271,7 +271,7 @@ final class SearchMonitorModelTests: XCTestCase {
         XCTAssertEqual(decoded.searchTerms, ["a", "b"])
         XCTAssertEqual(decoded.intervalHours, 12)
         XCTAssertEqual(decoded.noveltyThreshold, 0.5)
-        XCTAssertEqual(decoded.status, "active")
+        XCTAssertEqual(decoded.status, .active)
     }
 
     func test_request_encodesPartialFields() throws {
@@ -288,12 +288,12 @@ final class SearchMonitorModelTests: XCTestCase {
     }
 
     func test_request_statusOnly() throws {
-        let request = SearchMonitorRequest(status: "paused")
+        let request = SearchMonitorRequest(status: .paused)
 
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(SearchMonitorRequest.self, from: data)
         XCTAssertNil(decoded.name)
-        XCTAssertEqual(decoded.status, "paused")
+        XCTAssertEqual(decoded.status, .paused)
     }
 
     // MARK: - Helpers

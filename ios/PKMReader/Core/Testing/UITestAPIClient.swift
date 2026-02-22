@@ -319,7 +319,7 @@ final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
             searchTerms: request.searchTerms ?? existing.searchTerms,
             intervalHours: request.intervalHours ?? existing.intervalHours,
             noveltyThreshold: request.noveltyThreshold ?? existing.noveltyThreshold,
-            status: request.status.flatMap(SearchMonitorStatus.init(rawValue:)) ?? existing.status,
+            status: request.status ?? existing.status,
             lastExecuted: existing.lastExecuted,
             nextExecution: existing.nextExecution,
             created: existing.created,

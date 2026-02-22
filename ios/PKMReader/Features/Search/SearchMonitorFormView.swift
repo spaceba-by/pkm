@@ -14,16 +14,13 @@ struct SearchMonitorFormView: View {
     @State private var errorMessage: String?
 
     private let existingMonitor: SearchMonitor?
-    private let apiClient: any APIClientProtocol
     private let onSave: ((SearchMonitorRequest) async throws -> SearchMonitor)?
     private let onUpdate: ((SearchMonitorRequest) async throws -> SearchMonitor)?
 
     /// Create mode initializer
     init(
-        apiClient: any APIClientProtocol,
         onSave: @escaping (SearchMonitorRequest) async throws -> SearchMonitor
     ) {
-        self.apiClient = apiClient
         self.existingMonitor = nil
         self.onSave = onSave
         self.onUpdate = nil
@@ -32,10 +29,8 @@ struct SearchMonitorFormView: View {
     /// Edit mode initializer
     init(
         monitor: SearchMonitor,
-        apiClient: any APIClientProtocol,
         onUpdate: @escaping (SearchMonitorRequest) async throws -> SearchMonitor
     ) {
-        self.apiClient = apiClient
         self.existingMonitor = monitor
         self.onSave = nil
         self.onUpdate = onUpdate

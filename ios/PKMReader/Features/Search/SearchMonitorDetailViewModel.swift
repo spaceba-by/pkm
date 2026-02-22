@@ -42,7 +42,7 @@ final class SearchMonitorDetailViewModel: ObservableObject {
 
     func togglePauseResume() async throws {
         guard let monitor else { return }
-        let newStatus: String = monitor.status == .active ? "paused" : "active"
+        let newStatus: SearchMonitorStatus = monitor.status == .active ? .paused : .active
         let request = SearchMonitorRequest(status: newStatus)
         let updated = try await apiClient.updateSearchMonitor(id: monitorId, request: request)
         self.monitor = updated
