@@ -200,10 +200,9 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     }
 
     func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
-        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
-        let url = baseURL.appendingPathComponent("searches/\(encodedId)")
+        let url = baseURL
+            .appendingPathComponent("searches")
+            .appendingPathComponent(id)
         return try await performRequestWithRetry(url: url)
     }
 
@@ -213,27 +212,26 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     }
 
     func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
-        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
-        let url = baseURL.appendingPathComponent("searches/\(encodedId)")
+        let url = baseURL
+            .appendingPathComponent("searches")
+            .appendingPathComponent(id)
         return try await performEncodableMutatingRequestWithRetry(url: url, method: "PUT", body: request)
     }
 
     func deleteSearchMonitor(id: String) async throws {
-        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
-        let url = baseURL.appendingPathComponent("searches/\(encodedId)")
+        let url = baseURL
+            .appendingPathComponent("searches")
+            .appendingPathComponent(id)
         try await performDeleteRequestWithRetry(url: url)
     }
 
     func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] {
-        guard let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
+        let baseSummariesURL = baseURL
+            .appendingPathComponent("searches")
+            .appendingPathComponent(monitorId)
+            .appendingPathComponent("summaries")
         var components = URLComponents(
-            url: baseURL.appendingPathComponent("searches/\(encodedId)/summaries"),
+            url: baseSummariesURL,
             resolvingAgainstBaseURL: false
         )
         components?.queryItems = [
@@ -247,13 +245,11 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     }
 
     func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
-        guard let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
-        guard let encodedTs = timestamp.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            throw APIError.invalidURL
-        }
-        let url = baseURL.appendingPathComponent("searches/\(encodedId)/summaries/\(encodedTs)")
+        let url = baseURL
+            .appendingPathComponent("searches")
+            .appendingPathComponent(monitorId)
+            .appendingPathComponent("summaries")
+            .appendingPathComponent(timestamp)
         return try await performRequestWithRetry(url: url)
     }
 

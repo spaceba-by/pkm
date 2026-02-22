@@ -21,15 +21,19 @@ struct SearchMonitorListView: View {
                 monitorList
 
             case .empty:
-                EmptyStateView(
-                    icon: "magnifyingglass.circle",
-                    title: "No Search Monitors",
-                    message: "Create a monitor to track topics over time"
-                )
+                ScrollView {
+                    EmptyStateView(
+                        icon: "magnifyingglass.circle",
+                        title: "No Search Monitors",
+                        message: "Create a monitor to track topics over time"
+                    )
+                }
 
             case .error(let error):
-                ErrorView(error: error) {
-                    Task { await viewModel.loadMonitors() }
+                ScrollView {
+                    ErrorView(error: error) {
+                        Task { await viewModel.loadMonitors() }
+                    }
                 }
             }
         }

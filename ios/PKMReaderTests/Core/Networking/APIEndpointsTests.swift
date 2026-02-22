@@ -131,7 +131,9 @@ final class APIEndpointsTests: XCTestCase {
             monitorId: "mon-1",
             timestamp: "2026-02-20T10:00:00+05:00"
         )
-        // Colon in timezone offset should be encoded
+        // Colons should be percent-encoded in path
         XCTAssertTrue(path.contains("/searches/mon-1/summaries/"))
+        XCTAssertFalse(path.contains("10:00:00"))
+        XCTAssertTrue(path.contains("10%3A00%3A00"))
     }
 }
