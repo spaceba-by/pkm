@@ -46,9 +46,9 @@ resource "aws_sns_platform_application" "apns" {
   platform_principal  = var.apns_signing_key_id
 
   attributes = {
-    "ApplePlatformTeamID"      = var.apns_team_id
-    "ApplePlatformBundleID"    = var.apns_bundle_id
-    "TokenSigningAlgorithm"    = "ES256"
+    "ApplePlatformTeamID"   = var.apns_team_id
+    "ApplePlatformBundleID" = var.apns_bundle_id
+    "TokenSigningAlgorithm" = "ES256"
   }
 
   tags = merge(var.tags, {
@@ -85,7 +85,9 @@ resource "aws_lambda_function" "api_device_tokens" {
   s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_device_tokens.zip" : null
 
   environment {
-    variables = local.api_lambda_environment
+    variables = merge(local.api_lambda_environment, {
+      SNS_PLATFORM_APPLICATION_ARN = try(aws_sns_platform_application.apns["enabled"].arn, "")
+    })
   }
 
   dead_letter_config {

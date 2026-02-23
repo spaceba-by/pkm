@@ -88,7 +88,6 @@ struct RootView: View {
             }
         }
     }
-}
 
     private func configureNotifications(apiClient: any APIClientProtocol) async {
         let notificationService = NotificationService.shared

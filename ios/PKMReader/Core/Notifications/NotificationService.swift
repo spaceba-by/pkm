@@ -20,6 +20,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
     @Published private(set) var isRegistered = false
 
     private var apiClient: (any APIClientProtocol)?
+    private var registeredDeviceId: String?
 
     override private init() {
         super.init()
@@ -77,6 +78,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
 
         do {
             _ = try await apiClient.registerDevice(request: request)
+            registeredDeviceId = deviceId
             isRegistered = true
         } catch {
             print("Failed to register device token with backend: \(error.localizedDescription)")
@@ -86,13 +88,13 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
 
     /// Unregister the current device from push notifications
     func unregisterDevice() async {
-        guard let apiClient else { return }
-        let deviceId = await UIDevice.current.identifierForVendor?.uuidString ?? ""
+        guard let apiClient, let deviceId = registeredDeviceId else { return }
 
         do {
             try await apiClient.unregisterDevice(deviceId: deviceId)
             isRegistered = false
             deviceToken = nil
+            registeredDeviceId = nil
         } catch {
             print("Failed to unregister device: \(error.localizedDescription)")
         }

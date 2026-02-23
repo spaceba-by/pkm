@@ -52,32 +52,46 @@
              :expr-attr-values {":pk" user-pk
                                  ":prefix" "device_token#"}))
 
+(defn- get-unread-count
+  "Get unread notification count for a user"
+  [user-pk]
+  (let [results (ddb/query ddb-table
+                           :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                           :expr-attr-values {":pk" user-pk
+                                               ":prefix" "notification#pending#"}
+                           :select "COUNT")]
+    (or results 0)))
+
 (defn- build-apns-payload
   "Build APNs notification payload"
   [notification]
-  (let [payload {:aps {:alert {:title (:title notification)
+  (let [badge-count (try (get-unread-count (:pk notification))
+                         (catch Exception _ 1))
+        payload {:aps {:alert {:title (:title notification)
                                :body (:body notification)}
                        :sound "default"
-                       :badge 1}
+                       :badge badge-count}
                  :notificationType (:notification-type notification)
                  :deepLink (:deep-link notification)
                  :notificationId (:notification-id notification)}]
     (json/generate-string payload)))
 
 (defn- send-to-device
-  "Send notification to a single device via SNS"
-  [device-token notification]
-  (when sns-platform-arn
-    (try
-      (let [apns-payload (build-apns-payload notification)
-            message (json/generate-string
-                     {"APNS" apns-payload
-                      "APNS_SANDBOX" apns-payload
-                      "default" (:title notification)})]
-        (sns/publish-to-endpoint (:device_token device-token) message)
-        (println "Sent notification to device:" (:device_id device-token)))
-      (catch Exception e
-        (println "Error sending to device" (:device_id device-token) ":" (ex-message e))))))
+  "Send notification to a single device via SNS using the server-created endpoint ARN"
+  [device notification]
+  (let [endpoint-arn (:endpoint_arn device)]
+    (if (nil? endpoint-arn)
+      (println "Skipping device" (:device_id device) "- no endpoint ARN")
+      (try
+        (let [apns-payload (build-apns-payload notification)
+              message (json/generate-string
+                       {"APNS" apns-payload
+                        "APNS_SANDBOX" apns-payload
+                        "default" (:title notification)})]
+          (sns/publish-to-endpoint endpoint-arn message)
+          (println "Sent notification to device:" (:device_id device)))
+        (catch Exception e
+          (println "Error sending to device" (:device_id device) ":" (ex-message e)))))))
 
 (defn process-record
   "Process a single DynamoDB Stream record"
@@ -99,21 +113,19 @@
        :devices-notified (count device-tokens)})))
 
 (defn handler
-  "Lambda handler for DynamoDB Stream trigger"
+  "Lambda handler for DynamoDB Stream trigger.
+   DynamoDB Stream events contain Records directly in the event (not in a body)."
   [request]
   (try
-    (let [event (json/parse-string (:body request) true)
-          records (or (:Records event) (get event "Records") [])]
+    (let [records (or (:Records request) (get request "Records") [])]
 
       (println "Processing" (count records) "DynamoDB Stream records")
 
       (let [results (keep process-record records)]
-        {:statusCode 200
-         :body (json/generate-string {:processed (count results)
-                                      :results (vec results)})}))
+        {:processed (count results)
+         :results (vec results)}))
 
     (catch Exception e
       (println "Error in notification dispatch:" (ex-message e))
       (.printStackTrace e)
-      {:statusCode 500
-       :body (json/generate-string {:error (ex-message e)})})))
+      (throw e))))

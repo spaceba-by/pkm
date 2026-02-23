@@ -33,7 +33,7 @@
    :read (boolean (:read notification))})
 
 (defn list-notifications
-  "List pending notifications for the user"
+  "List all notifications for the user (both read and unread)"
   [user-sub]
   (let [pk (user-pk user-sub)
         results (ddb/query ddb-table
@@ -47,10 +47,11 @@
            :count (count formatted)})))
 
 (defn mark-read
-  "Mark a notification as read"
+  "Mark a notification as read.
+   Queries user notifications and filters by notification_id in-memory.
+   For users with many notifications, consider adding a GSI on notification_id."
   [user-sub notification-id]
   (let [pk (user-pk user-sub)
-        ;; Find the notification by scanning pending notifications
         results (ddb/query ddb-table
                            :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
                            :expr-attr-values {":pk" pk

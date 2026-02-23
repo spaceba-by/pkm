@@ -103,26 +103,45 @@
      :documents documents
      :classification_counts classification-counts}))
 
+(defn- get-all-user-pks
+  "Return a set of all user partition keys (PKs) from device token registrations"
+  []
+  (try
+    (let [items (ddb/scan-all ddb-table)]
+      (->> items
+           (map :PK)
+           (filter #(and (string? %) (.startsWith ^String % "user#")))
+           (into #{})))
+    (catch Exception e
+      (println "Warning: failed to scan for user partition keys:" (ex-message e))
+      #{})))
+
 (defn- create-report-notification
-  "Create a notification record for the weekly report"
+  "Create notification records for the weekly report, one per registered user"
   [week-str doc-count]
-  (let [notification-id (str (java.util.UUID/randomUUID))
-        now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
-        notification-sk (str "notification#pending#" now-ts "#" notification-id)]
-    (try
-      (ddb/put-item ddb-table
-                    {:PK "user#system"
-                     :SK notification-sk
-                     :notification_id notification-id
-                     :notification_type "weekly_report"
-                     :title (str "Weekly Report: " week-str)
-                     :body (str "Report covering " doc-count " documents for week " week-str)
-                     :deep_link (str "/reports/" week-str)
-                     :timestamp now-ts
-                     :read false})
-      (println "Created notification for weekly report:" week-str)
-      (catch Exception e
-        (println "Warning: failed to create notification:" (ex-message e))))))
+  (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
+        user-pks (get-all-user-pks)]
+    (if (seq user-pks)
+      (do
+        (doseq [user-pk user-pks]
+          (try
+            (let [notification-id (str (java.util.UUID/randomUUID))
+                  notification-sk (str "notification#pending#" now-ts "#" notification-id)]
+              (ddb/put-item ddb-table
+                            {:PK user-pk
+                             :SK notification-sk
+                             :notification_id notification-id
+                             :notification_type "weekly_report"
+                             :title (str "Weekly Report: " week-str)
+                             :body (str "Report covering " doc-count " documents for week " week-str)
+                             :deep_link (str "/reports/" week-str)
+                             :timestamp now-ts
+                             :read false}))
+            (catch Exception e
+              (println "Warning: failed to create notification for user"
+                       user-pk ":" (ex-message e)))))
+        (println "Created weekly report notifications for" (count user-pks) "users on" week-str))
+      (println "No registered users found, skipping notification creation for" week-str))))
 
 (defn handler
   "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"

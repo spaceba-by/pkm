@@ -46,11 +46,11 @@
   (testing "Device item has correct DynamoDB structure"
     (let [user-sub "user-123"
           device-id "device-001"
-          device-token "abcdef0123456789"
+          endpoint-arn "arn:aws:sns:us-east-1:123456789:endpoint/APNS/pkm-agent-ios-push/abc123"
           now "2026-02-23T12:00:00Z"
           item {:PK (user-pk user-sub)
                 :SK (device-sk device-id)
-                :device_token device-token
+                :endpoint_arn endpoint-arn
                 :device_id device-id
                 :platform "ios"
                 :app_version "1.0.0"
@@ -58,7 +58,7 @@
                 :last_seen now}]
       (is (= "user#user-123" (:PK item)))
       (is (= "device_token#device-001" (:SK item)))
-      (is (= device-token (:device_token item)))
+      (is (= endpoint-arn (:endpoint_arn item)))
       (is (= "ios" (:platform item))))))
 
 ;; =============================================================================

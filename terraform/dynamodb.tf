@@ -5,8 +5,8 @@ resource "aws_dynamodb_table" "metadata" {
   hash_key     = "PK"
   range_key    = "SK"
 
-  stream_enabled   = true
-  stream_view_type = "NEW_IMAGE"
+  stream_enabled   = var.enable_mobile_api
+  stream_view_type = var.enable_mobile_api ? "NEW_IMAGE" : null
 
   attribute {
     name = "PK"

@@ -2,12 +2,14 @@
   "API Lambda: Device token management for push notifications.
    Handles POST /devices and DELETE /devices/{device-id}"
   (:require [aws.dynamodb :as ddb]
+            [aws.sns :as sns]
             [api.response :as r]
             [cheshire.core :as json])
   (:import [java.time Instant]
            [java.time.temporal ChronoUnit]))
 
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
+(def sns-platform-arn (System/getenv "SNS_PLATFORM_APPLICATION_ARN"))
 
 (defn- now-iso []
   (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS)))
@@ -19,7 +21,8 @@
   (str "device_token#" device-id))
 
 (defn register-device
-  "Register or update a device token for push notifications"
+  "Register or update a device token for push notifications.
+   Creates an SNS platform endpoint server-side and stores the endpoint ARN."
   [user-sub body]
   (let [device-token (:deviceToken body)
         device-id (:deviceId body)
@@ -34,10 +37,14 @@
       (nil? device-id)
       (r/bad-request "Device ID is required")
 
+      (nil? sns-platform-arn)
+      (r/internal-error "SNS platform application not configured")
+
       :else
-      (let [item {:PK (user-pk user-sub)
+      (let [endpoint-arn (sns/create-platform-endpoint sns-platform-arn device-token)
+            item {:PK (user-pk user-sub)
                   :SK (device-sk device-id)
-                  :device_token device-token
+                  :endpoint_arn endpoint-arn
                   :device_id device-id
                   :platform platform
                   :app_version app-version
