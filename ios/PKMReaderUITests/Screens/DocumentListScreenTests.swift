@@ -33,13 +33,11 @@ final class DocumentListScreenTests: XCTestCase {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
 
-        // Mock data has 3 documents - verify all are present
         let cells = list.cells
         XCTAssertEqual(cells.count, 3, "Expected 3 document cells from mock data")
     }
 
     func test_documentList_showsDocumentTitles() throws {
-        // Verify fixture document titles appear
         let meetingTitle = app.staticTexts["Team Meeting Notes"]
         XCTAssertTrue(meetingTitle.waitForExistence(timeout: 5), "Meeting document title not found")
     }
@@ -56,11 +54,9 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertTrue(filterButton.waitForExistence(timeout: 5), "Filter button not found")
         filterButton.tap()
 
-        // Verify filter sheet appeared
         let filterNavBar = app.navigationBars["Filter"]
         XCTAssertTrue(filterNavBar.waitForExistence(timeout: 5), "Filter sheet not displayed")
 
-        // Verify "All Documents" option exists
         let allFilter = app.buttons["Filter_All"]
         XCTAssertTrue(allFilter.waitForExistence(timeout: 5), "All Documents filter not found")
     }
@@ -70,28 +66,23 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertTrue(filterButton.waitForExistence(timeout: 5))
         filterButton.tap()
 
-        // Select meeting filter
         let meetingFilter = app.buttons["Filter_meeting"]
         XCTAssertTrue(meetingFilter.waitForExistence(timeout: 5), "Meeting filter not found")
         meetingFilter.tap()
 
-        // Tap Apply
         let applyButton = app.buttons["ApplyFilterButton"]
         XCTAssertTrue(applyButton.waitForExistence(timeout: 5), "Apply button not found")
         applyButton.tap()
 
-        // Filter sheet should dismiss
         let filterNavBar = app.navigationBars["Filter"]
         XCTAssertFalse(filterNavBar.waitForExistence(timeout: 2), "Filter sheet should have dismissed")
 
-        // Verify the meeting filter was applied - only meeting documents should show
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed after filter")
 
         let meetingTitle = app.staticTexts["Team Meeting Notes"]
         XCTAssertTrue(meetingTitle.waitForExistence(timeout: 5), "Meeting document not shown after filter")
 
-        // Non-meeting documents should not appear
         let ideaTitle = app.staticTexts["App Redesign Ideas"]
         XCTAssertFalse(ideaTitle.exists, "Non-meeting document should be filtered out")
     }
@@ -106,7 +97,6 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Document cell not found")
         firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        // Verify navigation to detail view via back button presence
         let backButton = app.navigationBars.buttons.element(boundBy: 0)
         XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Document detail not displayed")
     }
@@ -117,10 +107,81 @@ final class DocumentListScreenTests: XCTestCase {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
 
-        // Swipe down to trigger refresh
         list.swipeDown()
 
-        // List should still be displayed after refresh
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed after refresh")
+    }
+
+    // MARK: - Search Tests (migrated from SearchScreenTests)
+
+    func test_search_showsResults() throws {
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Search field not found")
+        searchField.tap()
+        searchField.typeText("meeting")
+
+        let resultsList = app.collectionViews["SearchResultsList"]
+        XCTAssertTrue(resultsList.waitForExistence(timeout: 5), "Search results not displayed")
+    }
+
+    func test_search_tapResult_navigatesToDetail() throws {
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Search field not found")
+        searchField.tap()
+        searchField.typeText("meeting")
+
+        let resultsList = app.collectionViews["SearchResultsList"]
+        XCTAssertTrue(resultsList.waitForExistence(timeout: 5), "Search results not displayed")
+
+        let firstCell = resultsList.cells.firstMatch
+        XCTAssertTrue(firstCell.waitForExistence(timeout: 5), "Search result cell not found")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        let backButton = app.navigationBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Detail view not displayed")
+    }
+
+    func test_search_noResults_showsEmptyState() throws {
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Search field not found")
+        searchField.tap()
+        searchField.typeText("zzzznonexistent")
+
+        documentListPage.assertShowsSearchEmptyState(timeout: 5)
+    }
+
+    // MARK: - Search Monitors Access
+
+    func test_searchMonitorsLink_exists() throws {
+        let monitorsLink = app.buttons["SearchMonitorsLink"]
+        XCTAssertTrue(monitorsLink.waitForExistence(timeout: 5), "Search monitors link not found")
+    }
+
+    func test_searchMonitorsLink_navigatesToMonitors() throws {
+        let monitorsLink = app.buttons["SearchMonitorsLink"]
+        XCTAssertTrue(monitorsLink.waitForExistence(timeout: 5), "Search monitors link not found")
+        monitorsLink.tap()
+
+        let navBar = app.navigationBars["Search Monitors"]
+        XCTAssertTrue(navBar.waitForExistence(timeout: 10), "Search Monitors view not displayed")
+    }
+
+    // MARK: - Tag Filter in Filter Sheet
+
+    func test_filterSheet_showsTagsSection() throws {
+        let filterButton = app.buttons["FilterButton"]
+        XCTAssertTrue(filterButton.waitForExistence(timeout: 5))
+        filterButton.tap()
+
+        let filterNavBar = app.navigationBars["Filter"]
+        XCTAssertTrue(filterNavBar.waitForExistence(timeout: 5), "Filter sheet not displayed")
+
+        // Tags section should be visible — use accessibilityIdentifier to avoid
+        // ambiguity with classification names; scroll if needed
+        let tagElement = app.buttons["Filter_Tag_swift"]
+        if !tagElement.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(tagElement.waitForExistence(timeout: 5), "Tag not shown in filter sheet")
     }
 }

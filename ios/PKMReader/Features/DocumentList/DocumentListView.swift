@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Main view for displaying the list of documents
+/// Main view for displaying the list of documents with integrated search
 struct DocumentListView: View {
     @StateObject private var viewModel: DocumentListViewModel
     @State private var showingFilter = false
@@ -13,35 +13,17 @@ struct DocumentListView: View {
     var body: some View {
         NavigationStack {
             Group {
-                switch viewModel.state {
-                case .loading:
-                    LoadingView(message: "Loading documents...")
-
-                case .loaded(let documents):
-                    documentList(documents)
-
-                case .error(let error):
-                    ErrorView(error: error) {
-                        Task { await viewModel.loadDocuments() }
-                    }
-
-                case .empty:
-                    if let classification = viewModel.selectedClassification {
-                        EmptyStateView(
-                            icon: "doc.text",
-                            title: "No Documents",
-                            message: "No \(classification.displayName.lowercased()) documents found"
-                        )
-                    } else {
-                        EmptyStateView(
-                            icon: "doc.text",
-                            title: "No Documents",
-                            message: "Your vault is empty"
-                        )
-                    }
+                if viewModel.isSearchActive {
+                    searchContent
+                } else {
+                    browseContent
                 }
             }
             .navigationTitle("Documents")
+            .searchable(
+                text: $viewModel.searchText,
+                prompt: "Search documents..."
+            )
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     HStack(spacing: 12) {
@@ -53,9 +35,32 @@ struct DocumentListView: View {
                         .accessibilityLabel("Create document")
                         .accessibilityIdentifier("CreateDocumentButton")
 
-                        sortMenu
+                        if !viewModel.isSearchActive {
+                            sortMenu
+                        }
 
                         filterButton
+
+                        NavigationLink {
+                            SearchMonitorListView(apiClient: viewModel.apiClient)
+                        } label: {
+                            Image(systemName: "binoculars")
+                        }
+                        .accessibilityLabel("Search monitors")
+                        .accessibilityIdentifier("SearchMonitorsLink")
+                    }
+                }
+
+                if viewModel.isSearchActive {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Picker("Mode", selection: $viewModel.searchMode) {
+                            ForEach(SearchMode.allCases, id: \.self) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .fixedSize()
+                        .accessibilityIdentifier("SearchModePicker")
                     }
                 }
             }
@@ -69,20 +74,100 @@ struct DocumentListView: View {
             .sheet(isPresented: $showingFilter) {
                 FilterSheet(
                     selectedClassification: $viewModel.selectedClassification,
+                    selectedTag: $viewModel.selectedTag,
+                    tags: viewModel.tags,
                     onApply: {
                         Task { await viewModel.loadDocuments() }
                     }
                 )
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
             }
             .refreshable {
-                await viewModel.refresh()
+                if viewModel.isSearchActive {
+                    await viewModel.search()
+                } else {
+                    await viewModel.refresh()
+                }
             }
         }
         .task {
             await viewModel.loadDocuments()
         }
+        .task {
+            await viewModel.loadTags()
+        }
     }
+
+    // MARK: - Browse Content
+
+    @ViewBuilder private var browseContent: some View {
+        switch viewModel.state {
+        case .loading:
+            LoadingView(message: "Loading documents...")
+
+        case .loaded(let documents):
+            documentList(documents)
+
+        case .error(let error):
+            ErrorView(error: error) {
+                Task { await viewModel.loadDocuments() }
+            }
+
+        case .empty:
+            if let classification = viewModel.selectedClassification {
+                EmptyStateView(
+                    icon: "doc.text",
+                    title: "No Documents",
+                    message: "No \(classification.displayName.lowercased()) documents found"
+                )
+            } else if let tag = viewModel.selectedTag {
+                EmptyStateView(
+                    icon: "doc.text",
+                    title: "No Documents",
+                    message: "No documents tagged \"\(tag.name)\""
+                )
+            } else {
+                EmptyStateView(
+                    icon: "doc.text",
+                    title: "No Documents",
+                    message: "Your vault is empty"
+                )
+            }
+        }
+    }
+
+    // MARK: - Search Content
+
+    @ViewBuilder private var searchContent: some View {
+        switch viewModel.searchState {
+        case .idle:
+            EmptyStateView(
+                icon: "magnifyingglass",
+                title: "Search Documents",
+                message: "Enter at least 2 characters to search"
+            )
+
+        case .loading:
+            LoadingView(message: "Searching...")
+
+        case .loaded(let documents):
+            searchResultsList(documents)
+
+        case .empty:
+            EmptyStateView(
+                icon: "magnifyingglass",
+                title: "No Results",
+                message: "No documents match your search"
+            )
+
+        case .error(let error):
+            ErrorView(error: error) {
+                Task { await viewModel.search() }
+            }
+        }
+    }
+
+    // MARK: - Toolbar Items
 
     private var sortMenu: some View {
         Menu {
@@ -111,14 +196,16 @@ struct DocumentListView: View {
         Button {
             showingFilter = true
         } label: {
-            Image(systemName: viewModel.selectedClassification != nil
+            Image(systemName: viewModel.hasActiveFilter
                 ? "line.3.horizontal.decrease.circle.fill"
                 : "line.3.horizontal.decrease.circle")
         }
         .accessibilityLabel("Filter documents")
-        .accessibilityHint("Opens filter options by classification")
+        .accessibilityHint("Opens filter options by classification and tag")
         .accessibilityIdentifier("FilterButton")
     }
+
+    // MARK: - Lists
 
     private func documentList(_ documents: [Document]) -> some View {
         List {
@@ -144,6 +231,22 @@ struct DocumentListView: View {
             })
         }
         .accessibilityIdentifier("DocumentList")
+    }
+
+    private func searchResultsList(_ documents: [Document]) -> some View {
+        List {
+            ForEach(documents) { document in
+                NavigationLink(value: document) {
+                    DocumentRowView(document: document)
+                }
+                .accessibilityIdentifier("SearchResult_\(document.id)")
+            }
+        }
+        .listStyle(.plain)
+        .navigationDestination(for: Document.self) { document in
+            DocumentDetailView(document: document, apiClient: viewModel.apiClient)
+        }
+        .accessibilityIdentifier("SearchResultsList")
     }
 }
 

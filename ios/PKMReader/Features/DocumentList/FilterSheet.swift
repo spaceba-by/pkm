@@ -1,18 +1,21 @@
 import SwiftUI
 
-/// Sheet for filtering documents by classification
+/// Sheet for filtering documents by classification and tag
 struct FilterSheet: View {
     @Binding var selectedClassification: DocumentClassification?
+    @Binding var selectedTag: Tag?
+    let tags: [Tag]
     let onApply: () -> Void
 
     @Environment(\.dismiss)
     private var dismissAction: DismissAction
 
+    @State private var tagSearchText = ""
+
     var body: some View {
         NavigationStack {
             List {
                 Section("Classification") {
-                    // All documents option
                     Button {
                         selectedClassification = nil
                     } label: {
@@ -31,7 +34,6 @@ struct FilterSheet: View {
                     .accessibilityHint("Shows all document types")
                     .accessibilityIdentifier("Filter_All")
 
-                    // Classification options
                     ForEach(DocumentClassification.allCases, id: \.self) { classification in
                         Button {
                             selectedClassification = classification
@@ -52,7 +54,38 @@ struct FilterSheet: View {
                         .accessibilityIdentifier("Filter_\(classification.rawValue)")
                     }
                 }
+
+                if !tags.isEmpty {
+                    Section("Tags") {
+                        ForEach(filteredTags) { tag in
+                            Button {
+                                if selectedTag?.id == tag.id {
+                                    selectedTag = nil
+                                } else {
+                                    selectedTag = tag
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "tag")
+                                        .foregroundStyle(.secondary)
+                                    Text(tag.name)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Text("\(tag.documentCount)")
+                                        .foregroundStyle(.secondary)
+                                        .font(.callout)
+                                    if selectedTag?.id == tag.id {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                            }
+                            .accessibilityIdentifier("Filter_Tag_\(tag.name)")
+                        }
+                    }
+                }
             }
+            .searchable(text: $tagSearchText, prompt: "Filter tags...")
             .navigationTitle("Filter")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -73,14 +106,35 @@ struct FilterSheet: View {
         }
     }
 
-    init(selectedClassification: Binding<DocumentClassification?>, onApply: @escaping () -> Void) {
+    private var filteredTags: [Tag] {
+        if tagSearchText.isEmpty {
+            return tags
+        }
+        return tags.filter { $0.name.localizedCaseInsensitiveContains(tagSearchText) }
+    }
+
+    init(
+        selectedClassification: Binding<DocumentClassification?>,
+        selectedTag: Binding<Tag?>,
+        tags: [Tag],
+        onApply: @escaping () -> Void
+    ) {
         self._selectedClassification = selectedClassification
+        self._selectedTag = selectedTag
+        self.tags = tags
         self.onApply = onApply
     }
 }
 
 #Preview {
-    FilterSheet(selectedClassification: Binding.constant(DocumentClassification.meeting)) {
+    FilterSheet(
+        selectedClassification: Binding.constant(DocumentClassification.meeting),
+        selectedTag: Binding.constant(nil),
+        tags: [
+            Tag(id: "meeting", name: "meeting", documentCount: 10),
+            Tag(id: "project", name: "project", documentCount: 7)
+        ]
+    ) {
         print("Applied")
     }
 }

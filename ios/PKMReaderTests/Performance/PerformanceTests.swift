@@ -126,7 +126,7 @@ final class PerformanceTests: XCTestCase {
     func test_searchDebounce_cancellation_performance() {
         let mockAPIClient = MockAPIClient()
         mockAPIClient.searchResult = .success([])
-        let viewModel = SearchViewModel(apiClient: mockAPIClient)
+        let viewModel = DocumentListViewModel(apiClient: mockAPIClient)
 
         measure(metrics: [XCTClockMetric()]) {
             for i in 0..<50 {

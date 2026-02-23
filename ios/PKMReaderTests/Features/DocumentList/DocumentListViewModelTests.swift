@@ -20,44 +20,32 @@ final class DocumentListViewModelTests: XCTestCase {
         try await super.tearDown()
     }
 
-    // MARK: - Initial State Tests
+    // MARK: - Initial State
 
-    func test_initialState_isLoading() {
+    func test_initialState() {
         XCTAssertEqual(sut.state, .loading)
-    }
-
-    func test_initialState_hasNoMorePages() {
         XCTAssertFalse(sut.hasMorePages)
-    }
-
-    func test_initialState_noSelectedClassification() {
         XCTAssertNil(sut.selectedClassification)
-    }
-
-    func test_initialState_emptySearchText() {
         XCTAssertEqual(sut.searchText, "")
-    }
-
-    func test_initialState_sortOrderIsModifiedDate() {
         XCTAssertEqual(sut.sortOrder, .modifiedDate)
+        XCTAssertEqual(sut.searchState, .idle)
+        XCTAssertEqual(sut.searchMode, .keyword)
+        XCTAssertNil(sut.selectedTag)
+        XCTAssertTrue(sut.tags.isEmpty)
+        XCTAssertFalse(sut.isSearchActive)
+        XCTAssertFalse(sut.hasActiveFilter)
     }
 
-    // MARK: - Load Documents Tests
+    // MARK: - Load Documents
 
     func test_loadDocuments_success_updatesStateToLoaded() async {
-        // Given
-        let documents = TestFixtures.sampleDocuments
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: documents, nextCursor: nil)
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
-
-        // When
         await sut.loadDocuments()
 
-        // Then
         if case .loaded(let loadedDocs) = sut.state {
-            XCTAssertEqual(loadedDocs.count, documents.count)
-            // Documents are sorted by modified date descending
+            XCTAssertEqual(loadedDocs.count, 3)
             XCTAssertEqual(loadedDocs.first?.id, "ideas/new-feature.md")
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")
@@ -65,43 +53,20 @@ final class DocumentListViewModelTests: XCTestCase {
     }
 
     func test_loadDocuments_emptyResult_updatesStateToEmpty() async {
-        // Given
-        mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: [], nextCursor: nil)
-        )
-
-        // When
+        mockAPIClient.listDocumentsResult = .success(DocumentListResponse(documents: [], nextCursor: nil))
         await sut.loadDocuments()
-
-        // Then
         XCTAssertEqual(sut.state, .empty)
     }
 
     func test_loadDocuments_failure_updatesStateToError() async {
-        // Given
         mockAPIClient.listDocumentsResult = .failure(APIError.invalidResponse)
-
-        // When
         await sut.loadDocuments()
-
-        // Then
-        if case .error = sut.state {
-            // Expected
-        } else {
-            XCTFail("Expected error state, got \(sut.state)")
-        }
+        if case .error = sut.state { } else { XCTFail("Expected error state") }
     }
 
     func test_loadDocuments_callsAPIWithCorrectParameters() async {
-        // Given
-        mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: [], nextCursor: nil)
-        )
-
-        // When
+        mockAPIClient.listDocumentsResult = .success(DocumentListResponse(documents: [], nextCursor: nil))
         await sut.loadDocuments()
-
-        // Then
         XCTAssertEqual(mockAPIClient.listDocumentsCallCount, 1)
         XCTAssertNil(mockAPIClient.lastListDocumentsClassification)
         XCTAssertEqual(mockAPIClient.lastListDocumentsLimit, 50)
@@ -109,146 +74,106 @@ final class DocumentListViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastListDocumentsSort, .modifiedDate)
     }
 
-    // MARK: - Classification Filter Tests
-
     func test_loadDocuments_withClassification_passesFilterToAPI() async {
-        // Given
         sut.selectedClassification = .meeting
-        mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: [], nextCursor: nil)
-        )
-
-        // When
+        mockAPIClient.listDocumentsResult = .success(DocumentListResponse(documents: [], nextCursor: nil))
         await sut.loadDocuments()
-
-        // Then
         XCTAssertEqual(mockAPIClient.lastListDocumentsClassification, .meeting)
     }
 
-    // MARK: - Pagination Tests
+    // MARK: - Pagination
 
     func test_loadDocuments_withNextCursor_setsHasMorePages() async {
-        // Given
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(
-                documents: TestFixtures.sampleDocuments,
-                nextCursor: "next-page-token"
-            )
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: "next")
         )
-
-        // When
         await sut.loadDocuments()
-
-        // Then
         XCTAssertTrue(sut.hasMorePages)
     }
 
     func test_loadDocuments_withoutNextCursor_hasNoMorePages() async {
-        // Given
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(
-                documents: TestFixtures.sampleDocuments,
-                nextCursor: nil
-            )
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
-
-        // When
         await sut.loadDocuments()
-
-        // Then
         XCTAssertFalse(sut.hasMorePages)
     }
 
     func test_loadNextPage_whenNoMorePages_doesNotCallAPI() async {
-        // Given
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
         await sut.loadDocuments()
         mockAPIClient.reset()
-
-        // When
         await sut.loadNextPage()
-
-        // Then
         XCTAssertEqual(mockAPIClient.listDocumentsCallCount, 0)
     }
 
     func test_loadNextPage_appendsDocuments() async {
-        // Given
-        let firstPage = [TestFixtures.sampleDocument]
-        let secondPage = [TestFixtures.sampleMeetingDocument]
-
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: firstPage, nextCursor: "page2")
+            DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: "page2")
         )
         await sut.loadDocuments()
-
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: secondPage, nextCursor: nil)
+            DocumentListResponse(documents: [TestFixtures.sampleMeetingDocument], nextCursor: nil)
         )
-
-        // When
         await sut.loadNextPage()
 
-        // Then: both documents present, sorted by modified date descending
         if case .loaded(let docs) = sut.state {
             XCTAssertEqual(docs.count, 2)
-            XCTAssertEqual(docs[0].id, secondPage[0].id)  // Jan 2 (newer)
-            XCTAssertEqual(docs[1].id, firstPage[0].id)   // Jan 1 (older)
+            XCTAssertEqual(docs[0].id, "meetings/weekly.md")  // Jan 2 (newer)
+            XCTAssertEqual(docs[1].id, "test/sample.md")      // Jan 1 (older)
         } else {
             XCTFail("Expected loaded state")
         }
     }
 
-    // MARK: - Refresh Tests
+    func test_loadNextPage_maintainsSortOrder() async {
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: "page2")
+        )
+        await sut.loadDocuments()
+        mockAPIClient.listDocumentsResult = .success(
+            DocumentListResponse(documents: [TestFixtures.sampleIdeaDocument], nextCursor: nil)
+        )
+        await sut.loadNextPage()
+
+        if case .loaded(let docs) = sut.state {
+            XCTAssertEqual(docs.count, 2)
+            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")
+            XCTAssertEqual(docs[1].id, "test/sample.md")
+        } else {
+            XCTFail("Expected loaded state")
+        }
+    }
 
     // MARK: - State Equality
 
-    func test_state_loaded_equality() {
+    func test_state_equality() {
         let docs = TestFixtures.sampleDocuments
+        XCTAssertEqual(DocumentListViewModel.State.loaded(docs), DocumentListViewModel.State.loaded(docs))
         XCTAssertEqual(
-            DocumentListViewModel.State.loaded(docs),
-            DocumentListViewModel.State.loaded(docs)
+            DocumentListViewModel.State.error(APIError.networkError),
+            DocumentListViewModel.State.error(APIError.networkError)
         )
-    }
-
-    func test_state_error_equality() {
-        let state1 = DocumentListViewModel.State.error(APIError.networkError)
-        let state2 = DocumentListViewModel.State.error(APIError.networkError)
-        XCTAssertEqual(state1, state2)
-    }
-
-    func test_state_different_notEqual() {
         XCTAssertNotEqual(DocumentListViewModel.State.loading, DocumentListViewModel.State.empty)
-        XCTAssertNotEqual(
-            DocumentListViewModel.State.loaded(TestFixtures.sampleDocuments),
-            DocumentListViewModel.State.empty
-        )
+        XCTAssertNotEqual(DocumentListViewModel.State.loaded(docs), DocumentListViewModel.State.empty)
     }
 
     // MARK: - Refresh
 
     func test_refresh_reloadsDocuments() async {
-        // Given
-        let initialDocs = [TestFixtures.sampleDocument]
-        let refreshedDocs = TestFixtures.sampleDocuments
-
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: initialDocs, nextCursor: nil)
+            DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: nil)
         )
         await sut.loadDocuments()
-
         mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: refreshedDocs, nextCursor: nil)
+            DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
-
-        // When
         await sut.refresh()
 
-        // Then
         if case .loaded(let docs) = sut.state {
-            XCTAssertEqual(docs.count, refreshedDocs.count)
+            XCTAssertEqual(docs.count, TestFixtures.sampleDocuments.count)
         } else {
             XCTFail("Expected loaded state")
         }
@@ -259,24 +184,17 @@ final class DocumentListViewModelTests: XCTestCase {
     func test_loadDocuments_cancellationError_doesNotSetErrorState() async {
         mockAPIClient.listDocumentsResult = .failure(CancellationError())
         await sut.loadDocuments()
-
-        if case .error = sut.state {
-            XCTFail("CancellationError should not produce error state")
-        }
+        if case .error = sut.state { XCTFail("CancellationError should not produce error state") }
     }
 
     func test_refresh_cancellationError_keepsExistingState() async {
-        // Given: loaded state
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
         await sut.loadDocuments()
-
-        // When: refresh throws CancellationError
         mockAPIClient.listDocumentsResult = .failure(CancellationError())
         await sut.refresh()
 
-        // Then: state remains loaded
         if case .loaded(let docs) = sut.state {
             XCTAssertEqual(docs.count, TestFixtures.sampleDocuments.count)
         } else {
@@ -286,19 +204,15 @@ final class DocumentListViewModelTests: XCTestCase {
 
     // MARK: - Pagination Error Handling
 
-    func test_loadNextPage_error_stopsPageination() async {
-        // Given: first page loaded with more pages
+    func test_loadNextPage_error_stopsPagination() async {
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: "page2")
         )
         await sut.loadDocuments()
         XCTAssertTrue(sut.hasMorePages)
 
-        // When: next page fails
         mockAPIClient.listDocumentsResult = .failure(APIError.networkError)
         await sut.loadNextPage()
-
-        // Then: pagination stops, existing docs preserved
         XCTAssertFalse(sut.hasMorePages)
         if case .loaded(let docs) = sut.state {
             XCTAssertEqual(docs.count, 1)
@@ -308,17 +222,12 @@ final class DocumentListViewModelTests: XCTestCase {
     }
 
     func test_loadNextPage_cancellationError_doesNotStopPagination() async {
-        // Given: first page loaded with more pages
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: [TestFixtures.sampleDocument], nextCursor: "page2")
         )
         await sut.loadDocuments()
-
-        // When: next page is cancelled
         mockAPIClient.listDocumentsResult = .failure(CancellationError())
         await sut.loadNextPage()
-
-        // Then: hasMorePages unchanged, existing docs preserved
         XCTAssertTrue(sut.hasMorePages)
         if case .loaded(let docs) = sut.state {
             XCTAssertEqual(docs.count, 1)
@@ -327,18 +236,14 @@ final class DocumentListViewModelTests: XCTestCase {
         }
     }
 
-    // MARK: - Sort Order Tests
+    // MARK: - Sort Order
 
     func test_loadDocuments_sortsByModifiedDateDescending() async {
-        // Given: documents in arbitrary order
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
-
-        // When
         await sut.loadDocuments()
 
-        // Then: sorted by modified date descending (most recent first)
         if case .loaded(let docs) = sut.state {
             XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
             XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2
@@ -349,62 +254,241 @@ final class DocumentListViewModelTests: XCTestCase {
     }
 
     func test_applySortOrder_reloadsFromAPI() async {
-        // Given: documents loaded with default modified sort
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
         await sut.loadDocuments()
         mockAPIClient.reset()
-
-        // When: switch to created date sort
         mockAPIClient.listDocumentsResult = .success(
             DocumentListResponse(documents: TestFixtures.sampleDocuments, nextCursor: nil)
         )
         sut.sortOrder = .createdDate
         await sut.applySortOrder()
-
-        // Then: API was called again with createdDate sort
         XCTAssertEqual(mockAPIClient.listDocumentsCallCount, 1)
         XCTAssertEqual(mockAPIClient.lastListDocumentsSort, .createdDate)
     }
 
     func test_applySortOrder_passesModifiedSortToAPI() async {
-        // Given
-        mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: [], nextCursor: nil)
-        )
-
-        // When: load with default modified sort
+        mockAPIClient.listDocumentsResult = .success(DocumentListResponse(documents: [], nextCursor: nil))
         await sut.loadDocuments()
-
-        // Then: API was called with modifiedDate sort
         XCTAssertEqual(mockAPIClient.lastListDocumentsSort, .modifiedDate)
     }
 
-    func test_loadNextPage_maintainsSortOrder() async {
-        // Given: first page loaded
-        let firstPage = [TestFixtures.sampleDocument] // Jan 1
-        let secondPage = [TestFixtures.sampleIdeaDocument] // Jan 3
+    // MARK: - Search
 
-        mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: firstPage, nextCursor: "page2")
+    func test_search_shortQuery_remainsIdle() async {
+        sut.searchText = "a"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(sut.searchState, .idle)
+        XCTAssertEqual(mockAPIClient.searchCallCount, 0)
+    }
+
+    func test_search_emptyQuery_remainsIdle() async {
+        sut.searchText = ""
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(sut.searchState, .idle)
+    }
+
+    func test_search_whitespaceOnlyQuery_remainsIdle() async {
+        sut.searchText = "  "
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(sut.searchState, .idle)
+    }
+
+    func test_search_validQuery_returnsResults() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchText = "sample"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(sut.searchState, .loaded(TestFixtures.sampleDocuments))
+        XCTAssertEqual(mockAPIClient.searchCallCount, 1)
+        XCTAssertEqual(mockAPIClient.lastSearchQuery, "sample")
+    }
+
+    func test_search_validQuery_emptyResults_showsEmpty() async {
+        mockAPIClient.searchResult = .success([])
+        sut.searchText = "nonexistent"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(sut.searchState, .empty)
+    }
+
+    func test_search_error_showsError() async {
+        mockAPIClient.searchResult = .failure(APIError.networkError)
+        sut.searchText = "test query"
+        try? await Task.sleep(for: .milliseconds(400))
+        if case .error = sut.searchState { } else { XCTFail("Expected search error state") }
+    }
+
+    func test_search_rapidTyping_onlySendsOneRequest() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchText = "te"
+        sut.searchText = "tes"
+        sut.searchText = "test"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.searchCallCount, 1)
+        XCTAssertEqual(mockAPIClient.lastSearchQuery, "test")
+    }
+
+    func test_search_directSearch_skipsDebounce() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchText = "direct"
+        await sut.search()
+        XCTAssertEqual(sut.searchState, .loaded(TestFixtures.sampleDocuments))
+    }
+
+    func test_search_directSearch_shortQuery_goesIdle() async {
+        sut.searchText = "a"
+        await sut.search()
+        XCTAssertEqual(sut.searchState, .idle)
+    }
+
+    func test_search_semanticMode_passesMode() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchMode = .semantic
+        sut.searchText = "sample"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.lastSearchMode, .semantic)
+    }
+
+    func test_search_changingMode_retriggersSearch() async {
+        mockAPIClient.searchResult = .success(TestFixtures.sampleDocuments)
+        sut.searchText = "test query"
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.searchCallCount, 1)
+        sut.searchMode = .semantic
+        try? await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(mockAPIClient.searchCallCount, 2)
+        XCTAssertEqual(mockAPIClient.lastSearchMode, .semantic)
+    }
+
+    func test_search_isSearchActive() {
+        sut.searchText = "ab"
+        XCTAssertTrue(sut.isSearchActive)
+        sut.searchText = "a"
+        XCTAssertFalse(sut.isSearchActive)
+    }
+
+    // MARK: - Search State Equality
+
+    func test_searchState_equality() {
+        let docs = TestFixtures.sampleDocuments
+        XCTAssertEqual(
+            DocumentListViewModel.SearchState.loaded(docs),
+            DocumentListViewModel.SearchState.loaded(docs)
         )
+        XCTAssertEqual(
+            DocumentListViewModel.SearchState.error(APIError.networkError),
+            DocumentListViewModel.SearchState.error(APIError.networkError)
+        )
+        XCTAssertNotEqual(DocumentListViewModel.SearchState.idle, DocumentListViewModel.SearchState.loading)
+        XCTAssertNotEqual(DocumentListViewModel.SearchState.idle, DocumentListViewModel.SearchState.empty)
+    }
+
+    // MARK: - Tags
+
+    func test_loadTags_success_sortsByCountDescending() async {
+        mockAPIClient.listTagsResult = .success(TestFixtures.sampleTags)
+        await sut.loadTags()
+        XCTAssertEqual(sut.tags.count, 4)
+        XCTAssertEqual(sut.tags[0].name, "meeting")   // 10
+        XCTAssertEqual(sut.tags[1].name, "project")    // 7
+        XCTAssertEqual(sut.tags[2].name, "test")       // 5
+        XCTAssertEqual(sut.tags[3].name, "idea")       // 3
+        XCTAssertEqual(mockAPIClient.listTagsCallCount, 1)
+    }
+
+    func test_loadTags_emptyResult_keepsEmptyArray() async {
+        mockAPIClient.listTagsResult = .success([])
+        await sut.loadTags()
+        XCTAssertTrue(sut.tags.isEmpty)
+    }
+
+    func test_loadTags_error_keepsEmptyArray() async {
+        mockAPIClient.listTagsResult = .failure(APIError.networkError)
+        await sut.loadTags()
+        XCTAssertTrue(sut.tags.isEmpty)
+    }
+
+    // MARK: - Tag Filter
+
+    func test_loadDocuments_withTag_fetchesByTag() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
         await sut.loadDocuments()
 
-        mockAPIClient.listDocumentsResult = .success(
-            DocumentListResponse(documents: secondPage, nextCursor: nil)
-        )
-
-        // When
-        await sut.loadNextPage()
-
-        // Then: all documents sorted by modified date descending
-        if case .loaded(let docs) = sut.state {
-            XCTAssertEqual(docs.count, 2)
-            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
-            XCTAssertEqual(docs[1].id, "test/sample.md")         // Jan 1
+        XCTAssertEqual(mockAPIClient.documentsByTagCallCount, 1)
+        XCTAssertEqual(mockAPIClient.lastDocumentsByTagTag, "test")
+        XCTAssertEqual(mockAPIClient.lastDocumentsByTagLimit, 50)
+        XCTAssertEqual(mockAPIClient.listDocumentsCallCount, 0)
+        if case .loaded(let documents) = sut.state {
+            XCTAssertEqual(documents.count, 3)
+            XCTAssertEqual(documents[0].id, "ideas/new-feature.md")
         } else {
-            XCTFail("Expected loaded state")
+            XCTFail("Expected loaded state, got \(sut.state)")
         }
+    }
+
+    func test_loadDocuments_withTag_emptyResult_showsEmpty() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        mockAPIClient.documentsByTagResult = .success([])
+        await sut.loadDocuments()
+        XCTAssertEqual(sut.state, .empty)
+    }
+
+    func test_loadDocuments_withTag_error_showsError() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        mockAPIClient.documentsByTagResult = .failure(APIError.networkError)
+        await sut.loadDocuments()
+        if case .error = sut.state { } else { XCTFail("Expected error state") }
+    }
+
+    func test_loadDocuments_withTag_disablesPagination() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
+        await sut.loadDocuments()
+        XCTAssertFalse(sut.hasMorePages)
+    }
+
+    func test_loadDocuments_withTag_cancellationError_doesNotSetErrorState() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        mockAPIClient.documentsByTagResult = .failure(CancellationError())
+        await sut.loadDocuments()
+        if case .error = sut.state { XCTFail("CancellationError should not produce error state") }
+    }
+
+    // MARK: - Tag + Classification Combined Filter
+
+    func test_loadDocuments_withTagAndClassification_filtersClientSide() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        sut.selectedClassification = .meeting
+        mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
+        await sut.loadDocuments()
+
+        if case .loaded(let documents) = sut.state {
+            XCTAssertEqual(documents.count, 1)
+            XCTAssertEqual(documents[0].id, "meetings/weekly.md")
+        } else {
+            XCTFail("Expected loaded state, got \(sut.state)")
+        }
+    }
+
+    func test_loadDocuments_withTagAndClassification_noMatches_showsEmpty() async {
+        sut.selectedTag = TestFixtures.sampleTag
+        sut.selectedClassification = .meeting
+        mockAPIClient.documentsByTagResult = .success([TestFixtures.sampleDocument])
+        await sut.loadDocuments()
+        XCTAssertEqual(sut.state, .empty)
+    }
+
+    // MARK: - hasActiveFilter
+
+    func test_hasActiveFilter() {
+        XCTAssertFalse(sut.hasActiveFilter)
+        sut.selectedClassification = .meeting
+        XCTAssertTrue(sut.hasActiveFilter)
+        sut.selectedClassification = nil
+        sut.selectedTag = TestFixtures.sampleTag
+        XCTAssertTrue(sut.hasActiveFilter)
+        sut.selectedClassification = .meeting
+        XCTAssertTrue(sut.hasActiveFilter)
     }
 }

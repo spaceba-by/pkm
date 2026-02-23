@@ -26,12 +26,32 @@ final class DocumentListPage {
         app.searchFields.firstMatch
     }
 
+    var searchModePicker: XCUIElement {
+        app.segmentedControls["SearchModePicker"].firstMatch
+    }
+
+    var searchMonitorsLink: XCUIElement {
+        app.buttons["SearchMonitorsLink"].firstMatch
+    }
+
+    var searchResultsList: XCUIElement {
+        app.collectionViews["SearchResultsList"].firstMatch
+    }
+
     var loadingIndicator: XCUIElement {
         app.activityIndicators.firstMatch
     }
 
     var emptyStateView: XCUIElement {
         app.staticTexts["No Documents"].firstMatch
+    }
+
+    var searchIdleStateView: XCUIElement {
+        app.staticTexts["Search Documents"].firstMatch
+    }
+
+    var searchEmptyStateView: XCUIElement {
+        app.staticTexts["No Results"].firstMatch
     }
 
     var mainText: XCUIElement {
@@ -65,6 +85,10 @@ final class DocumentListPage {
         searchField.typeText(query)
     }
 
+    func tapSearchMonitorsLink() {
+        searchMonitorsLink.tap()
+    }
+
     func pullToRefresh() {
         documentList.swipeDown()
     }
@@ -85,5 +109,13 @@ final class DocumentListPage {
 
     func assertShowsLoading() {
         XCTAssertTrue(loadingIndicator.exists)
+    }
+
+    func assertShowsSearchIdleState(timeout: TimeInterval = 5) {
+        XCTAssertTrue(searchIdleStateView.waitForExistence(timeout: timeout))
+    }
+
+    func assertShowsSearchEmptyState(timeout: TimeInterval = 5) {
+        XCTAssertTrue(searchEmptyStateView.waitForExistence(timeout: timeout))
     }
 }
