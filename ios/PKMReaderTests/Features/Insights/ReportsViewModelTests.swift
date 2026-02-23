@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class ReportsViewModelTests: XCTestCase {
@@ -32,7 +32,7 @@ final class ReportsViewModelTests: XCTestCase {
         mockAPIClient.listReportsResult = .success(TestFixtures.sampleReports)
         await sut.loadReports()
 
-        if case .loaded(let reports) = sut.state {
+        if case let .loaded(reports) = sut.state {
             XCTAssertEqual(reports.count, 3)
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")
@@ -62,7 +62,7 @@ final class ReportsViewModelTests: XCTestCase {
         mockAPIClient.listReportsResult = .success(TestFixtures.sampleReports)
         await sut.refresh()
 
-        if case .loaded(let reports) = sut.state {
+        if case let .loaded(reports) = sut.state {
             XCTAssertEqual(reports.count, 3)
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")

@@ -24,7 +24,7 @@ struct ClassificationBadge: View {
     }
 }
 
-// Add color property to DocumentClassification
+/// Add color property to DocumentClassification
 extension DocumentClassification {
     var color: Color {
         switch self {

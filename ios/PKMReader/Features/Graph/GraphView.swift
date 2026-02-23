@@ -59,8 +59,10 @@ struct GraphView: View {
             Canvas { context, _ in
                 let transform = CGAffineTransform.identity
                     .scaledBy(x: scale, y: scale)
-                    .translatedBy(x: center.x + offset.width,
-                                  y: center.y + offset.height)
+                    .translatedBy(
+                        x: center.x + offset.width,
+                        y: center.y + offset.height
+                    )
 
                 // Draw edges
                 for edge in viewModel.edges {
@@ -76,9 +78,11 @@ struct GraphView: View {
 
                     let opacity = edgeOpacity(for: edge)
                     let lineWidth = edge.type == "links_to" ? 1.5 : 0.8
-                    context.stroke(path,
-                                   with: .color(.secondary.opacity(opacity)),
-                                   lineWidth: lineWidth * scale)
+                    context.stroke(
+                        path,
+                        with: .color(.secondary.opacity(opacity)),
+                        lineWidth: lineWidth * scale
+                    )
                 }
 
                 // Draw nodes
@@ -88,17 +92,21 @@ struct GraphView: View {
                     let nodeSize = viewModel.nodeSize(for: node) * scale
                     let isSelected = viewModel.selectedNode?.id == node.id
 
-                    let rect = CGRect(x: screenPos.x - nodeSize / 2,
-                                      y: screenPos.y - nodeSize / 2,
-                                      width: nodeSize,
-                                      height: nodeSize)
+                    let rect = CGRect(
+                        x: screenPos.x - nodeSize / 2,
+                        y: screenPos.y - nodeSize / 2,
+                        width: nodeSize,
+                        height: nodeSize
+                    )
 
                     let color = viewModel.nodeColor(for: node)
 
                     if isSelected {
                         let selectionRect = rect.insetBy(dx: -3 * scale, dy: -3 * scale)
-                        context.fill(Circle().path(in: selectionRect),
-                                     with: .color(color.opacity(0.3)))
+                        context.fill(
+                            Circle().path(in: selectionRect),
+                            with: .color(color.opacity(0.3))
+                        )
                     }
 
                     context.fill(Circle().path(in: rect), with: .color(color))
@@ -170,7 +178,6 @@ struct GraphView: View {
         .accessibilityLabel("Graph legend")
     }
 
-    @ViewBuilder
     private func nodeDetailOverlay(node: GraphNode) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -235,8 +242,10 @@ struct GraphView: View {
     private func handleTap(at location: CGPoint, center: CGPoint) {
         let transform = CGAffineTransform.identity
             .scaledBy(x: scale, y: scale)
-            .translatedBy(x: center.x + offset.width,
-                          y: center.y + offset.height)
+            .translatedBy(
+                x: center.x + offset.width,
+                y: center.y + offset.height
+            )
 
         for node in viewModel.nodes {
             guard let pos = viewModel.positions[node.id] else { continue }
@@ -275,17 +284,17 @@ struct GraphView: View {
     private func nodeTypeDescription(_ node: GraphNode) -> String {
         switch node.type {
         case "document":
-            return "Document (\(node.classification?.capitalized ?? "Unknown"))"
+            "Document (\(node.classification?.capitalized ?? "Unknown"))"
         case "entity":
-            return "Entity (\(node.entityType?.capitalized ?? "Unknown"))"
+            "Entity (\(node.entityType?.capitalized ?? "Unknown"))"
         case "tag":
-            return "Tag"
+            "Tag"
         default:
-            return node.type.capitalized
+            node.type.capitalized
         }
     }
 
     private func connectionCount(for node: GraphNode) -> Int {
-        viewModel.edges.lazy.filter { $0.source == node.id || $0.target == node.id }.count
+        viewModel.edges.lazy.count(where: { $0.source == node.id || $0.target == node.id })
     }
 }

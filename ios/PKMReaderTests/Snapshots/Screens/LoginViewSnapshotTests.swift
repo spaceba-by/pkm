@@ -1,7 +1,7 @@
+@testable import PKMReader
 import SnapshotTesting
 import SwiftUI
 import XCTest
-@testable import PKMReader
 
 final class LoginViewSnapshotTests: SnapshotTestCase {
     func test_defaultEmptyForm() {

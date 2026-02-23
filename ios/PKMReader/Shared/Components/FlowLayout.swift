@@ -8,7 +8,7 @@ struct FlowLayout: Layout {
         self.spacing = spacing
     }
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         return layout(sizes: sizes, proposal: proposal).size
     }
@@ -17,7 +17,7 @@ struct FlowLayout: Layout {
         in bounds: CGRect,
         proposal: ProposedViewSize,
         subviews: Subviews,
-        cache: inout ()
+        cache _: inout ()
     ) {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         let offsets = layout(sizes: sizes, proposal: proposal).offsets

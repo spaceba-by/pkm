@@ -119,8 +119,8 @@ struct FilterSheet: View {
         tags: [Tag],
         onApply: @escaping () -> Void
     ) {
-        self._selectedClassification = selectedClassification
-        self._selectedTag = selectedTag
+        _selectedClassification = selectedClassification
+        _selectedTag = selectedTag
         self.tags = tags
         self.onApply = onApply
     }
@@ -132,7 +132,7 @@ struct FilterSheet: View {
         selectedTag: Binding.constant(nil),
         tags: [
             Tag(id: "meeting", name: "meeting", documentCount: 10),
-            Tag(id: "project", name: "project", documentCount: 7)
+            Tag(id: "project", name: "project", documentCount: 7),
         ]
     ) {
         print("Applied")

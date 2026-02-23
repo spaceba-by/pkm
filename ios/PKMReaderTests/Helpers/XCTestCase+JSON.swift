@@ -29,7 +29,7 @@ extension XCTestCase {
     /// Encode an object to JSON data for comparison
     /// - Parameter value: The value to encode
     /// - Returns: The JSON data
-    func encodeToJSON<T: Encodable>(_ value: T) throws -> Data {
+    func encodeToJSON(_ value: some Encodable) throws -> Data {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]

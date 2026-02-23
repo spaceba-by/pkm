@@ -1,7 +1,7 @@
+@testable import PKMReader
 import SnapshotTesting
 import SwiftUI
 import XCTest
-@testable import PKMReader
 
 @MainActor
 final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
@@ -24,9 +24,9 @@ final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
                 "Deprecated evaluation framework",
             ],
             analysis: """
-                This update represents a major shift in the field with several key papers \
-                introducing new approaches to reasoning in language models.
-                """
+            This update represents a major shift in the field with several key papers \
+            introducing new approaches to reasoning in language models.
+            """
         )
 
         let view = NavigationStack {

@@ -1,6 +1,6 @@
-import XCTest
 import Network
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class NetworkMonitorTests: XCTestCase {

@@ -17,11 +17,11 @@ final class DocumentEditorViewModel: ObservableObject {
         static func == (lhs: SaveState, rhs: SaveState) -> Bool {
             switch (lhs, rhs) {
             case (.idle, .idle), (.saving, .saving), (.saved, .saved):
-                return true
+                true
             case let (.error(lhsMsg), .error(rhsMsg)):
-                return lhsMsg == rhsMsg
+                lhsMsg == rhsMsg
             default:
-                return false
+                false
             }
         }
     }
@@ -42,36 +42,36 @@ final class DocumentEditorViewModel: ObservableObject {
 
         switch mode {
         case .create:
-            self.content = ""
-            self.documentKey = ""
-            self.title = ""
-            self.lastModified = nil
+            content = ""
+            documentKey = ""
+            title = ""
+            lastModified = nil
 
-        case .edit(let document):
-            self.content = document.content ?? ""
-            self.documentKey = document.id
-            self.title = document.title
+        case let .edit(document):
+            content = document.content ?? ""
+            documentKey = document.id
+            title = document.title
             // Use ISO 8601 formatter for the modified date
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime]
-            self.lastModified = formatter.string(from: document.metadata.modified)
+            lastModified = formatter.string(from: document.metadata.modified)
         }
     }
 
     var isValid: Bool {
         switch mode {
         case .create:
-            return !documentKey.trimmingCharacters(in: .whitespaces).isEmpty
+            !documentKey.trimmingCharacters(in: .whitespaces).isEmpty
                 && documentKey.hasSuffix(".md")
         case .edit:
-            return true
+            true
         }
     }
 
     var navigationTitle: String {
         switch mode {
-        case .create: return "New Document"
-        case .edit: return "Edit Document"
+        case .create: "New Document"
+        case .edit: "Edit Document"
         }
     }
 
@@ -106,7 +106,7 @@ final class DocumentEditorViewModel: ObservableObject {
             }
         } catch {
             let statusCode = (error as? APIError).flatMap { apiError -> Int? in
-                if case .httpError(let code) = apiError { return code }
+                if case let .httpError(code) = apiError { return code }
                 return nil
             }
 

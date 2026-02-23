@@ -1,21 +1,23 @@
 #if DEBUG
-import Foundation
+    import Foundation
 
-/// Mock auth service for UI testing that simulates an authenticated state
-/// Activated via the `--mock-api` launch argument
-final class UITestAuthService: AuthServiceProtocol, @unchecked Sendable {
-    var isAuthenticated: Bool { true }
+    /// Mock auth service for UI testing that simulates an authenticated state
+    /// Activated via the `--mock-api` launch argument
+    final class UITestAuthService: AuthServiceProtocol, @unchecked Sendable {
+        var isAuthenticated: Bool {
+            true
+        }
 
-    func signIn(email: String, password: String) async throws {
-        // No-op for UI tests
+        func signIn(email _: String, password _: String) async throws {
+            // No-op for UI tests
+        }
+
+        func signOut() async throws {
+            // No-op for UI tests
+        }
+
+        func getAccessToken() async throws -> String {
+            "uitest-mock-token"
+        }
     }
-
-    func signOut() async throws {
-        // No-op for UI tests
-    }
-
-    func getAccessToken() async throws -> String {
-        "uitest-mock-token"
-    }
-}
 #endif

@@ -23,7 +23,7 @@ struct SearchMonitorDetailView: View {
                     monitorContent(monitor)
                 }
 
-            case .error(let error):
+            case let .error(error):
                 ErrorView(error: error) {
                     Task { await viewModel.loadDetail() }
                 }
@@ -132,7 +132,7 @@ struct SearchMonitorDetailView: View {
         }
     }
 
-    @ViewBuilder private var summariesSection: some View {
+    private var summariesSection: some View {
         Section("Summaries") {
             if viewModel.summaries.isEmpty {
                 Text("No summaries yet")

@@ -1,13 +1,19 @@
+@testable import PKMReader
+
 // swiftlint:disable file_length
 import XCTest
-@testable import PKMReader
 
 /// URLProtocol subclass that returns configured responses for testing
 private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
-    override static func canInit(with request: URLRequest) -> Bool { true }
-    override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with _: URLRequest) -> Bool {
+        true
+    }
+
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
 
     override func startLoading() {
         guard let handler = Self.requestHandler else {
@@ -121,6 +127,7 @@ final class APIClientTests: XCTestCase {
             baseRetryDelay: 0.01
         )
     }
+
     // swiftlint:enable force_unwrapping
 
     private func sampleDocumentJSON() -> [String: Any] {
@@ -134,8 +141,8 @@ final class APIClientTests: XCTestCase {
                 "linksTo": [] as [String],
                 "created": "2024-01-01T00:00:00Z",
                 "modified": "2024-01-01T00:00:00Z",
-                "hasFrontmatter": true
-            ]
+                "hasFrontmatter": true,
+            ],
         ]
     }
 
@@ -145,7 +152,7 @@ final class APIClientTests: XCTestCase {
         MockURLProtocol.requestHandler = { _ in
             self.makeJSONResponse(json: [
                 "documents": [self.sampleDocumentJSON()],
-                "nextCursor": NSNull()
+                "nextCursor": NSNull(),
             ])
         }
 
@@ -159,7 +166,7 @@ final class APIClientTests: XCTestCase {
             XCTAssertTrue(request.url?.absoluteString.contains("classification=meeting") ?? false)
             return self.makeJSONResponse(json: [
                 "documents": [] as [[String: Any]],
-                "nextCursor": NSNull()
+                "nextCursor": NSNull(),
             ])
         }
 
@@ -171,7 +178,7 @@ final class APIClientTests: XCTestCase {
             XCTAssertTrue(request.url?.absoluteString.contains("cursor=page2") ?? false)
             return self.makeJSONResponse(json: [
                 "documents": [] as [[String: Any]],
-                "nextCursor": NSNull()
+                "nextCursor": NSNull(),
             ])
         }
 
@@ -197,7 +204,7 @@ final class APIClientTests: XCTestCase {
             self.makeJSONResponse(json: [
                 "query": "test",
                 "results": [self.sampleDocumentJSON()],
-                "count": 1
+                "count": 1,
             ])
         }
 
@@ -211,7 +218,7 @@ final class APIClientTests: XCTestCase {
         MockURLProtocol.requestHandler = { _ in
             self.makeJSONResponse(json: [
                 "tags": [["name": "swift", "count": 4]],
-                "count": 1
+                "count": 1,
             ])
         }
 
@@ -226,8 +233,8 @@ final class APIClientTests: XCTestCase {
         MockURLProtocol.requestHandler = { _ in
             self.makeJSONResponse(json: [
                 "classifications": [
-                    ["name": "meeting", "displayName": "Meeting", "count": 5, "icon": "person.3"]
-                ]
+                    ["name": "meeting", "displayName": "Meeting", "count": 5, "icon": "person.3"],
+                ],
             ])
         }
 
@@ -241,9 +248,9 @@ final class APIClientTests: XCTestCase {
         MockURLProtocol.requestHandler = { _ in
             self.makeJSONResponse(json: [
                 "summaries": [
-                    ["id": "_agent/summaries/2024-01-01.md", "date": "2024-01-01"]
+                    ["id": "_agent/summaries/2024-01-01.md", "date": "2024-01-01"],
                 ],
-                "count": 1
+                "count": 1,
             ])
         }
 
@@ -257,9 +264,9 @@ final class APIClientTests: XCTestCase {
         MockURLProtocol.requestHandler = { _ in
             self.makeJSONResponse(json: [
                 "reports": [
-                    ["id": "_agent/reports/2024-01-01.md", "weekOf": "2024-01-01"]
+                    ["id": "_agent/reports/2024-01-01.md", "weekOf": "2024-01-01"],
                 ],
-                "count": 1
+                "count": 1,
             ])
         }
 
@@ -274,7 +281,7 @@ final class APIClientTests: XCTestCase {
             self.makeJSONResponse(json: [
                 "tag": "swift",
                 "documents": [self.sampleDocumentJSON()],
-                "count": 1
+                "count": 1,
             ])
         }
 
@@ -379,7 +386,7 @@ final class APIClientTests: XCTestCase {
             }
             return self.makeJSONResponse(json: [
                 "documents": [self.sampleDocumentJSON()],
-                "nextCursor": NSNull()
+                "nextCursor": NSNull(),
             ])
         }
 
@@ -544,7 +551,7 @@ final class APIClientTests: XCTestCase {
             XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
             return self.makeJSONResponse(json: [
                 "documents": [] as [[String: Any]],
-                "nextCursor": NSNull()
+                "nextCursor": NSNull(),
             ])
         }
 

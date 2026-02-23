@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class SummariesViewModelTests: XCTestCase {
@@ -32,7 +32,7 @@ final class SummariesViewModelTests: XCTestCase {
         mockAPIClient.listSummariesResult = .success(TestFixtures.sampleSummaries)
         await sut.loadSummaries()
 
-        if case .loaded(let summaries) = sut.state {
+        if case let .loaded(summaries) = sut.state {
             XCTAssertEqual(summaries.count, 3)
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")
@@ -82,7 +82,7 @@ final class SummariesViewModelTests: XCTestCase {
         mockAPIClient.listSummariesResult = .success(TestFixtures.sampleSummaries)
         await sut.refresh()
 
-        if case .loaded(let summaries) = sut.state {
+        if case let .loaded(summaries) = sut.state {
             XCTAssertEqual(summaries.count, 3)
         } else {
             XCTFail("Expected loaded state, got \(sut.state)")

@@ -106,9 +106,13 @@ struct SettingsView: View {
 
 /// Preview-only mock auth service
 private final class PreviewAuthService: AuthServiceProtocol, @unchecked Sendable {
-    var isAuthenticated: Bool { false }
+    var isAuthenticated: Bool {
+        false
+    }
 
-    func signIn(email: String, password: String) async throws {}
+    func signIn(email _: String, password _: String) async throws {}
     func signOut() async throws {}
-    func getAccessToken() async throws -> String { "preview-token" }
+    func getAccessToken() async throws -> String {
+        "preview-token"
+    }
 }

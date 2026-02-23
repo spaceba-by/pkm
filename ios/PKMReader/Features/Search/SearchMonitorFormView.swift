@@ -21,9 +21,9 @@ struct SearchMonitorFormView: View {
     init(
         onSave: @escaping (SearchMonitorRequest) async throws -> SearchMonitor
     ) {
-        self.existingMonitor = nil
+        existingMonitor = nil
         self.onSave = onSave
-        self.onUpdate = nil
+        onUpdate = nil
     }
 
     /// Edit mode initializer
@@ -31,8 +31,8 @@ struct SearchMonitorFormView: View {
         monitor: SearchMonitor,
         onUpdate: @escaping (SearchMonitorRequest) async throws -> SearchMonitor
     ) {
-        self.existingMonitor = monitor
-        self.onSave = nil
+        existingMonitor = monitor
+        onSave = nil
         self.onUpdate = onUpdate
         _name = State(initialValue: monitor.name)
         _description = State(initialValue: monitor.description)
@@ -41,13 +41,15 @@ struct SearchMonitorFormView: View {
         _noveltyThreshold = State(initialValue: monitor.noveltyThreshold)
     }
 
-    private var isEditing: Bool { existingMonitor != nil }
+    private var isEditing: Bool {
+        existingMonitor != nil
+    }
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !parseSearchTerms().isEmpty &&
-        intervalHours >= 1 && intervalHours <= 168 &&
-        noveltyThreshold >= 0.0 && noveltyThreshold <= 1.0
+            !parseSearchTerms().isEmpty &&
+            intervalHours >= 1 && intervalHours <= 168 &&
+            noveltyThreshold >= 0.0 && noveltyThreshold <= 1.0
     }
 
     var body: some View {
@@ -92,7 +94,7 @@ struct SearchMonitorFormView: View {
                 Stepper(
                     "Every \(intervalHours) hour\(intervalHours == 1 ? "" : "s")",
                     value: $intervalHours,
-                    in: 1...168
+                    in: 1 ... 168
                 )
                 .accessibilityIdentifier("MonitorIntervalStepper")
             } header: {
@@ -109,7 +111,7 @@ struct SearchMonitorFormView: View {
                         Text(String(format: "%.1f", noveltyThreshold))
                             .foregroundStyle(.secondary)
                     }
-                    Slider(value: $noveltyThreshold, in: 0...1, step: 0.1)
+                    Slider(value: $noveltyThreshold, in: 0 ... 1, step: 0.1)
                         .accessibilityIdentifier("MonitorThresholdSlider")
                 }
             } footer: {

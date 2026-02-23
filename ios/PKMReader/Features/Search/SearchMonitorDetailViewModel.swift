@@ -50,7 +50,7 @@ final class SearchMonitorDetailViewModel: ObservableObject {
 
     func updateMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
         let updated = try await apiClient.updateSearchMonitor(id: monitorId, request: request)
-        self.monitor = updated
+        monitor = updated
         return updated
     }
 

@@ -50,7 +50,7 @@ struct InsightsView: View {
                         await viewModel.refresh()
                     }
 
-                case .error(let error):
+                case let .error(error):
                     ErrorView(error: error) {
                         Task { await viewModel.loadData() }
                     }

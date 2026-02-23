@@ -18,8 +18,8 @@ final class LoginViewModel: ObservableObject {
     /// Whether the form is valid for submission
     var isValid: Bool {
         !email.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !password.isEmpty &&
-        email.contains("@")
+            !password.isEmpty &&
+            email.contains("@")
     }
 
     private let authService: any AuthServiceProtocol

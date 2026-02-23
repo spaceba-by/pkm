@@ -72,7 +72,7 @@ struct DocumentEditorView: View {
             )) {
                 Button("OK", role: .cancel) {}
             } message: {
-                if case .error(let message) = viewModel.saveState {
+                if case let .error(message) = viewModel.saveState {
                     Text(message)
                 }
             }

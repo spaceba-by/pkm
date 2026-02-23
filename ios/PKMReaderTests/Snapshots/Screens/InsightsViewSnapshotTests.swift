@@ -1,10 +1,12 @@
+@testable import PKMReader
 import SnapshotTesting
 import SwiftUI
 import XCTest
-@testable import PKMReader
 
 final class InsightsViewSnapshotTests: SnapshotTestCase {
-    override var isRecordMode: Bool { false }
+    override var isRecordMode: Bool {
+        false
+    }
 
     /// Fixed date (2026-02-17 noon UTC) and UTC calendar so the "today"
     /// highlight is deterministic regardless of the machine's timezone.

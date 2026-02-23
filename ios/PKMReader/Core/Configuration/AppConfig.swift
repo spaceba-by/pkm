@@ -8,19 +8,19 @@ import Foundation
 /// Values populated by scripts/configure-ios.sh from Terraform outputs.
 enum AppConfig {
     #if DEBUG
-    // Development environment (same deployment for now)
-    // swiftlint:disable:next force_unwrapping
-    static let apiBaseURL = URL(string: "https://yv13564xab.execute-api.us-east-1.amazonaws.com/")!
-    static let cognitoUserPoolId = "us-east-1_hL1TtgZHP"
-    static let cognitoClientId = "3itfc5t9qf390q2k236r5cba5b"
-    static let cognitoIdentityPoolId = "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f"
+        // Development environment (same deployment for now)
+        // swiftlint:disable:next force_unwrapping
+        static let apiBaseURL = URL(string: "https://yv13564xab.execute-api.us-east-1.amazonaws.com/")!
+        static let cognitoUserPoolId = "us-east-1_hL1TtgZHP"
+        static let cognitoClientId = "3itfc5t9qf390q2k236r5cba5b"
+        static let cognitoIdentityPoolId = "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f"
     #else
-    // Production environment
-    // swiftlint:disable:next force_unwrapping
-    static let apiBaseURL = URL(string: "https://yv13564xab.execute-api.us-east-1.amazonaws.com/")!
-    static let cognitoUserPoolId = "us-east-1_hL1TtgZHP"
-    static let cognitoClientId = "3itfc5t9qf390q2k236r5cba5b"
-    static let cognitoIdentityPoolId = "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f"
+        // Production environment
+        // swiftlint:disable:next force_unwrapping
+        static let apiBaseURL = URL(string: "https://yv13564xab.execute-api.us-east-1.amazonaws.com/")!
+        static let cognitoUserPoolId = "us-east-1_hL1TtgZHP"
+        static let cognitoClientId = "3itfc5t9qf390q2k236r5cba5b"
+        static let cognitoIdentityPoolId = "us-east-1:1037c9e0-e556-45b6-8ead-983c5a28677f"
     #endif
 
     static let cognitoRegion = "us-east-1"

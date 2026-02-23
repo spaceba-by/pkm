@@ -21,24 +21,24 @@ final class PKMReaderUITests: XCTestCase {
 
     // MARK: - App Launch Tests
 
-    func testAppLaunches() throws {
+    func testAppLaunches() {
         // Verify the app launches and shows the login screen (unauthenticated state)
         loginPage.assertIsDisplayed()
     }
 
-    func testAppShowsMainTitle() throws {
+    func testAppShowsMainTitle() {
         // Verify the main title is displayed on the login screen
         XCTAssertTrue(app.staticTexts["PKM Reader"].waitForExistence(timeout: 5))
     }
 
-    func testAppShowsLoginScreen() throws {
+    func testAppShowsLoginScreen() {
         // Verify the login screen elements are present
         loginPage.assertAllElementsExist()
     }
 
     // MARK: - Accessibility Tests
 
-    func testMainScreenHasAccessibilityIdentifiers() throws {
+    func testMainScreenHasAccessibilityIdentifiers() {
         // Verify key elements have accessibility identifiers
         // Wait for the first element to ensure the screen is loaded
         XCTAssertTrue(app.staticTexts["PKM Reader"].waitForExistence(timeout: 5))

@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class SummaryModelTests: XCTestCase {
     func test_summary_identifiable() {

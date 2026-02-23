@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class SearchMonitorModelTests: XCTestCase {
     // MARK: - SearchMonitorStatus

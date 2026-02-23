@@ -227,11 +227,11 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try listClassificationsResult.get()
     }
 
-    func listSummaries(limit: Int) async throws -> [Summary] {
+    func listSummaries(limit _: Int) async throws -> [Summary] {
         try listSummariesResult.get()
     }
 
-    func listReports(limit: Int) async throws -> [Report] {
+    func listReports(limit _: Int) async throws -> [Report] {
         try listReportsResult.get()
     }
 
@@ -252,17 +252,17 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try updateClassificationResult.get()
     }
 
-    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse {
+    func createDocument(key _: String, title _: String?, content _: String) async throws -> CreateDocumentResponse {
         createDocumentCallCount += 1
         return try createDocumentResult.get()
     }
 
-    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {
+    func updateDocument(key _: String, content _: String, ifUnmodifiedSince _: String?) async throws {
         updateDocumentCallCount += 1
         try updateDocumentResult.get()
     }
 
-    func deleteDocument(key: String) async throws {
+    func deleteDocument(key _: String) async throws {
         deleteDocumentCallCount += 1
         try deleteDocumentResult.get()
     }

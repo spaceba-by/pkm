@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class ResponseTypesTests: XCTestCase {
     // MARK: - SearchResponse
@@ -41,7 +41,7 @@ final class ResponseTypesTests: XCTestCase {
 
     func test_classificationListResponse_codable() throws {
         let classifications = [
-            ClassificationCount(name: "meeting", displayName: "Meeting", count: 5, icon: "person.3")
+            ClassificationCount(name: "meeting", displayName: "Meeting", count: 5, icon: "person.3"),
         ]
         let response = ClassificationListResponse(classifications: classifications)
         let data = try JSONEncoder().encode(response)

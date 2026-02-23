@@ -36,7 +36,7 @@ final class DocumentDetailScreenTests: XCTestCase {
 
     // MARK: - Content Display Tests
 
-    func test_detailView_displaysNavigationTitle() throws {
+    func test_detailView_displaysNavigationTitle() {
         navigateToFirstDocument()
         waitForDetailView()
 
@@ -48,14 +48,14 @@ final class DocumentDetailScreenTests: XCTestCase {
         )
     }
 
-    func test_detailView_showsScrollableContent() throws {
+    func test_detailView_showsScrollableContent() {
         navigateToFirstDocument()
 
         let scrollView = app.scrollViews.firstMatch
         XCTAssertTrue(scrollView.waitForExistence(timeout: 5), "Detail scroll view not displayed")
     }
 
-    func test_detailView_showsDateInformation() throws {
+    func test_detailView_showsDateInformation() {
         navigateToFirstDocument()
         waitForDetailView()
 
@@ -68,7 +68,7 @@ final class DocumentDetailScreenTests: XCTestCase {
 
     // MARK: - Navigation Tests
 
-    func test_backButton_returnsToList() throws {
+    func test_backButton_returnsToList() {
         navigateToFirstDocument()
         waitForDetailView()
 
@@ -80,7 +80,7 @@ final class DocumentDetailScreenTests: XCTestCase {
         XCTAssertTrue(navBar.waitForExistence(timeout: 5), "Did not return to document list")
     }
 
-    func test_navigateToSecondDocument() throws {
+    func test_navigateToSecondDocument() {
         // Navigate to second document by title
         let secondTitle = app.staticTexts["App Redesign Ideas"]
         XCTAssertTrue(secondTitle.waitForExistence(timeout: 5), "Second document title not found")

@@ -26,12 +26,12 @@ final class InsightsScreenTests: XCTestCase {
 
     // MARK: - Calendar Display Tests
 
-    func test_insightsView_showsCalendar() throws {
+    func test_insightsView_showsCalendar() {
         insightsPage.assertIsDisplayed()
         insightsPage.assertCalendarIsDisplayed()
     }
 
-    func test_calendarShowsMonthTitle() throws {
+    func test_calendarShowsMonthTitle() {
         insightsPage.assertIsDisplayed()
         insightsPage.assertCalendarIsDisplayed()
 
@@ -42,7 +42,7 @@ final class InsightsScreenTests: XCTestCase {
 
     // MARK: - Month Navigation Tests
 
-    func test_previousMonth_navigatesBack() throws {
+    func test_previousMonth_navigatesBack() {
         insightsPage.assertIsDisplayed()
         insightsPage.assertCalendarIsDisplayed()
 
@@ -56,7 +56,7 @@ final class InsightsScreenTests: XCTestCase {
         XCTAssertNotEqual(originalTitle, newTitle, "Month title should change after navigation")
     }
 
-    func test_nextMonth_navigatesForward() throws {
+    func test_nextMonth_navigatesForward() {
         insightsPage.assertIsDisplayed()
         insightsPage.assertCalendarIsDisplayed()
 
@@ -72,7 +72,7 @@ final class InsightsScreenTests: XCTestCase {
 
     // MARK: - Summary Tap Tests
 
-    func test_tapDayWithSummary_showsDetail() throws {
+    func test_tapDayWithSummary_showsDetail() {
         insightsPage.assertIsDisplayed()
         insightsPage.assertCalendarIsDisplayed()
 

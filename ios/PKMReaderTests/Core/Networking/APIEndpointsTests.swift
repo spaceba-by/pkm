@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class APIEndpointsTests: XCTestCase {
     // MARK: - Documents Endpoint

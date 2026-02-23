@@ -26,7 +26,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         self.maxRetries = maxRetries
         self.baseRetryDelay = baseRetryDelay
 
-        self.decoder = JSONDecoder()
+        decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
     }
 
@@ -44,7 +44,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         )
 
         var queryItems: [URLQueryItem] = [
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
         ]
 
         if let classification {
@@ -56,7 +56,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
 
         if let sort {
-            let sortValue: String = switch sort {
+            let sortValue = switch sort {
             case .modifiedDate: "modified"
             case .createdDate: "created"
             }
@@ -90,7 +90,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         components?.queryItems = [
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "limit", value: String(limit)),
-            URLQueryItem(name: "mode", value: mode.rawValue)
+            URLQueryItem(name: "mode", value: mode.rawValue),
         ]
 
         guard let url = components?.url else {
@@ -120,7 +120,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         )
 
         components?.queryItems = [
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
         ]
 
         guard let url = components?.url else {
@@ -138,7 +138,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         )
 
         components?.queryItems = [
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
         ]
 
         guard let url = components?.url else {
@@ -244,7 +244,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
             resolvingAgainstBaseURL: false
         )
         components?.queryItems = [
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
         ]
         guard let url = components?.url else {
             throw APIError.invalidURL
@@ -274,7 +274,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         )
 
         components?.queryItems = [
-            URLQueryItem(name: "limit", value: String(limit))
+            URLQueryItem(name: "limit", value: String(limit)),
         ]
 
         guard let url = components?.url else {
@@ -294,7 +294,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         var lastError: Error = APIError.networkError
 
-        for attempt in 0...maxRetries {
+        for attempt in 0 ... maxRetries {
             do {
                 return try await performMutatingRequest(url: url, method: "POST", body: body)
             } catch let error as APIError where error.isRetryable && attempt < maxRetries {
@@ -320,7 +320,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         var lastError: Error = APIError.networkError
 
-        for attempt in 0...maxRetries {
+        for attempt in 0 ... maxRetries {
             do {
                 let _: EmptyResponse = try await performMutatingRequest(url: url, method: "DELETE", body: nil)
                 return
@@ -379,7 +379,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
 
         switch httpResponse.statusCode {
-        case 200...299:
+        case 200 ... 299:
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
@@ -405,7 +405,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         var lastError: Error = APIError.networkError
 
-        for attempt in 0...maxRetries {
+        for attempt in 0 ... maxRetries {
             do {
                 try await performPutRequest(url: url, body: body)
                 return
@@ -460,7 +460,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
 
         switch httpResponse.statusCode {
-        case 200...299:
+        case 200 ... 299:
             return
         case 401:
             throw APIError.unauthorized
@@ -471,8 +471,8 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
     }
 
-    private func performEncodableMutatingRequestWithRetry<Body: Encodable, T: Decodable>(
-        url: URL, method: String, body: Body
+    private func performEncodableMutatingRequestWithRetry<T: Decodable>(
+        url: URL, method: String, body: some Encodable
     ) async throws -> T {
         guard await networkMonitor.isConnected else {
             throw APIError.networkError
@@ -480,7 +480,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         var lastError: Error = APIError.networkError
 
-        for attempt in 0...maxRetries {
+        for attempt in 0 ... maxRetries {
             do {
                 return try await performEncodableMutatingRequest(url: url, method: method, body: body)
             } catch let error as APIError where error.isRetryable && attempt < maxRetries {
@@ -499,8 +499,8 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         throw lastError
     }
 
-    private func performEncodableMutatingRequest<Body: Encodable, T: Decodable>(
-        url: URL, method: String, body: Body
+    private func performEncodableMutatingRequest<T: Decodable>(
+        url: URL, method: String, body: some Encodable
     ) async throws -> T {
         let token = try await authService.getAccessToken()
 
@@ -536,7 +536,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
 
         switch httpResponse.statusCode {
-        case 200...299:
+        case 200 ... 299:
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
@@ -563,10 +563,9 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
         var lastError: Error = APIError.networkError
 
-        for attempt in 0...maxRetries {
+        for attempt in 0 ... maxRetries {
             do {
-                let result: T = try await performRequest(url: url)
-                return result
+                return try await performRequest(url: url)
             } catch let error as APIError where error.isRetryable && attempt < maxRetries {
                 lastError = error
                 // Don't retry if we've gone offline
@@ -616,7 +615,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         }
 
         switch httpResponse.statusCode {
-        case 200...299:
+        case 200 ... 299:
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
@@ -634,7 +633,7 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
 
 /// Empty response for operations that return minimal data
 private struct EmptyResponse: Codable, Sendable {
-    // Accepts any JSON response
+    /// Accepts any JSON response
     init(from decoder: Decoder) throws {
         // Consume the container without requiring specific keys
         _ = try? decoder.singleValueContainer()

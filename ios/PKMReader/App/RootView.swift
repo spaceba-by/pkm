@@ -10,39 +10,39 @@ struct RootView: View {
     /// Check if app is launched in logged-out mode for UI testing
     private var isLoggedOutTestMode: Bool {
         #if DEBUG
-        return CommandLine.arguments.contains("--logged-out")
+            return CommandLine.arguments.contains("--logged-out")
         #else
-        return false
+            return false
         #endif
     }
 
     /// Check if app is launched with mock API for UI testing
     private var isMockAPIMode: Bool {
         #if DEBUG
-        return CommandLine.arguments.contains("--mock-api")
+            return CommandLine.arguments.contains("--mock-api")
         #else
-        return false
+            return false
         #endif
     }
 
     var body: some View {
         Group {
             #if DEBUG
-            if isMockAPIMode {
-                // UI testing mode: show main tab with mock data, skip auth
-                MainTabView(
-                    apiClient: UITestAPIClient(),
-                    authService: UITestAuthService(),
-                    networkMonitor: networkMonitor
-                )
-            } else if isLoggedOutTestMode {
-                // UI testing mode: show login screen directly
-                LoginView(authService: authService)
-            } else {
-                authenticatedContent
-            }
+                if isMockAPIMode {
+                    // UI testing mode: show main tab with mock data, skip auth
+                    MainTabView(
+                        apiClient: UITestAPIClient(),
+                        authService: UITestAuthService(),
+                        networkMonitor: networkMonitor
+                    )
+                } else if isLoggedOutTestMode {
+                    // UI testing mode: show login screen directly
+                    LoginView(authService: authService)
+                } else {
+                    authenticatedContent
+                }
             #else
-            authenticatedContent
+                authenticatedContent
             #endif
         }
         .task {
@@ -50,7 +50,7 @@ struct RootView: View {
             networkMonitor.start()
 
             // Skip auth initialization in test modes
-            guard !isLoggedOutTestMode && !isMockAPIMode else { return }
+            guard !isLoggedOutTestMode, !isMockAPIMode else { return }
 
             do {
                 try await authService.configure()

@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class DocumentDetailViewModelTests: XCTestCase {
@@ -25,7 +25,7 @@ final class DocumentDetailViewModelTests: XCTestCase {
         let document = TestFixtures.sampleDocument
         sut = DocumentDetailViewModel(document: document, apiClient: mockAPIClient)
 
-        if case .loaded(let content) = sut.contentState {
+        if case let .loaded(content) = sut.contentState {
             XCTAssertEqual(content, document.content)
         } else {
             XCTFail("Expected loaded state")
@@ -65,7 +65,7 @@ final class DocumentDetailViewModelTests: XCTestCase {
 
         await sut.loadContent()
 
-        if case .loaded(let content) = sut.contentState {
+        if case let .loaded(content) = sut.contentState {
             XCTAssertEqual(content, "# Full Content")
         } else {
             XCTFail("Expected loaded state")
@@ -124,7 +124,7 @@ final class DocumentDetailViewModelTests: XCTestCase {
 
         // Should have called the API despite already being loaded
         XCTAssertEqual(mockAPIClient.getDocumentCallCount, 1)
-        if case .loaded(let content) = sut.contentState {
+        if case let .loaded(content) = sut.contentState {
             XCTAssertTrue(content.contains("Updated Content"))
         } else {
             XCTFail("Expected loaded state after reload")
@@ -401,7 +401,7 @@ final class DocumentDetailViewModelTests: XCTestCase {
 
         await sut.loadContent()
 
-        if case .loaded(let content) = sut.contentState {
+        if case let .loaded(content) = sut.contentState {
             XCTAssertEqual(content, "*No content available*")
         } else {
             XCTFail("Expected loaded state with placeholder")

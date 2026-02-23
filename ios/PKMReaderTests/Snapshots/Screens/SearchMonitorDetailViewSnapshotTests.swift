@@ -1,7 +1,7 @@
+@testable import PKMReader
 import SnapshotTesting
 import SwiftUI
 import XCTest
-@testable import PKMReader
 
 @MainActor
 final class SearchMonitorDetailViewSnapshotTests: SnapshotTestCase {

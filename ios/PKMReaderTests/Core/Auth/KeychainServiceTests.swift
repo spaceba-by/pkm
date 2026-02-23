@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class KeychainServiceTests: XCTestCase {
     // swiftlint:disable implicitly_unwrapped_optional
