@@ -1,6 +1,6 @@
 # Task 0033: Unified Documents View
 
-**Status**: Planned
+**Status**: Complete ✅
 
 ## Specifications
 
@@ -84,27 +84,41 @@ Remove Search (tag 1) and Tags (tag 2). Renumber: Documents (0), Insights (1), S
 
 ## Acceptance Criteria
 
-- [ ] Documents tab integrates search bar via `.searchable` with keyword/semantic mode toggle
-- [ ] FilterSheet includes both Classification and Tags sections
-- [ ] Selecting a tag filters the document list inline
-- [ ] Tag + classification filters work together (fetch by tag, client-side filter by classification)
-- [ ] Search monitors accessible via toolbar binoculars button
-- [ ] Tab bar shows 4 tabs: Documents, Insights, Settings, Graph
-- [ ] Browse state preserved while searching
-- [ ] Search debounced at 300ms with "Enter at least 2 characters" hint
-- [ ] All existing unit tests migrated and passing
-- [ ] All existing UI tests migrated and passing
-- [ ] Lint checks pass
-- [ ] Old Search and Tags files deleted
+- [x] Documents tab integrates search bar via `.searchable` with keyword/semantic mode toggle
+- [x] FilterSheet includes both Classification and Tags sections
+- [x] Selecting a tag filters the document list inline
+- [x] Tag + classification filters work together (fetch by tag, client-side filter by classification)
+- [x] Search monitors accessible via toolbar binoculars button
+- [x] Tab bar shows 4 tabs: Documents, Insights, Settings, Graph
+- [x] Browse state preserved while searching
+- [x] Search debounced at 300ms with "Enter at least 2 characters" hint
+- [x] All existing unit tests migrated and passing
+- [x] All existing UI tests migrated and passing
+- [x] Lint checks pass
+- [x] Old Search and Tags files deleted
 
 ## Implementation Steps
 
-- [ ] Step 1: Expand `DocumentListViewModel` — Add `SearchState`, `searchText` debounce, `searchMode`, `selectedTag`, `tags`, tag-filtered fetching
-- [ ] Step 2: Expand `FilterSheet` — Add Tags section with searchable tag list, single-select tag filter
-- [ ] Step 3: Rewrite `DocumentListView` — Add `.searchable`, conditional browse/search content, search mode picker, search monitors toolbar button
-- [ ] Step 4: Update `MainTabView` — Remove Search and Tags tabs, renumber to 4 tabs
-- [ ] Step 5: Migrate unit tests — Move search + tag tests into `DocumentListViewModelTests`, delete old test files
-- [ ] Step 6: Update UI tests — Merge search/tag UI tests into Documents page object and screen tests, update SearchMonitor navigation
-- [ ] Step 7: Delete obsolete files — Remove old views, VMs, tests, snapshots
-- [ ] Step 8: Regenerate Xcode project — `mise run generate`
-- [ ] Step 9: Run all checks — `mise run lint:fix && mise run test`
+- [x] Step 1: Expand `DocumentListViewModel` — Add `SearchState`, `searchText` debounce, `searchMode`, `selectedTag`, `tags`, tag-filtered fetching
+- [x] Step 2: Expand `FilterSheet` — Add Tags section with searchable tag list, single-select tag filter
+- [x] Step 3: Rewrite `DocumentListView` — Add `.searchable`, conditional browse/search content, search mode picker, search monitors toolbar button
+- [x] Step 4: Update `MainTabView` — Remove Search and Tags tabs, renumber to 4 tabs
+- [x] Step 5: Migrate unit tests — Move search + tag tests into `DocumentListViewModelTests`, delete old test files
+- [x] Step 6: Update UI tests — Merge search/tag UI tests into Documents page object and screen tests, update SearchMonitor navigation
+- [x] Step 7: Delete obsolete files — Remove old views, VMs, tests, snapshots
+- [x] Step 8: Regenerate Xcode project — `mise run generate`
+- [x] Step 9: Run all checks — `mise run lint:fix && mise run test`
+
+## Summary of Changes
+
+### PR #107: feat: unify Documents, Search, and Tags into single tab (Task 0033)
+
+- Expanded `DocumentListViewModel` with search state (debounced text, keyword/semantic mode), tag filtering, and lazy tag loading
+- Expanded `FilterSheet` with Tags section alongside existing Classification filters
+- Rewrote `DocumentListView` with `.searchable`, conditional browse/search rendering, search mode picker, and search monitors toolbar button
+- Reduced `MainTabView` from 6 tabs to 4 (Documents, Insights, Settings, Graph)
+- Migrated all search and tag unit tests into `DocumentListViewModelTests`
+- Migrated search and tag UI tests into `DocumentListScreenTests` with updated page objects
+- Deleted 15 obsolete files: SearchView, SearchViewModel, TagsView, TagsViewModel, TagDocumentsView, TagDocumentsViewModel, and their associated tests, snapshots, and page objects
+- Updated snapshot reference images for new unified document list layout
+- 29 files changed, 749 insertions, 1406 deletions
