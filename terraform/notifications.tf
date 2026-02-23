@@ -45,15 +45,8 @@ resource "aws_sns_platform_application" "apns" {
   platform_credential = var.apns_signing_key
   platform_principal  = var.apns_signing_key_id
 
-  attributes = {
-    "ApplePlatformTeamID"   = var.apns_team_id
-    "ApplePlatformBundleID" = var.apns_bundle_id
-    "TokenSigningAlgorithm" = "ES256"
-  }
-
-  tags = merge(var.tags, {
-    Name = "${var.project_name}-ios-push"
-  })
+  apple_platform_team_id   = var.apns_team_id
+  apple_platform_bundle_id = var.apns_bundle_id
 }
 
 # =============================================================================

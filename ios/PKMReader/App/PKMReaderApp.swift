@@ -24,7 +24,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, Sendable {
 
 @main
 struct PKMReaderApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self)
+    var appDelegate
 
     init() {
         #if DEBUG
