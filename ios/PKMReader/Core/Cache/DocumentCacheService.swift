@@ -16,8 +16,8 @@ final class DocumentCacheService: @unchecked Sendable {
             schema: schema,
             isStoredInMemoryOnly: false
         )
-        self.modelContainer = try ModelContainer(for: schema, configurations: [config])
-        self.modelContext = modelContainer.mainContext
+        modelContainer = try ModelContainer(for: schema, configurations: [config])
+        modelContext = modelContainer.mainContext
     }
 
     /// For testing - use in-memory storage
@@ -27,8 +27,8 @@ final class DocumentCacheService: @unchecked Sendable {
             schema: schema,
             isStoredInMemoryOnly: inMemory
         )
-        self.modelContainer = try ModelContainer(for: schema, configurations: [config])
-        self.modelContext = modelContainer.mainContext
+        modelContainer = try ModelContainer(for: schema, configurations: [config])
+        modelContext = modelContainer.mainContext
     }
 
     func cacheDocuments(_ documents: [Document]) {

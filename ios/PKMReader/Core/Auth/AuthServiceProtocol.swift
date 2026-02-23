@@ -47,19 +47,19 @@ extension AuthError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Not authenticated"
+            "Not authenticated"
         case .invalidCredentials:
-            return "Invalid email or password"
+            "Invalid email or password"
         case .accountNotConfirmed:
-            return "Please confirm your account"
+            "Please confirm your account"
         case .networkError:
-            return "Network error"
+            "Network error"
         case .userAlreadyExists:
-            return "An account with this email already exists"
+            "An account with this email already exists"
         case .invalidPassword:
-            return "Password doesn't meet requirements"
-        case .unknown(let message):
-            return message
+            "Password doesn't meet requirements"
+        case let .unknown(message):
+            message
         }
     }
 }

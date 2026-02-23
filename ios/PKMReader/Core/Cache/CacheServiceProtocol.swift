@@ -11,7 +11,7 @@ protocol CacheServiceProtocol: Sendable {
     /// - Parameters:
     ///   - key: The cache key
     ///   - value: The value to cache
-    func set<T: Codable>(key: String, value: T) async
+    func set(key: String, value: some Codable) async
 
     /// Remove a cached value
     /// - Parameter key: The cache key to remove

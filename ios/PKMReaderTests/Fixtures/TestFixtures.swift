@@ -124,9 +124,10 @@ enum TestFixtures {
             Tag(id: "test", name: "test", documentCount: 5),
             Tag(id: "meeting", name: "meeting", documentCount: 10),
             Tag(id: "idea", name: "idea", documentCount: 3),
-            Tag(id: "project", name: "project", documentCount: 7)
+            Tag(id: "project", name: "project", documentCount: 7),
         ]
     }
+
     // MARK: - Sample Summaries
 
     /// A sample summary
@@ -155,7 +156,7 @@ enum TestFixtures {
                 id: "_agent/summaries/2024-01-01.md",
                 date: "2024-01-01",
                 modified: Date(timeIntervalSince1970: 1_704_067_200)
-            )
+            ),
         ]
     }
 
@@ -187,10 +188,10 @@ enum TestFixtures {
                 id: "_agent/reports/weekly/2024-W01.md",
                 weekOf: "2024-W01",
                 modified: Date(timeIntervalSince1970: 1_704_067_200)
-            )
+            ),
         ]
     }
 }
 
-// Helper class to find the test bundle
+/// Helper class to find the test bundle
 private class BundleToken {}

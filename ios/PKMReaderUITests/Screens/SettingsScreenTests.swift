@@ -22,7 +22,7 @@ final class SettingsScreenTests: XCTestCase {
 
     // MARK: - Settings Tests
 
-    func test_settingsView_displaysAllSections() throws {
+    func test_settingsView_displaysAllSections() {
         // Verify the Settings navigation title
         let navBar = app.navigationBars["Settings"]
         XCTAssertTrue(navBar.waitForExistence(timeout: 5), "Settings navigation bar not displayed")
@@ -35,13 +35,13 @@ final class SettingsScreenTests: XCTestCase {
         XCTAssertTrue(signOutButton.exists, "Sign Out button not found")
     }
 
-    func test_clearCache_buttonExists() throws {
+    func test_clearCache_buttonExists() {
         let clearCacheButton = app.buttons["ClearCacheButton"]
         XCTAssertTrue(clearCacheButton.waitForExistence(timeout: 5), "Clear Cache button not found")
         XCTAssertTrue(clearCacheButton.isEnabled, "Clear Cache button should be enabled")
     }
 
-    func test_displayPreferences_toggles() throws {
+    func test_displayPreferences_toggles() {
         let compactToggle = app.switches["CompactListToggle"]
         XCTAssertTrue(compactToggle.waitForExistence(timeout: 5), "Compact List toggle not found")
 
@@ -57,7 +57,7 @@ final class SettingsScreenTests: XCTestCase {
 
     // MARK: - Tab Navigation
 
-    func test_tabLayout_exists() throws {
+    func test_tabLayout_exists() {
         let tabBar = app.tabBars.element
         XCTAssertTrue(tabBar.waitForExistence(timeout: 5), "Tab bar not found")
 

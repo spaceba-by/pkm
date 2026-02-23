@@ -148,7 +148,7 @@ final class DocumentListViewModel: ObservableObject {
             hasMorePages = response.nextCursor != nil
             nextCursor = response.nextCursor
 
-            if case .loaded(var currentDocs) = state {
+            if case var .loaded(currentDocs) = state {
                 currentDocs.append(contentsOf: response.documents)
                 state = .loaded(sortedDocuments(currentDocs))
             }

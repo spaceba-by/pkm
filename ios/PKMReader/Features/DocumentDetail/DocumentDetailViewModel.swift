@@ -46,7 +46,7 @@ final class DocumentDetailViewModel: ObservableObject {
     init(document: Document, apiClient: any APIClientProtocol) {
         self.document = document
         self.apiClient = apiClient
-        self.classification = document.metadata.classification
+        classification = document.metadata.classification
 
         // If content already loaded, use it
         if let content = document.content {

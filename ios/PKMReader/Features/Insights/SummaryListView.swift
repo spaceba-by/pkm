@@ -14,7 +14,7 @@ struct SummaryListView: View {
             case .loading:
                 LoadingView(message: "Loading summaries...")
 
-            case .loaded(let summaries):
+            case let .loaded(summaries):
                 summaryList(summaries)
 
             case .empty:
@@ -24,7 +24,7 @@ struct SummaryListView: View {
                     message: "No daily summaries available yet"
                 )
 
-            case .error(let error):
+            case let .error(error):
                 ErrorView(error: error) {
                     Task { await viewModel.loadSummaries() }
                 }

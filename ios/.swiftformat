@@ -15,7 +15,9 @@
 --closingparen balanced
 --funcattributes prev-line
 --typeattributes prev-line
---varattributes prev-line
+--varattributes preserve
+--complex-attributes prev-line
+--modifier-order nonisolated,private,fileprivate,internal,public,open,final,override,convenience,required,lazy,dynamic,weak,unowned,static,class
 
 # Enabled rules
 --enable blankLinesBetweenScopes
@@ -27,6 +29,7 @@
 --enable emptyBraces
 --enable indent
 --enable leadingDelimiters
+--enable modifierOrder
 --enable redundantBreak
 --enable redundantExtensionACL
 --enable redundantFileprivate
@@ -70,3 +73,4 @@
 --disable acronyms
 --disable markTypes
 --disable organizeDeclarations
+--disable wrapMultilineStatementBraces

@@ -24,7 +24,7 @@ struct CalendarWeek: Identifiable, Equatable {
     init(days: [CalendarDay], weekStart: Date) {
         self.days = days
         self.weekStart = weekStart
-        self.id = Self.weekIdFormatter.string(from: weekStart)
+        id = Self.weekIdFormatter.string(from: weekStart)
     }
 }
 
@@ -78,23 +78,23 @@ final class CalendarViewModel: ObservableObject {
         let dkf = DateFormatter()
         dkf.dateFormat = "yyyy-MM-dd"
         dkf.timeZone = calendar.timeZone
-        self.dateKeyFormatter = dkf
+        dateKeyFormatter = dkf
 
         let mtf = DateFormatter()
         mtf.dateFormat = "MMMM yyyy"
         mtf.timeZone = calendar.timeZone
-        self.monthTitleFormatter = mtf
+        monthTitleFormatter = mtf
 
         let iwf = DateFormatter()
         iwf.dateFormat = "YYYY-'W'ww-e"
         iwf.timeZone = calendar.timeZone
         iwf.locale = Locale(identifier: "en_US_POSIX")
         iwf.calendar = Calendar(identifier: .iso8601)
-        self.isoWeekFormatter = iwf
+        isoWeekFormatter = iwf
 
         // Start on the first day of the current month
         let components = calendar.dateComponents([.year, .month], from: today)
-        self.displayedMonth = calendar.date(from: components) ?? today
+        displayedMonth = calendar.date(from: components) ?? today
         computeWeeks()
     }
 
@@ -212,7 +212,7 @@ final class CalendarViewModel: ObservableObject {
 
     private func leadingDays(before monthStart: Date, count: Int) -> [CalendarDay] {
         guard count > 0 else { return [] }
-        return (1...count).reversed().compactMap { i in
+        return (1 ... count).reversed().compactMap { i in
             guard let date = calendar.date(byAdding: .day, value: -i, to: monthStart) else { return nil }
             let dayNum = calendar.component(.day, from: date)
             return CalendarDay(
@@ -250,7 +250,7 @@ final class CalendarViewModel: ObservableObject {
         let remainder = allDays.count % 7
         guard remainder > 0, let lastDay = allDays.last?.date else { return [] }
         let trailingCount = 7 - remainder
-        return (1...trailingCount).compactMap { i in
+        return (1 ... trailingCount).compactMap { i in
             guard let date = calendar.date(byAdding: .day, value: i, to: lastDay) else { return nil }
             let dayNum = calendar.component(.day, from: date)
             return CalendarDay(
@@ -265,7 +265,7 @@ final class CalendarViewModel: ObservableObject {
 
     private func groupIntoWeeks(_ allDays: [CalendarDay]) -> [CalendarWeek] {
         stride(from: 0, to: allDays.count, by: 7).compactMap { i in
-            let weekDays = Array(allDays[i..<min(i + 7, allDays.count)])
+            let weekDays = Array(allDays[i ..< min(i + 7, allDays.count)])
             guard let firstDay = weekDays.first else { return nil }
             return CalendarWeek(days: weekDays, weekStart: firstDay.date)
         }

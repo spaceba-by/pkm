@@ -24,7 +24,7 @@ final class SearchMonitorScreenTests: XCTestCase {
 
     // MARK: - List View Tests
 
-    func test_monitorList_displaysMonitors() throws {
+    func test_monitorList_displaysMonitors() {
         let monitor1 = app.staticTexts["Swift Concurrency Updates"]
         XCTAssertTrue(monitor1.waitForExistence(timeout: 10), "First monitor not shown")
 
@@ -32,7 +32,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertTrue(monitor2.waitForExistence(timeout: 5), "Second monitor not shown")
     }
 
-    func test_monitorList_showsStatusBadges() throws {
+    func test_monitorList_showsStatusBadges() {
         let activeBadge = app.staticTexts["Active"]
         XCTAssertTrue(activeBadge.waitForExistence(timeout: 10), "Active badge not shown")
 
@@ -40,17 +40,17 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertTrue(pausedBadge.waitForExistence(timeout: 5), "Paused badge not shown")
     }
 
-    func test_monitorList_showsCreateButton() throws {
+    func test_monitorList_showsCreateButton() {
         let createButton = app.buttons["CreateMonitorButton"].firstMatch
         XCTAssertTrue(createButton.waitForExistence(timeout: 10), "Create button not shown")
     }
 
-    func test_monitorList_showsNavigationTitle() throws {
+    func test_monitorList_showsNavigationTitle() {
         let navBar = app.navigationBars["Search Monitors"]
         XCTAssertTrue(navBar.waitForExistence(timeout: 10), "Navigation title not shown")
     }
 
-    func test_monitorList_showsSearchTerms() throws {
+    func test_monitorList_showsSearchTerms() {
         let monitor1 = app.staticTexts["Swift Concurrency Updates"]
         XCTAssertTrue(monitor1.waitForExistence(timeout: 10))
 
@@ -58,7 +58,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertGreaterThan(termsText.count, 0, "Search terms not shown")
     }
 
-    func test_monitorList_showsInterval() throws {
+    func test_monitorList_showsInterval() {
         let monitor1 = app.staticTexts["Swift Concurrency Updates"]
         XCTAssertTrue(monitor1.waitForExistence(timeout: 10))
 
@@ -66,7 +66,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertGreaterThan(intervalText.count, 0, "Interval not shown")
     }
 
-    func test_form_cancelDismisses() throws {
+    func test_form_cancelDismisses() {
         let createButton = app.buttons["CreateMonitorButton"].firstMatch
         XCTAssertTrue(createButton.waitForExistence(timeout: 10))
         createButton.tap()
@@ -79,7 +79,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertTrue(monitor1.waitForExistence(timeout: 5), "Monitor list not shown after cancel")
     }
 
-    func test_form_showsNameField() throws {
+    func test_form_showsNameField() {
         let createButton = app.buttons["CreateMonitorButton"].firstMatch
         XCTAssertTrue(createButton.waitForExistence(timeout: 10))
         createButton.tap()
@@ -88,7 +88,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "Name field not shown")
     }
 
-    func test_form_showsSearchTermsField() throws {
+    func test_form_showsSearchTermsField() {
         let createButton = app.buttons["CreateMonitorButton"].firstMatch
         XCTAssertTrue(createButton.waitForExistence(timeout: 10))
         createButton.tap()
@@ -97,7 +97,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertTrue(searchTermsField.waitForExistence(timeout: 5), "Search terms field not shown")
     }
 
-    func test_form_showsNewMonitorTitle() throws {
+    func test_form_showsNewMonitorTitle() {
         let createButton = app.buttons["CreateMonitorButton"].firstMatch
         XCTAssertTrue(createButton.waitForExistence(timeout: 10))
         createButton.tap()

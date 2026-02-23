@@ -20,14 +20,14 @@ struct ReportDetailView: View {
             case .loading:
                 LoadingView(message: "Loading report...")
 
-            case .loaded(let content):
+            case let .loaded(content):
                 ScrollView {
                     StructuredText(markdown: content)
                         .textSelection(.enabled)
                         .padding()
                 }
 
-            case .error(let error):
+            case let .error(error):
                 ErrorView(error: error) {
                     Task { await viewModel.loadContent() }
                 }

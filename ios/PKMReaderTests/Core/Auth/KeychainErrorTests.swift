@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class KeychainErrorTests: XCTestCase {
     func test_keychainKey_constants() {
@@ -14,7 +14,7 @@ final class KeychainErrorTests: XCTestCase {
             .unableToSave,
             .unableToRetrieve,
             .unableToDelete,
-            .dataConversionError
+            .dataConversionError,
         ]
         XCTAssertEqual(errors.count, 4)
     }

@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class CacheKeyTests: XCTestCase {
     func test_documentList_key() {

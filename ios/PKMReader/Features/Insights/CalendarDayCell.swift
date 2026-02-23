@@ -57,7 +57,7 @@ struct CalendarDayCell: View {
 
     private var accessibilityText: String {
         let dateText = Self.accessibilityDateFormatter.string(from: day.date)
-        if day.isToday && hasSummary {
+        if day.isToday, hasSummary {
             return "\(dateText), today, daily summary available"
         } else if day.isToday {
             return "\(dateText), today"

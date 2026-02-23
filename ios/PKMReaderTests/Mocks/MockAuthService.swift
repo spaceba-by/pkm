@@ -65,7 +65,7 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
 
     func getAccessToken() async throws -> String {
         getAccessTokenCallCount += 1
-        if throwWhenNotAuthenticated && !isAuthenticatedValue {
+        if throwWhenNotAuthenticated, !isAuthenticatedValue {
             throw AuthError.notAuthenticated
         }
         return accessToken

@@ -22,22 +22,22 @@ final class GraphScreenTests: XCTestCase {
 
     // MARK: - Graph Display Tests
 
-    func test_graphView_isDisplayed() throws {
+    func test_graphView_isDisplayed() {
         let graphView = app.otherElements["GraphView"]
         XCTAssertTrue(graphView.waitForExistence(timeout: 10), "Graph view not displayed")
     }
 
-    func test_graphView_navigationTitle() throws {
+    func test_graphView_navigationTitle() {
         let navBar = app.navigationBars["Graph"]
         XCTAssertTrue(navBar.waitForExistence(timeout: 10), "Graph navigation bar not found")
     }
 
-    func test_graphView_hasLegendButton() throws {
+    func test_graphView_hasLegendButton() {
         let legendButton = app.buttons["Graph legend"]
         XCTAssertTrue(legendButton.waitForExistence(timeout: 10), "Legend button not found")
     }
 
-    func test_tapLegend_showsMenu() throws {
+    func test_tapLegend_showsMenu() {
         let legendButton = app.buttons["Graph legend"]
         XCTAssertTrue(legendButton.waitForExistence(timeout: 10), "Legend button not found")
         legendButton.tap()

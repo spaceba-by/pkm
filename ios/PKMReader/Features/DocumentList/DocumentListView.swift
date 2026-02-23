@@ -105,10 +105,10 @@ struct DocumentListView: View {
         case .loading:
             LoadingView(message: "Loading documents...")
 
-        case .loaded(let documents):
+        case let .loaded(documents):
             documentList(documents)
 
-        case .error(let error):
+        case let .error(error):
             ErrorView(error: error) {
                 Task { await viewModel.loadDocuments() }
             }
@@ -150,7 +150,7 @@ struct DocumentListView: View {
         case .loading:
             LoadingView(message: "Searching...")
 
-        case .loaded(let documents):
+        case let .loaded(documents):
             searchResultsList(documents)
 
         case .empty:
@@ -160,7 +160,7 @@ struct DocumentListView: View {
                 message: "No documents match your search"
             )
 
-        case .error(let error):
+        case let .error(error):
             ErrorView(error: error) {
                 Task { await viewModel.search() }
             }
@@ -257,10 +257,10 @@ struct DocumentListView: View {
 /// Preview-only mock API client
 private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listDocuments(
-        classification: DocumentClassification?,
-        limit: Int,
-        cursor: String?,
-        sort: DocumentSortOrder? = nil
+        classification _: DocumentClassification?,
+        limit _: Int,
+        cursor _: String?,
+        sort _: DocumentSortOrder? = nil
     ) async throws -> DocumentListResponse {
         DocumentListResponse(documents: [], nextCursor: nil)
     }
@@ -282,34 +282,63 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
         )
     }
 
-    func search(query: String, limit: Int, mode: SearchMode) async throws -> [Document] { [] }
-    func listTags() async throws -> [Tag] { [] }
-    func listClassifications() async throws -> [ClassificationCount] { [] }
-    func listSummaries(limit: Int) async throws -> [Summary] { [] }
-    func listReports(limit: Int) async throws -> [Report] { [] }
-    func documentsByTag(tag: String, limit: Int) async throws -> [Document] { [] }
-    func updateClassification(documentId: String, classification: DocumentClassification) async throws {}
-    func createDocument(key: String, title: String?, content: String) async throws -> CreateDocumentResponse {
+    func search(query _: String, limit _: Int, mode _: SearchMode) async throws -> [Document] {
+        []
+    }
+
+    func listTags() async throws -> [Tag] {
+        []
+    }
+
+    func listClassifications() async throws -> [ClassificationCount] {
+        []
+    }
+
+    func listSummaries(limit _: Int) async throws -> [Summary] {
+        []
+    }
+
+    func listReports(limit _: Int) async throws -> [Report] {
+        []
+    }
+
+    func documentsByTag(tag _: String, limit _: Int) async throws -> [Document] {
+        []
+    }
+
+    func updateClassification(documentId _: String, classification _: DocumentClassification) async throws {}
+    func createDocument(key: String, title: String?, content _: String) async throws -> CreateDocumentResponse {
         CreateDocumentResponse(key: key, title: title ?? key, createdAt: "2024-01-01T00:00:00Z")
     }
-    func updateDocument(key: String, content: String, ifUnmodifiedSince: String?) async throws {}
-    func deleteDocument(key: String) async throws {}
+
+    func updateDocument(key _: String, content _: String, ifUnmodifiedSince _: String?) async throws {}
+    func deleteDocument(key _: String) async throws {}
     func getGraphData() async throws -> GraphDataResponse {
         GraphDataResponse(nodes: [], edges: [], nodeCount: 0, edgeCount: 0)
     }
-    func listSearchMonitors() async throws -> [SearchMonitor] { [] }
-    func getSearchMonitor(id: String) async throws -> SearchMonitorDetailResponse {
+
+    func listSearchMonitors() async throws -> [SearchMonitor] {
+        []
+    }
+
+    func getSearchMonitor(id _: String) async throws -> SearchMonitorDetailResponse {
         throw APIError.invalidResponse
     }
-    func createSearchMonitor(request: SearchMonitorRequest) async throws -> SearchMonitor {
+
+    func createSearchMonitor(request _: SearchMonitorRequest) async throws -> SearchMonitor {
         throw APIError.invalidResponse
     }
-    func updateSearchMonitor(id: String, request: SearchMonitorRequest) async throws -> SearchMonitor {
+
+    func updateSearchMonitor(id _: String, request _: SearchMonitorRequest) async throws -> SearchMonitor {
         throw APIError.invalidResponse
     }
-    func deleteSearchMonitor(id: String) async throws {}
-    func listSearchMonitorSummaries(monitorId: String, limit: Int) async throws -> [SearchSummary] { [] }
-    func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary {
+
+    func deleteSearchMonitor(id _: String) async throws {}
+    func listSearchMonitorSummaries(monitorId _: String, limit _: Int) async throws -> [SearchSummary] {
+        []
+    }
+
+    func getSearchMonitorSummary(monitorId _: String, timestamp _: String) async throws -> SearchSummary {
         throw APIError.invalidResponse
     }
 }

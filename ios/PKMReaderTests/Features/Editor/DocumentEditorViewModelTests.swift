@@ -1,9 +1,9 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class DocumentEditorViewModelTests: XCTestCase {
-    private var mockAPIClient: MockAPIClient!  // swiftlint:disable:this implicitly_unwrapped_optional
+    private var mockAPIClient: MockAPIClient! // swiftlint:disable:this implicitly_unwrapped_optional
 
     override func setUp() async throws {
         mockAPIClient = MockAPIClient()

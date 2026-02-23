@@ -1,7 +1,7 @@
+@testable import PKMReader
 import SnapshotTesting
 import SwiftUI
 import XCTest
-@testable import PKMReader
 
 final class SettingsViewSnapshotTests: SnapshotTestCase {
     func test_defaultState() {

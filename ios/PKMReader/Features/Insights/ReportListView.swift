@@ -14,7 +14,7 @@ struct ReportListView: View {
             case .loading:
                 LoadingView(message: "Loading reports...")
 
-            case .loaded(let reports):
+            case let .loaded(reports):
                 reportList(reports)
 
             case .empty:
@@ -24,7 +24,7 @@ struct ReportListView: View {
                     message: "No weekly reports available yet"
                 )
 
-            case .error(let error):
+            case let .error(error):
                 ErrorView(error: error) {
                     Task { await viewModel.loadReports() }
                 }

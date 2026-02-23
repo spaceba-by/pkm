@@ -21,26 +21,26 @@ final class LoginScreenTests: XCTestCase {
 
     // MARK: - Screen Display Tests
 
-    func test_loginScreen_displaysCorrectly() throws {
+    func test_loginScreen_displaysCorrectly() {
         // Verify all UI elements are present on the login screen
         loginPage.assertAllElementsExist()
     }
 
     // MARK: - Form Validation Tests
 
-    func test_signInButton_disabledWithEmptyFields() throws {
+    func test_signInButton_disabledWithEmptyFields() {
         // Sign in button should be disabled when both fields are empty
         loginPage.assertIsDisplayed()
         loginPage.assertSignInButtonDisabled()
     }
 
-    func test_signInButton_disabledWithOnlyEmail() throws {
+    func test_signInButton_disabledWithOnlyEmail() {
         // Sign in button should be disabled when only email is entered
         loginPage.enterEmail("test@example.com")
         loginPage.assertSignInButtonDisabled()
     }
 
-    func test_signInButton_enabledWithValidInput() throws {
+    func test_signInButton_enabledWithValidInput() {
         // Sign in button should be enabled when both fields have input
         loginPage.enterEmail("test@example.com")
         loginPage.enterPassword("password123")
@@ -49,7 +49,7 @@ final class LoginScreenTests: XCTestCase {
 
     // MARK: - Input Field Tests
 
-    func test_emailField_acceptsInput() throws {
+    func test_emailField_acceptsInput() {
         // Verify the email field accepts text input
         let testEmail = "user@example.com"
         loginPage.enterEmail(testEmail)
@@ -57,7 +57,7 @@ final class LoginScreenTests: XCTestCase {
         XCTAssertEqual(loginPage.emailField.value as? String, testEmail)
     }
 
-    func test_passwordField_acceptsInput() throws {
+    func test_passwordField_acceptsInput() {
         // Verify the password field accepts text input
         // Note: Secure text fields show dots, so we verify by checking the field has content
         loginPage.enterPassword("secretpassword")

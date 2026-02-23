@@ -1,10 +1,10 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class GraphViewModelTests: XCTestCase {
-    private var sut: GraphViewModel!  // swiftlint:disable:this implicitly_unwrapped_optional
-    private var mockAPIClient: MockAPIClient!  // swiftlint:disable:this implicitly_unwrapped_optional
+    private var sut: GraphViewModel! // swiftlint:disable:this implicitly_unwrapped_optional
+    private var mockAPIClient: MockAPIClient! // swiftlint:disable:this implicitly_unwrapped_optional
 
     override func setUp() async throws {
         mockAPIClient = MockAPIClient()
@@ -67,10 +67,10 @@ final class GraphViewModelTests: XCTestCase {
     func test_loadGraph_success_populatesNodesAndEdges() async {
         let nodes = [
             makeNode(id: "doc:test.md", type: "document", label: "Test", path: "test.md", classification: "reference"),
-            makeNode(id: "tag:swift", type: "tag", label: "swift")
+            makeNode(id: "tag:swift", type: "tag", label: "swift"),
         ]
         let edges = [
-            GraphEdge(source: "doc:test.md", target: "tag:swift", type: "tagged", weight: 1)
+            GraphEdge(source: "doc:test.md", target: "tag:swift", type: "tagged", weight: 1),
         ]
 
         await loadGraphWith(nodes: nodes, edges: edges)
@@ -85,7 +85,7 @@ final class GraphViewModelTests: XCTestCase {
     func test_loadGraph_success_initializesPositions() async {
         let nodes = [
             makeNode(id: "doc:a.md", type: "document", label: "A", path: "a.md", classification: "meeting"),
-            makeNode(id: "doc:b.md", type: "document", label: "B", path: "b.md", classification: "idea")
+            makeNode(id: "doc:b.md", type: "document", label: "B", path: "b.md", classification: "idea"),
         ]
 
         await loadGraphWith(nodes: nodes)
@@ -114,7 +114,7 @@ final class GraphViewModelTests: XCTestCase {
     }
 
     func test_loadGraph_positionsDistributed() async {
-        let nodes = (0..<5).map { i in
+        let nodes = (0 ..< 5).map { i in
             makeNode(
                 id: "doc:\(i).md",
                 type: "document",
@@ -139,7 +139,7 @@ final class GraphViewModelTests: XCTestCase {
 
         let nodes2 = [
             makeNode(id: "doc:x.md", type: "document", label: "X", classification: "idea"),
-            makeNode(id: "doc:y.md", type: "document", label: "Y", classification: "journal")
+            makeNode(id: "doc:y.md", type: "document", label: "Y", classification: "journal"),
         ]
         await loadGraphWith(nodes: nodes2)
         XCTAssertEqual(sut.nodes.count, 2)
@@ -246,12 +246,12 @@ final class GraphViewModelTests: XCTestCase {
             makeNode(id: "doc:center.md", type: "document", label: "Center", classification: "reference"),
             makeNode(id: "tag:a", type: "tag", label: "a"),
             makeNode(id: "tag:b", type: "tag", label: "b"),
-            makeNode(id: "tag:c", type: "tag", label: "c")
+            makeNode(id: "tag:c", type: "tag", label: "c"),
         ]
         let edges = [
             GraphEdge(source: "doc:center.md", target: "tag:a", type: "tagged", weight: 1),
             GraphEdge(source: "doc:center.md", target: "tag:b", type: "tagged", weight: 1),
-            GraphEdge(source: "doc:center.md", target: "tag:c", type: "tagged", weight: 1)
+            GraphEdge(source: "doc:center.md", target: "tag:c", type: "tagged", weight: 1),
         ]
 
         await loadGraphWith(nodes: nodes, edges: edges)
@@ -268,7 +268,7 @@ final class GraphViewModelTests: XCTestCase {
     func test_nodeSize_cappedAtTenConnections() async {
         var nodes = [makeNode(id: "doc:hub.md", type: "document", label: "Hub", classification: "reference")]
         var edges: [GraphEdge] = []
-        for i in 0..<15 {
+        for i in 0 ..< 15 {
             let tagId = "tag:\(i)"
             nodes.append(makeNode(id: tagId, type: "tag", label: "\(i)"))
             edges.append(GraphEdge(source: "doc:hub.md", target: tagId, type: "tagged", weight: 1))
@@ -450,10 +450,10 @@ final class GraphViewModelTests: XCTestCase {
     func test_loadGraph_runsSimulation() async {
         let nodes = [
             makeNode(id: "doc:a.md", type: "document", label: "A", classification: "reference"),
-            makeNode(id: "doc:b.md", type: "document", label: "B", classification: "idea")
+            makeNode(id: "doc:b.md", type: "document", label: "B", classification: "idea"),
         ]
         let edges = [
-            GraphEdge(source: "doc:a.md", target: "doc:b.md", type: "links_to", weight: 1)
+            GraphEdge(source: "doc:a.md", target: "doc:b.md", type: "links_to", weight: 1),
         ]
 
         await loadGraphWith(nodes: nodes, edges: edges)

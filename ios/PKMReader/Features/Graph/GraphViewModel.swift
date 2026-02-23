@@ -43,7 +43,7 @@ final class GraphViewModel: ObservableObject {
 
         for (index, node) in nodes.enumerated() {
             let angle = (CGFloat(index) / CGFloat(nodes.count)) * 2 * .pi
-            let jitter = CGFloat.random(in: -50...50)
+            let jitter = CGFloat.random(in: -50 ... 50)
             positions[node.id] = CGPoint(
                 x: center.x + (radius + jitter) * cos(angle),
                 y: center.y + (radius + jitter) * sin(angle)
@@ -62,7 +62,7 @@ final class GraphViewModel: ObservableObject {
             var positions = currentPositions
             let iterations = 150
 
-            for iteration in 0..<iterations {
+            for iteration in 0 ..< iterations {
                 if Task.isCancelled { return }
 
                 let temperature = 1.0 - (Double(iteration) / Double(iterations))
@@ -97,11 +97,13 @@ final class GraphViewModel: ObservableObject {
         nodeIds: [String], edges: [GraphEdge], positions: [String: CGPoint]
     ) -> [String: CGPoint] {
         var forces: [String: CGPoint] = [:]
-        for id in nodeIds { forces[id] = .zero }
+        for id in nodeIds {
+            forces[id] = .zero
+        }
 
         // Repulsion between all nodes
-        for i in 0..<nodeIds.count {
-            for j in (i + 1)..<nodeIds.count {
+        for i in 0 ..< nodeIds.count {
+            for j in (i + 1) ..< nodeIds.count {
                 let idA = nodeIds[i]
                 let idB = nodeIds[j]
                 guard let posA = positions[idA], let posB = positions[idB] else { continue }
@@ -169,25 +171,25 @@ final class GraphViewModel: ObservableObject {
         switch node.type {
         case "document":
             switch node.classification {
-            case "meeting": return .orange
-            case "idea": return .yellow
-            case "reference": return .blue
-            case "journal": return .purple
-            case "project": return .green
-            default: return .gray
+            case "meeting": .orange
+            case "idea": .yellow
+            case "reference": .blue
+            case "journal": .purple
+            case "project": .green
+            default: .gray
             }
         case "entity":
             switch node.entityType {
-            case "people": return .pink
-            case "organizations": return .cyan
-            case "concepts": return .mint
-            case "locations": return .indigo
-            default: return .gray
+            case "people": .pink
+            case "organizations": .cyan
+            case "concepts": .mint
+            case "locations": .indigo
+            default: .gray
             }
         case "tag":
-            return .teal
+            .teal
         default:
-            return .gray
+            .gray
         }
     }
 
@@ -201,25 +203,25 @@ final class GraphViewModel: ObservableObject {
         switch node.type {
         case "document":
             switch node.classification {
-            case "meeting": return "person.3"
-            case "idea": return "lightbulb"
-            case "reference": return "book"
-            case "journal": return "book.closed"
-            case "project": return "folder"
-            default: return "doc"
+            case "meeting": "person.3"
+            case "idea": "lightbulb"
+            case "reference": "book"
+            case "journal": "book.closed"
+            case "project": "folder"
+            default: "doc"
             }
         case "entity":
             switch node.entityType {
-            case "people": return "person"
-            case "organizations": return "building.2"
-            case "concepts": return "brain"
-            case "locations": return "mappin"
-            default: return "circle"
+            case "people": "person"
+            case "organizations": "building.2"
+            case "concepts": "brain"
+            case "locations": "mappin"
+            default: "circle"
             }
         case "tag":
-            return "tag"
+            "tag"
         default:
-            return "circle"
+            "circle"
         }
     }
 }

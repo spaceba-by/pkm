@@ -29,7 +29,7 @@ struct SearchMonitorListView: View {
                     )
                 }
 
-            case .error(let error):
+            case let .error(error):
                 ScrollView {
                     ErrorView(error: error) {
                         Task { await viewModel.loadMonitors() }

@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class ClassificationCountTests: XCTestCase {
     func test_classificationCount_properties() {

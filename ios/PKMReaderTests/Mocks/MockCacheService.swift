@@ -41,7 +41,7 @@ final class MockCacheService: CacheServiceProtocol, @unchecked Sendable {
         return try? JSONDecoder().decode(T.self, from: data)
     }
 
-    func set<T: Codable>(key: String, value: T) async {
+    func set(key: String, value: some Codable) async {
         setCallCount += 1
         lastSetKey = key
 

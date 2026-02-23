@@ -33,7 +33,9 @@ struct SearchSummary: Identifiable, Codable, Hashable, Sendable {
     let removedItems: [String]
     let analysis: String?
 
-    var id: String { timestamp }
+    var id: String {
+        timestamp
+    }
 }
 
 // MARK: - API Response Wrappers

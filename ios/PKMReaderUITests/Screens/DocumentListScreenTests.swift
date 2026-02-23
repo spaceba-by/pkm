@@ -22,14 +22,14 @@ final class DocumentListScreenTests: XCTestCase {
 
     // MARK: - Navigation Tests
 
-    func test_navigationTitle_displays() throws {
+    func test_navigationTitle_displays() {
         let navBar = app.navigationBars["Documents"]
         XCTAssertTrue(navBar.waitForExistence(timeout: 5), "Documents navigation bar not displayed")
     }
 
     // MARK: - Document List Tests
 
-    func test_documentList_displaysDocuments() throws {
+    func test_documentList_displaysDocuments() {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
 
@@ -37,19 +37,19 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertEqual(cells.count, 3, "Expected 3 document cells from mock data")
     }
 
-    func test_documentList_showsDocumentTitles() throws {
+    func test_documentList_showsDocumentTitles() {
         let meetingTitle = app.staticTexts["Team Meeting Notes"]
         XCTAssertTrue(meetingTitle.waitForExistence(timeout: 5), "Meeting document title not found")
     }
 
     // MARK: - Filter Tests
 
-    func test_filterButton_exists() throws {
+    func test_filterButton_exists() {
         let filterButton = app.buttons["FilterButton"]
         XCTAssertTrue(filterButton.waitForExistence(timeout: 5), "Filter button not found")
     }
 
-    func test_filterButton_opensFilterSheet() throws {
+    func test_filterButton_opensFilterSheet() {
         let filterButton = app.buttons["FilterButton"]
         XCTAssertTrue(filterButton.waitForExistence(timeout: 5), "Filter button not found")
         filterButton.tap()
@@ -61,7 +61,7 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertTrue(allFilter.waitForExistence(timeout: 5), "All Documents filter not found")
     }
 
-    func test_filterSheet_selectClassification_andApply() throws {
+    func test_filterSheet_selectClassification_andApply() {
         let filterButton = app.buttons["FilterButton"]
         XCTAssertTrue(filterButton.waitForExistence(timeout: 5))
         filterButton.tap()
@@ -89,7 +89,7 @@ final class DocumentListScreenTests: XCTestCase {
 
     // MARK: - Navigation to Detail
 
-    func test_tapDocument_navigatesToDetail() throws {
+    func test_tapDocument_navigatesToDetail() {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
 
@@ -103,7 +103,7 @@ final class DocumentListScreenTests: XCTestCase {
 
     // MARK: - Pull to Refresh
 
-    func test_pullToRefresh_reloadsDocuments() throws {
+    func test_pullToRefresh_reloadsDocuments() {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 5), "Document list not displayed")
 
@@ -114,7 +114,7 @@ final class DocumentListScreenTests: XCTestCase {
 
     // MARK: - Search Tests (migrated from SearchScreenTests)
 
-    func test_search_showsResults() throws {
+    func test_search_showsResults() {
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Search field not found")
         searchField.tap()
@@ -124,7 +124,7 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertTrue(resultsList.waitForExistence(timeout: 5), "Search results not displayed")
     }
 
-    func test_search_tapResult_navigatesToDetail() throws {
+    func test_search_tapResult_navigatesToDetail() {
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Search field not found")
         searchField.tap()
@@ -141,7 +141,7 @@ final class DocumentListScreenTests: XCTestCase {
         XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Detail view not displayed")
     }
 
-    func test_search_noResults_showsEmptyState() throws {
+    func test_search_noResults_showsEmptyState() {
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Search field not found")
         searchField.tap()
@@ -152,12 +152,12 @@ final class DocumentListScreenTests: XCTestCase {
 
     // MARK: - Search Monitors Access
 
-    func test_searchMonitorsLink_exists() throws {
+    func test_searchMonitorsLink_exists() {
         let monitorsLink = app.buttons["SearchMonitorsLink"]
         XCTAssertTrue(monitorsLink.waitForExistence(timeout: 5), "Search monitors link not found")
     }
 
-    func test_searchMonitorsLink_navigatesToMonitors() throws {
+    func test_searchMonitorsLink_navigatesToMonitors() {
         let monitorsLink = app.buttons["SearchMonitorsLink"]
         XCTAssertTrue(monitorsLink.waitForExistence(timeout: 5), "Search monitors link not found")
         monitorsLink.tap()
@@ -168,7 +168,7 @@ final class DocumentListScreenTests: XCTestCase {
 
     // MARK: - Tag Filter in Filter Sheet
 
-    func test_filterSheet_showsTagsSection() throws {
+    func test_filterSheet_showsTagsSection() {
         let filterButton = app.buttons["FilterButton"]
         XCTAssertTrue(filterButton.waitForExistence(timeout: 5))
         filterButton.tap()

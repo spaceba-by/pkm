@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class SearchMonitorDetailViewModelTests: XCTestCase {
@@ -53,7 +53,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
         let monitor = makeMonitor(id: "test-id", name: "My Monitor")
         let summaries = [
             makeSummary(timestamp: "2026-02-20T10:00:00Z"),
-            makeSummary(timestamp: "2026-02-19T10:00:00Z")
+            makeSummary(timestamp: "2026-02-19T10:00:00Z"),
         ]
         mockAPIClient.getSearchMonitorResult = .success(
             SearchMonitorDetailResponse(monitor: monitor, summaries: summaries, summaryCount: 2)
@@ -178,7 +178,7 @@ final class SearchMonitorDetailViewModelTests: XCTestCase {
 
         let moreSummaries = [
             makeSummary(timestamp: "2026-02-19T10:00:00Z"),
-            makeSummary(timestamp: "2026-02-18T10:00:00Z")
+            makeSummary(timestamp: "2026-02-18T10:00:00Z"),
         ]
         mockAPIClient.listSearchMonitorSummariesResult = .success(moreSummaries)
 

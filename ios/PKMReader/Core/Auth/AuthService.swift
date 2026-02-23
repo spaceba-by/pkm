@@ -49,7 +49,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
               let poolId = defaultPool["PoolId"] as? String else {
             throw AuthError.unknown(
                 "Invalid amplifyconfiguration.json structure. "
-                + "Run scripts/configure-ios.sh to populate real values."
+                    + "Run scripts/configure-ios.sh to populate real values."
             )
         }
 
@@ -57,7 +57,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         guard poolId.contains("_") else {
             throw AuthError.unknown(
                 "Cognito User Pool ID is not configured (found \"\(poolId)\"). "
-                + "Run scripts/configure-ios.sh to populate real values."
+                    + "Run scripts/configure-ios.sh to populate real values."
             )
         }
     }
@@ -126,7 +126,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
 
             let tokensResult = cognitoSession.getCognitoTokens()
             switch tokensResult {
-            case .success(let tokens):
+            case let .success(tokens):
                 return tokens.accessToken
             case .failure:
                 throw AuthError.notAuthenticated

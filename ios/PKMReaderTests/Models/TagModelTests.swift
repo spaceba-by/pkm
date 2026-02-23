@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class TagModelTests: XCTestCase {
     func test_tag_identifiable() {

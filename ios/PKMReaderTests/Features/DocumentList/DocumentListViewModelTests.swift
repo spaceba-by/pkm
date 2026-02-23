@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class DocumentListViewModelTests: XCTestCase {
@@ -44,7 +44,7 @@ final class DocumentListViewModelTests: XCTestCase {
         )
         await sut.loadDocuments()
 
-        if case .loaded(let loadedDocs) = sut.state {
+        if case let .loaded(loadedDocs) = sut.state {
             XCTAssertEqual(loadedDocs.count, 3)
             XCTAssertEqual(loadedDocs.first?.id, "ideas/new-feature.md")
         } else {
@@ -119,10 +119,10 @@ final class DocumentListViewModelTests: XCTestCase {
         )
         await sut.loadNextPage()
 
-        if case .loaded(let docs) = sut.state {
+        if case let .loaded(docs) = sut.state {
             XCTAssertEqual(docs.count, 2)
-            XCTAssertEqual(docs[0].id, "meetings/weekly.md")  // Jan 2 (newer)
-            XCTAssertEqual(docs[1].id, "test/sample.md")      // Jan 1 (older)
+            XCTAssertEqual(docs[0].id, "meetings/weekly.md") // Jan 2 (newer)
+            XCTAssertEqual(docs[1].id, "test/sample.md") // Jan 1 (older)
         } else {
             XCTFail("Expected loaded state")
         }
@@ -138,7 +138,7 @@ final class DocumentListViewModelTests: XCTestCase {
         )
         await sut.loadNextPage()
 
-        if case .loaded(let docs) = sut.state {
+        if case let .loaded(docs) = sut.state {
             XCTAssertEqual(docs.count, 2)
             XCTAssertEqual(docs[0].id, "ideas/new-feature.md")
             XCTAssertEqual(docs[1].id, "test/sample.md")
@@ -172,7 +172,7 @@ final class DocumentListViewModelTests: XCTestCase {
         )
         await sut.refresh()
 
-        if case .loaded(let docs) = sut.state {
+        if case let .loaded(docs) = sut.state {
             XCTAssertEqual(docs.count, TestFixtures.sampleDocuments.count)
         } else {
             XCTFail("Expected loaded state")
@@ -195,7 +195,7 @@ final class DocumentListViewModelTests: XCTestCase {
         mockAPIClient.listDocumentsResult = .failure(CancellationError())
         await sut.refresh()
 
-        if case .loaded(let docs) = sut.state {
+        if case let .loaded(docs) = sut.state {
             XCTAssertEqual(docs.count, TestFixtures.sampleDocuments.count)
         } else {
             XCTFail("Expected loaded state preserved, got \(sut.state)")
@@ -214,7 +214,7 @@ final class DocumentListViewModelTests: XCTestCase {
         mockAPIClient.listDocumentsResult = .failure(APIError.networkError)
         await sut.loadNextPage()
         XCTAssertFalse(sut.hasMorePages)
-        if case .loaded(let docs) = sut.state {
+        if case let .loaded(docs) = sut.state {
             XCTAssertEqual(docs.count, 1)
         } else {
             XCTFail("Expected loaded state preserved")
@@ -229,7 +229,7 @@ final class DocumentListViewModelTests: XCTestCase {
         mockAPIClient.listDocumentsResult = .failure(CancellationError())
         await sut.loadNextPage()
         XCTAssertTrue(sut.hasMorePages)
-        if case .loaded(let docs) = sut.state {
+        if case let .loaded(docs) = sut.state {
             XCTAssertEqual(docs.count, 1)
         } else {
             XCTFail("Expected loaded state preserved")
@@ -244,10 +244,10 @@ final class DocumentListViewModelTests: XCTestCase {
         )
         await sut.loadDocuments()
 
-        if case .loaded(let docs) = sut.state {
-            XCTAssertEqual(docs[0].id, "ideas/new-feature.md")   // Jan 3
-            XCTAssertEqual(docs[1].id, "meetings/weekly.md")     // Jan 2
-            XCTAssertEqual(docs[2].id, "test/sample.md")         // Jan 1
+        if case let .loaded(docs) = sut.state {
+            XCTAssertEqual(docs[0].id, "ideas/new-feature.md") // Jan 3
+            XCTAssertEqual(docs[1].id, "meetings/weekly.md") // Jan 2
+            XCTAssertEqual(docs[2].id, "test/sample.md") // Jan 1
         } else {
             XCTFail("Expected loaded state")
         }
@@ -389,10 +389,10 @@ final class DocumentListViewModelTests: XCTestCase {
         mockAPIClient.listTagsResult = .success(TestFixtures.sampleTags)
         await sut.loadTags()
         XCTAssertEqual(sut.tags.count, 4)
-        XCTAssertEqual(sut.tags[0].name, "meeting")   // 10
-        XCTAssertEqual(sut.tags[1].name, "project")    // 7
-        XCTAssertEqual(sut.tags[2].name, "test")       // 5
-        XCTAssertEqual(sut.tags[3].name, "idea")       // 3
+        XCTAssertEqual(sut.tags[0].name, "meeting") // 10
+        XCTAssertEqual(sut.tags[1].name, "project") // 7
+        XCTAssertEqual(sut.tags[2].name, "test") // 5
+        XCTAssertEqual(sut.tags[3].name, "idea") // 3
         XCTAssertEqual(mockAPIClient.listTagsCallCount, 1)
     }
 
@@ -419,7 +419,7 @@ final class DocumentListViewModelTests: XCTestCase {
         XCTAssertEqual(mockAPIClient.lastDocumentsByTagTag, "test")
         XCTAssertEqual(mockAPIClient.lastDocumentsByTagLimit, 50)
         XCTAssertEqual(mockAPIClient.listDocumentsCallCount, 0)
-        if case .loaded(let documents) = sut.state {
+        if case let .loaded(documents) = sut.state {
             XCTAssertEqual(documents.count, 3)
             XCTAssertEqual(documents[0].id, "ideas/new-feature.md")
         } else {
@@ -463,7 +463,7 @@ final class DocumentListViewModelTests: XCTestCase {
         mockAPIClient.documentsByTagResult = .success(TestFixtures.sampleDocuments)
         await sut.loadDocuments()
 
-        if case .loaded(let documents) = sut.state {
+        if case let .loaded(documents) = sut.state {
             XCTAssertEqual(documents.count, 1)
             XCTAssertEqual(documents[0].id, "meetings/weekly.md")
         } else {

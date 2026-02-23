@@ -1,8 +1,8 @@
+@testable import PKMReader
 import SnapshotTesting
 import SwiftUI
 import UIKit
 import XCTest
-@testable import PKMReader
 
 // MARK: - iPhone 17 Device Configuration
 
@@ -28,15 +28,21 @@ extension ViewImageConfig {
 @MainActor
 class SnapshotTestCase: XCTestCase {
     /// Set to `true` to record new reference images, then flip back to `false`
-    var isRecordMode: Bool { false }
+    var isRecordMode: Bool {
+        false
+    }
 
     /// Precision tolerance for pixel matching (0.0–1.0)
     /// Allows minor rendering differences across environments
-    var snapshotPrecision: Float { 0.99 }
+    var snapshotPrecision: Float {
+        0.99
+    }
 
     /// Perceptual precision tolerance (0.0–1.0)
     /// 98-99% mimics the precision of the human eye
-    var snapshotPerceptualPrecision: Float { 0.98 }
+    var snapshotPerceptualPrecision: Float {
+        0.98
+    }
 
     override func invokeTest() {
         withSnapshotTesting(record: isRecordMode ? .all : .never) {
@@ -45,8 +51,8 @@ class SnapshotTestCase: XCTestCase {
     }
 
     /// Assert a SwiftUI view matches its snapshot using the device layout
-    func assertDeviceSnapshot<V: View>(
-        of view: V,
+    func assertDeviceSnapshot(
+        of view: some View,
         named name: String? = nil,
         file: StaticString = #filePath,
         testName: String = #function,
@@ -70,8 +76,8 @@ class SnapshotTestCase: XCTestCase {
     }
 
     /// Assert a SwiftUI view matches its snapshot using a fixed-size layout
-    func assertComponentSnapshot<V: View>(
-        of view: V,
+    func assertComponentSnapshot(
+        of view: some View,
         size: CGSize = CGSize(width: 393, height: 200),
         named name: String? = nil,
         file: StaticString = #filePath,
@@ -96,8 +102,8 @@ class SnapshotTestCase: XCTestCase {
     }
 
     /// Assert a SwiftUI view matches its snapshot after allowing async `.task` modifiers to settle
-    func assertDeviceSnapshotAfterTask<V: View>(
-        of view: V,
+    func assertDeviceSnapshotAfterTask(
+        of view: some View,
         settleDuration: TimeInterval = 1.0,
         named name: String? = nil,
         file: StaticString = #filePath,

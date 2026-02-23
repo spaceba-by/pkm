@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 final class ReportModelTests: XCTestCase {
     func test_report_identifiable() {
