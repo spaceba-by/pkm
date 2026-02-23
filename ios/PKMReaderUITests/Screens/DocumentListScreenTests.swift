@@ -176,8 +176,12 @@ final class DocumentListScreenTests: XCTestCase {
         let filterNavBar = app.navigationBars["Filter"]
         XCTAssertTrue(filterNavBar.waitForExistence(timeout: 5), "Filter sheet not displayed")
 
-        // Tags section should be visible (mock data includes tags)
-        let tagLabel = app.staticTexts["meeting"]
-        XCTAssertTrue(tagLabel.waitForExistence(timeout: 5), "Tag not shown in filter sheet")
+        // Tags section should be visible — use accessibilityIdentifier to avoid
+        // ambiguity with classification names; scroll if needed
+        let tagElement = app.buttons["Filter_Tag_swift"]
+        if !tagElement.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(tagElement.waitForExistence(timeout: 5), "Tag not shown in filter sheet")
     }
 }
