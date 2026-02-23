@@ -76,13 +76,27 @@ struct RootView: View {
                 LoginView(authService: authService)
 
             case .signedIn:
+                let client = APIClient(authService: authService, networkMonitor: networkMonitor)
                 MainTabView(
-                    apiClient: APIClient(authService: authService, networkMonitor: networkMonitor),
+                    apiClient: client,
                     authService: authService,
                     networkMonitor: networkMonitor
                 )
+                .task {
+                    await configureNotifications(apiClient: client)
+                }
             }
         }
+    }
+}
+
+    private func configureNotifications(apiClient: any APIClientProtocol) async {
+        let notificationService = NotificationService.shared
+        notificationService.configure(apiClient: apiClient)
+        NotificationHandler.shared.configure(apiClient: apiClient)
+
+        _ = try? await notificationService.requestAuthorization()
+        await NotificationHandler.shared.refreshUnreadCount()
     }
 }
 

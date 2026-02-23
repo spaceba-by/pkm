@@ -188,6 +188,52 @@ resource "aws_iam_role_policy" "lambda_secretsmanager_access" {
   })
 }
 
+# Policy for DynamoDB Streams access (notification dispatch)
+resource "aws_iam_role_policy" "lambda_dynamodb_streams" {
+  name = "dynamodb-streams-access"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetRecords",
+          "dynamodb:GetShardIterator",
+          "dynamodb:DescribeStream",
+          "dynamodb:ListStreams"
+        ]
+        Resource = [
+          "${aws_dynamodb_table.metadata.arn}/stream/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Policy for SNS access (push notification dispatch)
+resource "aws_iam_role_policy" "lambda_sns_access" {
+  name = "sns-access"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish",
+          "sns:CreatePlatformEndpoint",
+          "sns:GetEndpointAttributes",
+          "sns:SetEndpointAttributes"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Policy for Lambda to invoke other Lambda functions (for update-classification-index)
 resource "aws_iam_role_policy" "lambda_invoke" {
   name = "lambda-invoke"

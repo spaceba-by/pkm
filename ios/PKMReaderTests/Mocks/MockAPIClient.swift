@@ -333,6 +333,46 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         throw APIError.invalidResponse
     }
 
+    // MARK: - Device Tokens & Notifications
+
+    var registerDeviceResult: Result<DeviceRegistrationResponse, Error> = .success(
+        DeviceRegistrationResponse(deviceId: "mock-device", registered: true)
+    )
+    private(set) var registerDeviceCallCount = 0
+
+    var unregisterDeviceResult: Result<Void, Error> = .success(())
+    private(set) var unregisterDeviceCallCount = 0
+
+    var listNotificationsResult: Result<NotificationListResponse, Error> = .success(
+        NotificationListResponse(notifications: [], count: 0)
+    )
+    private(set) var listNotificationsCallCount = 0
+
+    var markNotificationReadResult: Result<Void, Error> = .success(())
+    private(set) var markNotificationReadCallCount = 0
+    private(set) var lastMarkNotificationReadId: String?
+
+    func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
+        registerDeviceCallCount += 1
+        return try registerDeviceResult.get()
+    }
+
+    func unregisterDevice(deviceId: String) async throws {
+        unregisterDeviceCallCount += 1
+        try unregisterDeviceResult.get()
+    }
+
+    func listNotifications() async throws -> NotificationListResponse {
+        listNotificationsCallCount += 1
+        return try listNotificationsResult.get()
+    }
+
+    func markNotificationRead(id: String) async throws {
+        markNotificationReadCallCount += 1
+        lastMarkNotificationReadId = id
+        try markNotificationReadResult.get()
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -375,5 +415,10 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         getSearchMonitorSummaryCallCount = 0
         lastGetSearchMonitorSummaryMonitorId = nil
         lastGetSearchMonitorSummaryTimestamp = nil
+        registerDeviceCallCount = 0
+        unregisterDeviceCallCount = 0
+        listNotificationsCallCount = 0
+        markNotificationReadCallCount = 0
+        lastMarkNotificationReadId = nil
     }
 }

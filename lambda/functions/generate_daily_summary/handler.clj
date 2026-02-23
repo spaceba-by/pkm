@@ -86,6 +86,27 @@
                      (conj documents result)
                      documents))))))))
 
+(defn- create-summary-notification
+  "Create a notification record for the daily summary"
+  [date-str doc-count]
+  (let [notification-id (str (java.util.UUID/randomUUID))
+        now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
+        notification-sk (str "notification#pending#" now-ts "#" notification-id)]
+    (try
+      (ddb/put-item ddb-table
+                    {:PK "user#system"
+                     :SK notification-sk
+                     :notification_id notification-id
+                     :notification_type "daily_summary"
+                     :title (str "Daily Summary: " date-str)
+                     :body (str "Summary of " doc-count " documents from " date-str)
+                     :deep_link (str "/summaries/" date-str)
+                     :timestamp now-ts
+                     :read false})
+      (println "Created notification for daily summary:" date-str)
+      (catch Exception e
+        (println "Warning: failed to create notification:" (ex-message e))))))
+
 (defn handler
   "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
   [request]
@@ -151,6 +172,9 @@
                                                         summary-doc)]
 
                    (println "Created daily summary:" summary-key)
+
+                   ;; Create notification for daily summary
+                   (create-summary-notification date-str (count documents))
 
                    {:statusCode 200
                     :body (json/generate-string {:date date-str

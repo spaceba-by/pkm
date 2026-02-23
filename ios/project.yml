@@ -68,6 +68,10 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
         ENABLE_PREVIEWS: YES
+    entitlements:
+      path: PKMReader/PKMReader.entitlements
+      properties:
+        aps-environment: development
     dependencies:
       - package: Textual
       - package: Amplify

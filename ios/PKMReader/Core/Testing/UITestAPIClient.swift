@@ -416,4 +416,43 @@
         ]
     }
 
+
+        // MARK: - Device Tokens & Notifications
+
+        func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
+            DeviceRegistrationResponse(deviceId: request.deviceId, registered: true)
+        }
+
+        func unregisterDevice(deviceId _: String) async throws {
+            // No-op for UI tests
+        }
+
+        func listNotifications() async throws -> NotificationListResponse {
+            let notifications = [
+                PKMNotification(
+                    notificationId: "notif-001",
+                    notificationType: .dailySummary,
+                    title: "Daily Summary: 2026-02-23",
+                    body: "Summary of 5 documents from 2026-02-23",
+                    deepLink: "/summaries/2026-02-23",
+                    timestamp: "2026-02-23T06:00:00Z",
+                    read: false
+                ),
+                PKMNotification(
+                    notificationId: "notif-002",
+                    notificationType: .weeklyReport,
+                    title: "Weekly Report: 2026-W08",
+                    body: "Report covering 15 documents for week 2026-W08",
+                    deepLink: "/reports/2026-W08",
+                    timestamp: "2026-02-22T20:00:00Z",
+                    read: true
+                ),
+            ]
+            return NotificationListResponse(notifications: notifications, count: notifications.count)
+        }
+
+        func markNotificationRead(id _: String) async throws {
+            // No-op for UI tests
+        }
+    }
 #endif

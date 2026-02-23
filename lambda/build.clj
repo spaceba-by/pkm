@@ -45,6 +45,7 @@
                             'com.cognitect.aws/lambda {:mvn/version "848.2.1413.0"}
                             'com.cognitect.aws/secretsmanager {:mvn/version "847.2.1387.0"}
                             'com.cognitect.aws/bedrock-runtime {:mvn/version "869.2.1687.0"}
+                            'com.cognitect.aws/sns {:mvn/version "848.2.1413.0"}
                             'io.github.em-schmidt/bblf {:git/url "https://github.com/em-schmidt/bblf"
                                                         :git/sha "e08d9f7b40f8d4e65baa074c14743b6e62fc73b8"}}}))
       ;; Create uberjar
@@ -117,7 +118,11 @@
    "api_search_monitors"         "handler/handler"
    "api_search_monitor_detail"   "handler/handler"
    "api_search_summaries"        "handler/handler"
-   "index_embeddings"            "handler/handler"})
+   "index_embeddings"            "handler/handler"
+   ;; Push notification Lambda functions
+   "api_device_tokens"           "handler/handler"
+   "api_notifications"           "handler/handler"
+   "notification_dispatch"       "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

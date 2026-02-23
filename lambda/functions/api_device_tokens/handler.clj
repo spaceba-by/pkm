@@ -1,0 +1,91 @@
+(ns handler
+  "API Lambda: Device token management for push notifications.
+   Handles POST /devices and DELETE /devices/{device-id}"
+  (:require [aws.dynamodb :as ddb]
+            [api.response :as r]
+            [cheshire.core :as json])
+  (:import [java.time Instant]
+           [java.time.temporal ChronoUnit]))
+
+(def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
+
+(defn- now-iso []
+  (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS)))
+
+(defn- user-pk [user-sub]
+  (str "user#" user-sub))
+
+(defn- device-sk [device-id]
+  (str "device_token#" device-id))
+
+(defn register-device
+  "Register or update a device token for push notifications"
+  [user-sub body]
+  (let [device-token (:deviceToken body)
+        device-id (:deviceId body)
+        platform (or (:platform body) "ios")
+        app-version (or (:appVersion body) "unknown")
+        now (now-iso)]
+
+    (cond
+      (nil? device-token)
+      (r/bad-request "Device token is required")
+
+      (nil? device-id)
+      (r/bad-request "Device ID is required")
+
+      :else
+      (let [item {:PK (user-pk user-sub)
+                  :SK (device-sk device-id)
+                  :device_token device-token
+                  :device_id device-id
+                  :platform platform
+                  :app_version app-version
+                  :registered_at now
+                  :last_seen now}]
+        (ddb/put-item ddb-table item)
+        (r/ok-no-cache {:deviceId device-id
+                        :registered true})))))
+
+(defn unregister-device
+  "Unregister a device from push notifications"
+  [user-sub device-id]
+  (let [pk (user-pk user-sub)
+        sk (device-sk device-id)
+        existing (ddb/get-item ddb-table {:PK pk :SK sk})]
+
+    (if (nil? existing)
+      (r/not-found (str "Device not found: " device-id))
+      (do
+        (ddb/delete-item ddb-table {:PK pk :SK sk})
+        (r/ok-no-cache {:deleted true :deviceId device-id})))))
+
+(defn handler
+  "Lambda handler for device token CRUD operations"
+  [request]
+  (try
+    (let [event (json/parse-string (:body request) true)
+          user-sub (r/get-user-sub event)
+          http-method (or (get-in event [:requestContext :http :method])
+                          (get-in event ["requestContext" "http" "method"]))
+          path-params (r/parse-path-params event)
+          device-id (or (:device-id path-params) (get path-params "device-id"))
+
+          request-body (when-let [body (or (:body event) (get event "body"))]
+                         (if (string? body)
+                           (json/parse-string body true)
+                           body))]
+
+      (println "User" user-sub "method:" http-method "device-id:" device-id)
+
+      (case http-method
+        "POST" (register-device user-sub request-body)
+        "DELETE" (if device-id
+                   (unregister-device user-sub device-id)
+                   (r/bad-request "Device ID required"))
+        (r/bad-request (str "Unsupported method: " http-method))))
+
+    (catch Exception e
+      (println "Error in device tokens API:" (ex-message e))
+      (.printStackTrace e)
+      (r/internal-error "Failed to process device token request"))))

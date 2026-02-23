@@ -103,6 +103,27 @@
      :documents documents
      :classification_counts classification-counts}))
 
+(defn- create-report-notification
+  "Create a notification record for the weekly report"
+  [week-str doc-count]
+  (let [notification-id (str (java.util.UUID/randomUUID))
+        now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
+        notification-sk (str "notification#pending#" now-ts "#" notification-id)]
+    (try
+      (ddb/put-item ddb-table
+                    {:PK "user#system"
+                     :SK notification-sk
+                     :notification_id notification-id
+                     :notification_type "weekly_report"
+                     :title (str "Weekly Report: " week-str)
+                     :body (str "Report covering " doc-count " documents for week " week-str)
+                     :deep_link (str "/reports/" week-str)
+                     :timestamp now-ts
+                     :read false})
+      (println "Created notification for weekly report:" week-str)
+      (catch Exception e
+        (println "Warning: failed to create notification:" (ex-message e))))))
+
 (defn handler
   "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
   [request]
@@ -155,6 +176,9 @@
                                            report-doc)]
 
        (println "Created weekly report:" report-key)
+
+       ;; Create notification for weekly report
+       (create-report-notification week-str (count week-docs))
 
        {:statusCode 200
         :body (json/generate-string {:week week-str

@@ -285,6 +285,33 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         return response.documents
     }
 
+    // MARK: - Device Tokens & Notifications
+
+    func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
+        let url = baseURL.appendingPathComponent("devices")
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "POST", body: request)
+    }
+
+    func unregisterDevice(deviceId: String) async throws {
+        let url = baseURL
+            .appendingPathComponent("devices")
+            .appendingPathComponent(deviceId)
+        try await performDeleteRequestWithRetry(url: url)
+    }
+
+    func listNotifications() async throws -> NotificationListResponse {
+        let url = baseURL.appendingPathComponent("notifications")
+        return try await performRequestWithRetry(url: url)
+    }
+
+    func markNotificationRead(id: String) async throws {
+        let url = baseURL
+            .appendingPathComponent("notifications")
+            .appendingPathComponent(id)
+            .appendingPathComponent("read")
+        try await performPutRequestWithRetry(url: url, body: [:])
+    }
+
     // MARK: - Private
 
     private func performPostRequestWithRetry<T: Decodable>(url: URL, body: [String: String]) async throws -> T {
