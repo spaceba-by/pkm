@@ -12,12 +12,7 @@ final class SearchMonitorScreenTests: XCTestCase {
         app = XCUIApplication()
         app.launchWithMockData()
 
-        // Navigate to Search tab
-        let searchTab = app.tabBars.buttons["Search"]
-        XCTAssertTrue(searchTab.waitForExistence(timeout: 5), "Search tab not found")
-        searchTab.tap()
-
-        // Navigate to Search Monitors
+        // Navigate to Search Monitors via Documents tab toolbar button
         let monitorsLink = app.buttons["SearchMonitorsLink"].firstMatch
         XCTAssertTrue(monitorsLink.waitForExistence(timeout: 5), "Search Monitors link not found")
         monitorsLink.tap()
@@ -56,11 +51,9 @@ final class SearchMonitorScreenTests: XCTestCase {
     }
 
     func test_monitorList_showsSearchTerms() throws {
-        // First monitor has "swift concurrency, async await, structured concurrency"
         let monitor1 = app.staticTexts["Swift Concurrency Updates"]
         XCTAssertTrue(monitor1.waitForExistence(timeout: 10))
 
-        // Look for search terms text
         let termsText = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'swift concurrency'"))
         XCTAssertGreaterThan(termsText.count, 0, "Search terms not shown")
     }
@@ -69,7 +62,6 @@ final class SearchMonitorScreenTests: XCTestCase {
         let monitor1 = app.staticTexts["Swift Concurrency Updates"]
         XCTAssertTrue(monitor1.waitForExistence(timeout: 10))
 
-        // Look for interval text "Every 12h"
         let intervalText = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'Every 12h'"))
         XCTAssertGreaterThan(intervalText.count, 0, "Interval not shown")
     }
@@ -83,7 +75,6 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertTrue(cancelButton.waitForExistence(timeout: 5), "Cancel button not found")
         cancelButton.tap()
 
-        // Should be back on list
         let monitor1 = app.staticTexts["Swift Concurrency Updates"]
         XCTAssertTrue(monitor1.waitForExistence(timeout: 5), "Monitor list not shown after cancel")
     }
