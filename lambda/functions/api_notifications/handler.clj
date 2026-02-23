@@ -3,8 +3,8 @@
    Handles GET /notifications and PUT /notifications/{id}/read"
   (:require [aws.dynamodb :as ddb]
             [api.response :as r]
-            [cheshire.core :as json]
-            [clojure.string :as str])
+            [notifications.utils :as nu]
+            [cheshire.core :as json])
   (:import [java.time Instant]
            [java.time.temporal ChronoUnit]))
 
@@ -13,36 +13,17 @@
 (defn- now-iso []
   (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS)))
 
-(defn- user-pk [user-sub]
-  (str "user#" user-sub))
-
-(defn- format-notification
-  "Format a notification record for API response"
-  [notification]
-  {:notificationId (:notification_id notification)
-   :notificationType (:notification_type notification)
-   :title (or (:title notification)
-              (case (:notification_type notification)
-                "daily_summary" "Daily Summary"
-                "weekly_report" "Weekly Report"
-                "search_monitor" (str "Search Update: " (:monitor_name notification))
-                "Notification"))
-   :body (or (:body notification) "")
-   :deepLink (:deep_link notification)
-   :timestamp (:timestamp notification)
-   :read (boolean (:read notification))})
-
 (defn list-notifications
   "List all notifications for the user (both read and unread)"
   [user-sub]
-  (let [pk (user-pk user-sub)
+  (let [pk (nu/user-pk user-sub)
         results (ddb/query ddb-table
                            :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
                            :expr-attr-values {":pk" pk
                                                ":prefix" "notification#"}
                            :scan-index-forward false
                            :limit 50)
-        formatted (mapv format-notification results)]
+        formatted (mapv nu/format-notification results)]
     (r/ok {:notifications formatted
            :count (count formatted)})))
 
@@ -51,7 +32,7 @@
    Queries user notifications and filters by notification_id in-memory.
    For users with many notifications, consider adding a GSI on notification_id."
   [user-sub notification-id]
-  (let [pk (user-pk user-sub)
+  (let [pk (nu/user-pk user-sub)
         results (ddb/query ddb-table
                            :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
                            :expr-attr-values {":pk" pk

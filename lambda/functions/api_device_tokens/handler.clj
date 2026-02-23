@@ -4,6 +4,7 @@
   (:require [aws.dynamodb :as ddb]
             [aws.sns :as sns]
             [api.response :as r]
+            [notifications.utils :as nu]
             [cheshire.core :as json])
   (:import [java.time Instant]
            [java.time.temporal ChronoUnit]))
@@ -13,12 +14,6 @@
 
 (defn- now-iso []
   (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS)))
-
-(defn- user-pk [user-sub]
-  (str "user#" user-sub))
-
-(defn- device-sk [device-id]
-  (str "device_token#" device-id))
 
 (defn register-device
   "Register or update a device token for push notifications.
@@ -42,8 +37,8 @@
 
       :else
       (let [endpoint-arn (sns/create-platform-endpoint sns-platform-arn device-token)
-            item {:PK (user-pk user-sub)
-                  :SK (device-sk device-id)
+            item {:PK (nu/user-pk user-sub)
+                  :SK (nu/device-sk device-id)
                   :endpoint_arn endpoint-arn
                   :device_id device-id
                   :platform platform
@@ -57,8 +52,8 @@
 (defn unregister-device
   "Unregister a device from push notifications"
   [user-sub device-id]
-  (let [pk (user-pk user-sub)
-        sk (device-sk device-id)
+  (let [pk (nu/user-pk user-sub)
+        sk (nu/device-sk device-id)
         existing (ddb/get-item ddb-table {:PK pk :SK sk})]
 
     (if (nil? existing)

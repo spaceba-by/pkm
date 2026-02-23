@@ -3,6 +3,7 @@
    Triggered by DynamoDB Stream when notification records are written."
   (:require [aws.dynamodb :as ddb]
             [aws.sns :as sns]
+            [notifications.utils :as nu]
             [cheshire.core :as json])
   (:import [java.time Instant]
            [java.time.temporal ChronoUnit]))
@@ -12,37 +13,6 @@
 
 (defn- now-iso []
   (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS)))
-
-(defn- notification-record?
-  "Check if a DynamoDB Stream record is a new notification record"
-  [record]
-  (let [event-name (or (:eventName record) (get record "eventName"))
-        new-image (or (get-in record [:dynamodb :NewImage])
-                      (get-in record ["dynamodb" "NewImage"]))]
-    (and (= "INSERT" event-name)
-         new-image
-         (let [sk-val (or (get-in new-image [:SK :S])
-                          (get-in new-image ["SK" "S"])
-                          "")]
-           (.startsWith sk-val "notification#pending#")))))
-
-(defn- extract-notification-data
-  "Extract notification data from DynamoDB Stream new image"
-  [new-image]
-  (let [get-s (fn [field] (or (get-in new-image [field :S])
-                               (get-in new-image [(name field) "S"])))]
-    {:pk (get-s :PK)
-     :notification-id (get-s :notification_id)
-     :notification-type (get-s :notification_type)
-     :title (or (get-s :title)
-                (case (get-s :notification_type)
-                  "daily_summary" "Daily Summary Ready"
-                  "weekly_report" "Weekly Report Ready"
-                  "search_monitor" (str "Search Update: " (get-s :monitor_name))
-                  "New Notification"))
-     :body (or (get-s :body) "")
-     :deep-link (get-s :deep_link)
-     :timestamp (get-s :timestamp)}))
 
 (defn- get-user-device-tokens
   "Get all registered device tokens for a user"
@@ -63,18 +33,11 @@
     (or results 0)))
 
 (defn- build-apns-payload
-  "Build APNs notification payload"
+  "Build APNs notification payload with dynamic badge count"
   [notification]
   (let [badge-count (try (get-unread-count (:pk notification))
-                         (catch Exception _ 1))
-        payload {:aps {:alert {:title (:title notification)
-                               :body (:body notification)}
-                       :sound "default"
-                       :badge badge-count}
-                 :notificationType (:notification-type notification)
-                 :deepLink (:deep-link notification)
-                 :notificationId (:notification-id notification)}]
-    (json/generate-string payload)))
+                         (catch Exception _ 1))]
+    (nu/build-apns-payload notification badge-count)))
 
 (defn- send-to-device
   "Send notification to a single device via SNS using the server-created endpoint ARN"
@@ -96,10 +59,10 @@
 (defn process-record
   "Process a single DynamoDB Stream record"
   [record]
-  (when (notification-record? record)
+  (when (nu/notification-record? record)
     (let [new-image (or (get-in record [:dynamodb :NewImage])
                         (get-in record ["dynamodb" "NewImage"]))
-          notification (extract-notification-data new-image)
+          notification (nu/extract-notification-data new-image)
           device-tokens (get-user-device-tokens (:pk notification))]
 
       (println "Dispatching notification:" (:notification-id notification)
