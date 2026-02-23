@@ -236,9 +236,6 @@ final class DocumentListViewModel: ObservableObject {
                     tagDocs = tagDocs.filter { $0.metadata.classification == classification }
                 }
                 documents = tagDocs
-                // No pagination in tag-filtered mode
-                hasMorePages = false
-                nextCursor = nil
             } else {
                 let response = try await apiClient.listDocuments(
                     classification: selectedClassification,
@@ -255,6 +252,11 @@ final class DocumentListViewModel: ObservableObject {
             }
 
             guard generation == loadGeneration else { return }
+
+            if selectedTag != nil {
+                hasMorePages = false
+                nextCursor = nil
+            }
 
             if documents.isEmpty {
                 state = .empty
