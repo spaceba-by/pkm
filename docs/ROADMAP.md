@@ -88,7 +88,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Tags browsing with drill-down to documents by tag
   - Insights tab combining daily summaries and weekly reports
   - Enhanced settings with cache management and preferences
-  - 5-tab layout: Documents, Search, Tags, Insights, Settings
+  - 4-tab layout: Documents, Insights, Settings, Graph
 
 - **Task 0012: iOS Test Coverage** ✅
 
@@ -160,7 +160,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - See: [0011-knowledge-graph](tasks/0011-knowledge-graph.md)
   - API endpoint (GET /graph) with entity relationship mapping from extracted entities
   - Interactive force-directed graph visualization in iOS app with Canvas rendering
-  - 6-tab layout: Documents, Search, Tags, Insights, Settings, Graph
+  - 4-tab layout: Documents, Insights, Settings, Graph
   - Navigate documents by entity connections, color-coded by classification/type
 
 - **Task 0017: Insights Calendar Design** ✅
@@ -186,23 +186,21 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Backend API already complete (7 endpoints from Task 0013)
   - SearchMonitor model, views, and view models following existing patterns
 
-### Planned
-
-#### Tier 1 — Immediate
-
-- **Task 0033: Unified Documents View**
-
-  - See: [0033-unified-documents-view](tasks/0033-unified-documents-view.md)
-  - Consolidate Documents, Search, and Tags tabs into a single Documents tab
-  - Integrated search bar with keyword/semantic mode, expanded FilterSheet with tags
-  - Reduce tab bar from 6 tabs to 4: Documents, Insights, Settings, Graph
-
-- **Task 0020: Secrets Management**
+- **Task 0020: Secrets Management** ✅
 
   - See: [0020-secrets-management](tasks/0020-secrets-management.md)
   - Centralize Terraform secrets resources into dedicated `secrets.tf`
   - Generalize IAM policy for multi-secret support
   - Extend secrets_manager.clj with multi-key caching
+
+- **Task 0033: Unified Documents View** ✅
+
+  - See: [0033-unified-documents-view](tasks/0033-unified-documents-view.md)
+  - Consolidated Documents, Search, and Tags tabs into a single Documents tab
+  - Integrated search bar with keyword/semantic mode, expanded FilterSheet with tags
+  - Reduced tab bar from 6 tabs to 4: Documents, Insights, Settings, Graph
+
+### Planned
 
 #### Tier 2 — Communication
 
@@ -212,14 +210,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - AWS SNS + APNs integration for iOS push notifications
   - Notification dispatch Lambda triggered by DynamoDB events
   - Extends existing notification records from persistent search
-  - Depends on: Task 0020
+  - Depends on: Task 0020 ✅
 
 - **Task 0022: Webhook Receiving & Classification**
 
   - See: [0022-webhook-receiving](tasks/0022-webhook-receiving.md)
   - API endpoint for receiving external webhooks (GitHub, email, custom)
   - Signature verification, classification, and routing to processing pipeline
-  - Depends on: Task 0020
+  - Depends on: Task 0020 ✅
 
 #### Tier 3 — Command & Intelligence
 
@@ -285,7 +283,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - See: [0031-email-calendar-integration](tasks/0031-email-calendar-integration.md)
   - OAuth-based email and calendar provider connections
   - Periodic sync, markdown conversion, processing pipeline integration
-  - Depends on: Task 0020
+  - Depends on: Task 0020 ✅
 
 - **Task 0032: Real-time Collaboration**
 
