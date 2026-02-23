@@ -54,6 +54,11 @@ final class NotificationHandler: NSObject, ObservableObject {
         }
     }
 
+    /// Set a deep link from a notification tap (called from nonisolated delegate)
+    func setDeepLink(_ deepLink: String) {
+        pendingDeepLink = deepLink
+    }
+
     /// Clear the pending deep link after navigation
     func clearDeepLink() {
         pendingDeepLink = nil
@@ -76,7 +81,9 @@ extension NotificationHandler: @preconcurrency UNUserNotificationCenterDelegate 
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        let userInfo = response.notification.request.content.userInfo
-        await handleNotification(userInfo: userInfo)
+        let deepLink = response.notification.request.content.userInfo["deepLink"] as? String
+        if let deepLink {
+            await setDeepLink(deepLink)
+        }
     }
 }
