@@ -27,7 +27,6 @@ jobs:
       - name: Format Check
         run:  cd ios && mise run format:check
 
-
   lint:
     name: Lint
     runs-on: macos-26
