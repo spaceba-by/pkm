@@ -414,8 +414,6 @@
             GraphEdge(source: "doc:reference/swift-concurrency.md", target: "tag:swift", type: "tagged", weight: 1),
             GraphEdge(source: "entity:people:alice", target: "entity:people:bob", type: "co_occurrence", weight: 1),
         ]
-    }
-
 
         // MARK: - Device Tokens & Notifications
 

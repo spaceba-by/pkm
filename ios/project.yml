@@ -70,8 +70,6 @@ targets:
         ENABLE_PREVIEWS: YES
     entitlements:
       path: PKMReader/PKMReader.entitlements
-      properties:
-        aps-environment: development
     dependencies:
       - package: Textual
       - package: Amplify
