@@ -136,7 +136,9 @@ xcodebuild test-without-building \
 description = "Generate and check coverage from test results (CI)"
 run = """
 RESULT_BUNDLE="${RESULT_BUNDLE_PATH:-TestResults/unit-tests.xcresult}"
-THRESHOLD="${COVERAGE_THRESHOLD:-74}"
+# Threshold is lower than full-suite (74%) because unit tests alone
+# cover fewer code paths than unit + UI tests combined.
+THRESHOLD="${COVERAGE_THRESHOLD:-45}"
 
 if [ ! -d "$RESULT_BUNDLE" ]; then
   echo "::warning::No test results found at $RESULT_BUNDLE, skipping coverage"
