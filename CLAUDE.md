@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Always start work in a new git worktree. 
 - Never commit or push changes directly to main, all changes must be submitted via PR.
-- Before opening a new PR or pushing changes to an existing PR: Run all applicable tests and checks, including linting.
+- Before opening a new PR or pushing changes to an existing PR: Run all applicable tests and checks, including formatting and linting.
 - After creating a PR: Wait for review comments, resolve them, and ensure all CI jobs pass before considering the work done.
 
 

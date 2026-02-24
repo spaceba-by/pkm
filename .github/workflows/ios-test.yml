@@ -12,6 +12,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  format:
+    name: Format
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v3
+        with:
+          working_directory: ios
+
+      - name: Format Check
+        run:  mise run format:check
+        working-directory: ios
+
   lint:
     name: Lint
     runs-on: macos-26
