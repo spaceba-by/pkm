@@ -26,6 +26,12 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
         super.init()
     }
 
+    /// Internal init for testing
+    init(apiClient: any APIClientProtocol) {
+        super.init()
+        self.apiClient = apiClient
+    }
+
     /// Set the API client for device token registration
     func configure(apiClient: any APIClientProtocol) {
         self.apiClient = apiClient
