@@ -14,7 +14,8 @@ final class NotificationHandler: NSObject, ObservableObject {
 
     private var apiClient: (any APIClientProtocol)?
 
-    override private init() {
+    // swiftlint:disable:next modifier_order
+    private override init() {
         super.init()
     }
 

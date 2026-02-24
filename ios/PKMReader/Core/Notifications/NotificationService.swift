@@ -22,7 +22,8 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
     private var apiClient: (any APIClientProtocol)?
     private var registeredDeviceId: String?
 
-    override private init() {
+    // swiftlint:disable:next modifier_order
+    private override init() {
         super.init()
     }
 
