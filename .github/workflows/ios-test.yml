@@ -53,13 +53,13 @@ jobs:
         working-directory: ios
         run: swiftlint lint --strict --reporter github-actions-logging
 
-  build-and-test:
-    name: Build & Test
+  build:
+    name: Build
     runs-on: macos-26
 
     env:
-      SCHEME: PKMReader
       DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
+      DERIVED_DATA_PATH: /tmp/DerivedData
 
     steps:
       - name: Checkout repository
@@ -70,34 +70,21 @@ jobs:
         with:
           xcode-version: '26.0'
 
-      - name: Cache Homebrew tools
-        uses: actions/cache@v4
+      - uses: jdx/mise-action@v3
         with:
-          path: |
-            ~/Library/Caches/Homebrew/downloads
-            ~/Library/Caches/Homebrew/xcodegen--*
-            ~/Library/Caches/Homebrew/xcbeautify--*
-          key: ${{ runner.os }}-brew-build-${{ hashFiles('.github/workflows/ios-test.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-brew-build-
+          working_directory: ios
 
       - name: Install tools
-        run: brew install xcodegen xcbeautify
+        run: brew install xcodegen
 
       - name: Generate Xcode project
         working-directory: ios
-        run: xcodegen generate
-
-      - name: Cache SPM dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
-          key: ${{ runner.os }}-spm-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+        run: mise run generate
 
       - name: Cache DerivedData
         uses: actions/cache@v4
         with:
-          path: ~/Library/Developer/Xcode/DerivedData
+          path: /tmp/DerivedData
           key: ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift', 'ios/PKMReaderTests/**/*.swift', 'ios/PKMReaderUITests/**/*.swift') }}
           restore-keys: |
             ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
@@ -105,73 +92,146 @@ jobs:
 
       - name: Boot simulator
         run: |
-          # Pre-boot the simulator to avoid boot time during tests
           DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 17" | grep "26.0" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
           if [ -n "$DEVICE_ID" ]; then
             echo "Booting simulator $DEVICE_ID"
             xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-            # Wait for boot to complete
             xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
           fi
 
       - name: Build for testing
         working-directory: ios
-        run: |
-          set -o pipefail
-          NSUnbufferedIO=YES \
-          xcodebuild build-for-testing \
-            -project PKMReader.xcodeproj \
-            -scheme $SCHEME \
-            -destination "$DESTINATION" \
-            -enableCodeCoverage YES \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO 2>&1 \
-            | xcbeautify --renderer github-actions
+        run: mise run ci:build
 
-      - name: Run tests
+      - name: Tar DerivedData for upload
+        run: tar -cf /tmp/derived-data.tar -C /tmp DerivedData
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: derived-data
+          path: /tmp/derived-data.tar
+          retention-days: 1
+
+  unit-tests:
+    name: Unit Tests
+    needs: build
+    runs-on: macos-26
+
+    env:
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
+      DERIVED_DATA_PATH: /tmp/DerivedData
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.0'
+
+      - uses: jdx/mise-action@v3
+        with:
+          working_directory: ios
+
+      - name: Install tools
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
         working-directory: ios
+        run: mise run generate
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: derived-data
+          path: /tmp
+
+      - name: Restore DerivedData
+        run: tar -xf /tmp/derived-data.tar -C /tmp
+
+      - name: Boot simulator
         run: |
-          xcodebuild test-without-building \
-            -project PKMReader.xcodeproj \
-            -scheme $SCHEME \
-            -destination "$DESTINATION" \
-            -enableCodeCoverage YES \
-            -resultBundlePath TestResults/all-tests.xcresult \
-            -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 120
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 17" | grep "26.0" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          if [ -n "$DEVICE_ID" ]; then
+            echo "Booting simulator $DEVICE_ID"
+            xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+            xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
+          fi
+
+      - name: Run unit tests
+        working-directory: ios
+        run: mise run ci:test:unit
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results
+          name: unit-test-results
           path: ios/TestResults/
           retention-days: 14
 
-      - name: Generate coverage report
+      - name: Check coverage
         if: always()
         working-directory: ios
+        run: mise run ci:coverage
+
+  ui-tests:
+    name: UI Tests
+    needs: build
+    runs-on: macos-26
+
+    env:
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
+      DERIVED_DATA_PATH: /tmp/DerivedData
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.0'
+
+      - uses: jdx/mise-action@v3
+        with:
+          working_directory: ios
+
+      - name: Install tools
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: mise run generate
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: derived-data
+          path: /tmp
+
+      - name: Restore DerivedData
+        run: tar -xf /tmp/derived-data.tar -C /tmp
+
+      - name: Boot simulator
         run: |
-          if [ -d "TestResults/all-tests.xcresult" ]; then
-            xcrun xccov view --report --json TestResults/all-tests.xcresult > coverage.json
-            COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100 | floor')
-            echo "## Code Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "::warning::No test results found, skipping coverage report"
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 17" | grep "26.0" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          if [ -n "$DEVICE_ID" ]; then
+            echo "Booting simulator $DEVICE_ID"
+            xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+            xcrun simctl bootstatus "$DEVICE_ID" -b 2>/dev/null || true
           fi
 
-      - name: Check coverage threshold
-        if: always()
+      - name: Run UI tests
         working-directory: ios
-        run: |
-          if [ ! -f "coverage.json" ]; then
-            echo "::warning::No coverage data available"
-            exit 0
-          fi
-          COVERAGE=$(cat coverage.json | jq '.lineCoverage * 100')
-          THRESHOLD=74
-          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "::error::Code coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
-            exit 1
-          fi
-          echo "Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
+        run: mise run ci:test:ui
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-results
+          path: ios/TestResults/
+          retention-days: 14

@@ -54,3 +54,103 @@ run = "xcodegen generate"
 [tasks.setup]
 description = "First-time setup for new developers"
 run = "./Scripts/bootstrap.sh"
+
+# =============================================================================
+# CI Tasks - used by GitHub Actions, also runnable locally
+# Set DESTINATION and DERIVED_DATA_PATH env vars to override defaults.
+# =============================================================================
+
+[tasks."ci:build"]
+description = "Build for testing (CI)"
+run = """
+set -o pipefail
+DEST="${DESTINATION:-platform=iOS Simulator,name=iPhone 17}"
+DD="${DERIVED_DATA_PATH:-}"
+DD_FLAG=""
+if [ -n "$DD" ]; then
+  DD_FLAG="-derivedDataPath $DD"
+fi
+NSUnbufferedIO=YES \
+xcodebuild build-for-testing \
+  -project PKMReader.xcodeproj \
+  -scheme PKMReader \
+  -destination "$DEST" \
+  $DD_FLAG \
+  -enableCodeCoverage YES \
+  CODE_SIGN_IDENTITY="" \
+  CODE_SIGNING_REQUIRED=NO 2>&1 \
+  | xcbeautify --renderer github-actions
+"""
+
+[tasks."ci:test:unit"]
+description = "Run unit tests with retry-on-failure (CI)"
+run = """
+DEST="${DESTINATION:-platform=iOS Simulator,name=iPhone 17}"
+DD="${DERIVED_DATA_PATH:-}"
+DD_FLAG=""
+if [ -n "$DD" ]; then
+  DD_FLAG="-derivedDataPath $DD"
+fi
+RESULT_PATH="${RESULT_BUNDLE_PATH:-TestResults/unit-tests.xcresult}"
+xcodebuild test-without-building \
+  -project PKMReader.xcodeproj \
+  -scheme PKMReader \
+  -destination "$DEST" \
+  $DD_FLAG \
+  -only-testing:PKMReaderTests \
+  -enableCodeCoverage YES \
+  -resultBundlePath "$RESULT_PATH" \
+  -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 120 \
+  -retry-tests-on-failure \
+  -test-repetition-mode retry-on-failure \
+  -test-iterations 3
+"""
+
+[tasks."ci:test:ui"]
+description = "Run UI tests with retry-on-failure (CI)"
+run = """
+DEST="${DESTINATION:-platform=iOS Simulator,name=iPhone 17}"
+DD="${DERIVED_DATA_PATH:-}"
+DD_FLAG=""
+if [ -n "$DD" ]; then
+  DD_FLAG="-derivedDataPath $DD"
+fi
+RESULT_PATH="${RESULT_BUNDLE_PATH:-TestResults/ui-tests.xcresult}"
+xcodebuild test-without-building \
+  -project PKMReader.xcodeproj \
+  -scheme PKMReader \
+  -destination "$DEST" \
+  $DD_FLAG \
+  -only-testing:PKMReaderUITests \
+  -enableCodeCoverage NO \
+  -resultBundlePath "$RESULT_PATH" \
+  -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 180 \
+  -retry-tests-on-failure \
+  -test-repetition-mode retry-on-failure \
+  -test-iterations 3
+"""
+
+[tasks."ci:coverage"]
+description = "Generate and check coverage from test results (CI)"
+run = """
+RESULT_BUNDLE="${RESULT_BUNDLE_PATH:-TestResults/unit-tests.xcresult}"
+THRESHOLD="${COVERAGE_THRESHOLD:-74}"
+
+if [ ! -d "$RESULT_BUNDLE" ]; then
+  echo "::warning::No test results found at $RESULT_BUNDLE, skipping coverage"
+  exit 0
+fi
+
+xcrun xccov view --report --json "$RESULT_BUNDLE" > coverage.json
+COVERAGE_FLOOR=$(jq '.lineCoverage * 100 | floor' coverage.json)
+COVERAGE=$(jq '.lineCoverage * 100' coverage.json)
+echo "## Code Coverage: ${COVERAGE_FLOOR}%" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
+if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" = "1" ]; then
+  echo "::error::Code coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+  exit 1
+fi
+echo "Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
+"""
