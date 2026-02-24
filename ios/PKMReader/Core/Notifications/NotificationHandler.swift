@@ -41,7 +41,7 @@ final class NotificationHandler: NSObject, ObservableObject {
         guard let apiClient else { return }
         do {
             let response = try await apiClient.listNotifications()
-            unreadCount = response.notifications.filter { !$0.read }.count
+            unreadCount = response.notifications.count(where: { !$0.read })
         } catch {
             // Silently fail — badge count is non-critical
         }
@@ -76,15 +76,15 @@ final class NotificationHandler: NSObject, ObservableObject {
 extension NotificationHandler: @preconcurrency UNUserNotificationCenterDelegate {
     /// Handle notification when app is in foreground
     nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
+        _: UNUserNotificationCenter,
+        willPresent _: UNNotification
     ) async -> UNNotificationPresentationOptions {
         [.banner, .badge, .sound]
     }
 
     /// Handle notification tap
     nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
+        _: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
         let deepLink = response.notification.request.content.userInfo["deepLink"] as? String

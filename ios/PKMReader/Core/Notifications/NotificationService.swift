@@ -1,6 +1,6 @@
 import Foundation
-import UserNotifications
 import UIKit
+import UserNotifications
 
 /// Protocol for notification service to enable testing
 protocol NotificationServiceProtocol: Sendable {
@@ -65,8 +65,8 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
     /// Called when APNs registration fails
     func didFailToRegisterForRemoteNotifications(error: Error) {
         print("Failed to register for remote notifications: \(error.localizedDescription)")
-        self.deviceToken = nil
-        self.isRegistered = false
+        deviceToken = nil
+        isRegistered = false
     }
 
     private func registerDeviceTokenWithBackend(_ token: String) async {

@@ -1,5 +1,5 @@
-import XCTest
 @testable import PKMReader
+import XCTest
 
 @MainActor
 final class NotificationHandlerTests: XCTestCase {
@@ -73,7 +73,7 @@ final class NotificationHandlerTests: XCTestCase {
         let notifications = [
             makeNotification(id: "1", read: false),
             makeNotification(id: "2", type: .weeklyReport, read: true),
-            makeNotification(id: "3", type: .searchMonitor, read: false)
+            makeNotification(id: "3", type: .searchMonitor, read: false),
         ]
         mockAPIClient.listNotificationsResult = .success(
             NotificationListResponse(notifications: notifications, count: 3)

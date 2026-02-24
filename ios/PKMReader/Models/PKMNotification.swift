@@ -17,7 +17,9 @@ struct PKMNotification: Identifiable, Codable, Hashable, Sendable {
     let timestamp: String
     let read: Bool
 
-    var id: String { notificationId }
+    var id: String {
+        notificationId
+    }
 }
 
 /// Response from GET /notifications

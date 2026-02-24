@@ -4,7 +4,7 @@ import UserNotifications
 /// App delegate to handle push notification registration callbacks
 final class AppDelegate: NSObject, UIApplicationDelegate, Sendable {
     func application(
-        _ application: UIApplication,
+        _: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         Task { @MainActor in
@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, Sendable {
     }
 
     func application(
-        _ application: UIApplication,
+        _: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
         Task { @MainActor in

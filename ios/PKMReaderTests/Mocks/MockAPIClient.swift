@@ -352,12 +352,12 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     private(set) var markNotificationReadCallCount = 0
     private(set) var lastMarkNotificationReadId: String?
 
-    func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
+    func registerDevice(request _: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
         registerDeviceCallCount += 1
         return try registerDeviceResult.get()
     }
 
-    func unregisterDevice(deviceId: String) async throws {
+    func unregisterDevice(deviceId _: String) async throws {
         unregisterDeviceCallCount += 1
         try unregisterDeviceResult.get()
     }
