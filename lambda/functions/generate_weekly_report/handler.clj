@@ -122,7 +122,7 @@
   (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
         user-pks (get-all-user-pks)]
     (if (seq user-pks)
-      (do
+      (let [failed-users (atom [])]
         (doseq [user-pk user-pks]
           (try
             (let [notification-id (str (java.util.UUID/randomUUID))
@@ -139,8 +139,13 @@
                              :read false}))
             (catch Exception e
               (println "Warning: failed to create notification for user"
-                       user-pk ":" (ex-message e)))))
-        (println "Created weekly report notifications for" (count user-pks) "users on" week-str))
+                       user-pk ":" (ex-message e))
+              (swap! failed-users conj user-pk))))
+        (let [total (count user-pks)
+              failures (count @failed-users)]
+          (println "Created weekly report notifications for" (- total failures) "/" total "users on" week-str)
+          (when (pos? failures)
+            (println "Warning:" failures "notification(s) failed for users:" @failed-users))))
       (println "No registered users found, skipping notification creation for" week-str))))
 
 (defn handler

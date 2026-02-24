@@ -225,7 +225,7 @@ resource "aws_iam_role_policy" "lambda_sns_access" {
         Action = [
           "sns:Publish"
         ]
-        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint/*"
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint/APNS*/${var.project_name}-*"
       },
       {
         Effect = "Allow"
@@ -234,7 +234,7 @@ resource "aws_iam_role_policy" "lambda_sns_access" {
           "sns:GetEndpointAttributes",
           "sns:SetEndpointAttributes"
         ]
-        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:app/*"
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:app/APNS*/${var.project_name}-*"
       }
     ]
   })

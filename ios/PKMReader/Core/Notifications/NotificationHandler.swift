@@ -44,7 +44,7 @@ final class NotificationHandler: NSObject, ObservableObject {
             let response = try await apiClient.listNotifications()
             unreadCount = response.notifications.count(where: { !$0.read })
         } catch {
-            // Silently fail — badge count is non-critical
+            print("Failed to refresh unread count: \(error.localizedDescription)")
         }
     }
 
@@ -57,7 +57,7 @@ final class NotificationHandler: NSObject, ObservableObject {
                 unreadCount -= 1
             }
         } catch {
-            // Silently fail
+            print("Failed to mark notification \(notificationId) as read: \(error.localizedDescription)")
         }
     }
 

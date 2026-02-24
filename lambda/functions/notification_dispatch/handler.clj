@@ -49,8 +49,7 @@
         (let [apns-payload (build-apns-payload notification)
               message (json/generate-string
                        {"APNS" apns-payload
-                        "APNS_SANDBOX" apns-payload
-                        "default" (:title notification)})]
+                        "APNS_SANDBOX" apns-payload})]
           (sns/publish-to-endpoint endpoint-arn message)
           (println "Sent notification to device:" (:device_id device)))
         (catch Exception e

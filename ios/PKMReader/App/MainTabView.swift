@@ -53,6 +53,8 @@ struct MainTabView: View {
     private func handleDeepLink(_ link: String) {
         if link.hasPrefix("/summaries") || link.hasPrefix("/reports") {
             selectedTab = 1
+        } else if link.hasPrefix("/search") {
+            selectedTab = 0
         }
     }
 }

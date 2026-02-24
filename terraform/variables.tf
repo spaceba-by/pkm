@@ -193,13 +193,13 @@ variable "apns_signing_key_id" {
 variable "apns_team_id" {
   description = "Apple Developer Team ID for APNs"
   type        = string
-  default     = "TPXD65QGEQ"
+  default     = ""
 }
 
 variable "apns_bundle_id" {
   description = "iOS app bundle ID for APNs"
   type        = string
-  default     = "by.spaceba.pkm.reader"
+  default     = ""
 }
 
 variable "apns_use_sandbox" {
