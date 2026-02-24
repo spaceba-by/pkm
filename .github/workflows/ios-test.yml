@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   format:
-    name: format
+    name: Format
     runs-on: macos-26
 
     steps:
