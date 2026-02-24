@@ -85,9 +85,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/DerivedData
-          key: ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift', 'ios/PKMReaderTests/**/*.swift', 'ios/PKMReaderUITests/**/*.swift') }}
+          key: ${{ runner.os }}-dd-${{ hashFiles('ios/project.yml', 'ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift', 'ios/PKMReaderTests/**/*.swift', 'ios/PKMReaderUITests/**/*.swift') }}
           restore-keys: |
-            ${{ runner.os }}-dd-${{ hashFiles('ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
+            ${{ runner.os }}-dd-${{ hashFiles('ios/project.yml', 'ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
             ${{ runner.os }}-dd-
 
       - name: Boot simulator
@@ -235,3 +235,11 @@ jobs:
           name: ui-test-results
           path: ios/TestResults/
           retention-days: 14
+
+      - name: Check coverage
+        if: always()
+        working-directory: ios
+        env:
+          RESULT_BUNDLE_PATH: TestResults/ui-tests.xcresult
+          COVERAGE_THRESHOLD: 30
+        run: mise run ci:coverage

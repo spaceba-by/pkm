@@ -124,7 +124,7 @@ xcodebuild test-without-building \
   -destination "$DEST" \
   $DD_FLAG \
   -only-testing:PKMReaderUITests \
-  -enableCodeCoverage NO \
+  -enableCodeCoverage YES \
   -resultBundlePath "$RESULT_PATH" \
   -test-timeouts-enabled YES \
   -default-test-execution-time-allowance 180 \
