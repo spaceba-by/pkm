@@ -37,7 +37,7 @@ run = "bundle exec fastlane format"
 
 [tasks."format:check"]
 description = "Check code formatting (CI mode)"
-run = "bundle exec fastlane format_check"
+run = "swiftformat . --config .swiftformat --lint"
 
 [tasks.build]
 description = "Build for development (simulator)"
