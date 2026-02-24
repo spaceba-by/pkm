@@ -92,6 +92,7 @@ if [ -n "$DD" ]; then
   DD_FLAG="-derivedDataPath $DD"
 fi
 RESULT_PATH="${RESULT_BUNDLE_PATH:-TestResults/unit-tests.xcresult}"
+mkdir -p "$(dirname "$RESULT_PATH")"
 xcodebuild test-without-building \
   -project PKMReader.xcodeproj \
   -scheme PKMReader \
@@ -102,7 +103,6 @@ xcodebuild test-without-building \
   -resultBundlePath "$RESULT_PATH" \
   -test-timeouts-enabled YES \
   -default-test-execution-time-allowance 120 \
-  -retry-tests-on-failure \
   -test-repetition-mode retry-on-failure \
   -test-iterations 3
 """
@@ -117,6 +117,7 @@ if [ -n "$DD" ]; then
   DD_FLAG="-derivedDataPath $DD"
 fi
 RESULT_PATH="${RESULT_BUNDLE_PATH:-TestResults/ui-tests.xcresult}"
+mkdir -p "$(dirname "$RESULT_PATH")"
 xcodebuild test-without-building \
   -project PKMReader.xcodeproj \
   -scheme PKMReader \
@@ -127,7 +128,6 @@ xcodebuild test-without-building \
   -resultBundlePath "$RESULT_PATH" \
   -test-timeouts-enabled YES \
   -default-test-execution-time-allowance 180 \
-  -retry-tests-on-failure \
   -test-repetition-mode retry-on-failure \
   -test-iterations 3
 """
