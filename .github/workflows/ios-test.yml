@@ -25,7 +25,8 @@ jobs:
           working_directory: ios
 
       - name: Format Check
-        run:  cd ios && mise run format:check
+        run:  mise run format:check
+        working-directory: ios
 
   lint:
     name: Lint
