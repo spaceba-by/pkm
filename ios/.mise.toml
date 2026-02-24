@@ -103,7 +103,7 @@ xcodebuild test-without-building \
   -resultBundlePath "$RESULT_PATH" \
   -test-timeouts-enabled YES \
   -default-test-execution-time-allowance 120 \
-  -test-repetition-mode retry-on-failure \
+  -retry-tests-on-failure \
   -test-iterations 3
 """
 
@@ -128,7 +128,7 @@ xcodebuild test-without-building \
   -resultBundlePath "$RESULT_PATH" \
   -test-timeouts-enabled YES \
   -default-test-execution-time-allowance 180 \
-  -test-repetition-mode retry-on-failure \
+  -retry-tests-on-failure \
   -test-iterations 3
 """
 
