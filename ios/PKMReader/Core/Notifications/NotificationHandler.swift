@@ -18,6 +18,12 @@ final class NotificationHandler: NSObject, ObservableObject {
         super.init()
     }
 
+    /// Internal init for testing
+    init(apiClient: any APIClientProtocol) {
+        super.init()
+        self.apiClient = apiClient
+    }
+
     /// Set the API client for notification operations
     func configure(apiClient: any APIClientProtocol) {
         self.apiClient = apiClient
