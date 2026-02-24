@@ -86,6 +86,51 @@
                      (conj documents result)
                      documents))))))))
 
+(defn- get-all-user-pks
+  "Return a set of all user partition keys (PKs) from device token registrations"
+  []
+  (try
+    (let [items (ddb/scan-all ddb-table)]
+      (->> items
+           (map :PK)
+           (filter #(and (string? %) (.startsWith ^String % "user#")))
+           (into #{})))
+    (catch Exception e
+      (println "Warning: failed to scan for user partition keys:" (ex-message e))
+      #{})))
+
+(defn- create-summary-notification
+  "Create notification records for the daily summary, one per registered user"
+  [date-str doc-count]
+  (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
+        user-pks (get-all-user-pks)]
+    (if (seq user-pks)
+      (let [failed-users (atom [])]
+        (doseq [user-pk user-pks]
+          (try
+            (let [notification-id (str (java.util.UUID/randomUUID))
+                  notification-sk (str "notification#pending#" now-ts "#" notification-id)]
+              (ddb/put-item ddb-table
+                            {:PK user-pk
+                             :SK notification-sk
+                             :notification_id notification-id
+                             :notification_type "daily_summary"
+                             :title (str "Daily Summary: " date-str)
+                             :body (str "Summary of " doc-count " documents from " date-str)
+                             :deep_link (str "/summaries/" date-str)
+                             :timestamp now-ts
+                             :read false}))
+            (catch Exception e
+              (println "Warning: failed to create notification for user"
+                       user-pk ":" (ex-message e))
+              (swap! failed-users conj user-pk))))
+        (let [total (count user-pks)
+              failures (count @failed-users)]
+          (println "Created daily summary notifications for" (- total failures) "/" total "users on" date-str)
+          (when (pos? failures)
+            (println "Warning:" failures "notification(s) failed for users:" @failed-users))))
+      (println "No registered users found, skipping notification creation for" date-str))))
+
 (defn handler
   "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
   [request]
@@ -151,6 +196,9 @@
                                                         summary-doc)]
 
                    (println "Created daily summary:" summary-key)
+
+                   ;; Create notification for daily summary
+                   (create-summary-notification date-str (count documents))
 
                    {:statusCode 200
                     :body (json/generate-string {:date date-str

@@ -118,6 +118,20 @@ protocol APIClientProtocol: Sendable {
 
     /// Get a specific summary for a search monitor
     func getSearchMonitorSummary(monitorId: String, timestamp: String) async throws -> SearchSummary
+
+    // MARK: - Device Tokens & Notifications
+
+    /// Register a device for push notifications
+    func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse
+
+    /// Unregister a device from push notifications
+    func unregisterDevice(deviceId: String) async throws
+
+    /// List pending notifications for the current user
+    func listNotifications() async throws -> NotificationListResponse
+
+    /// Mark a notification as read
+    func markNotificationRead(id: String) async throws
 }
 
 extension APIClientProtocol {

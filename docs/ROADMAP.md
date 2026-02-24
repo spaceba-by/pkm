@@ -204,7 +204,7 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 #### Tier 2 — Communication
 
-- **Task 0021: Push Notifications**
+- **Task 0021: Push Notifications** *(In Progress)*
 
   - See: [0021-push-notifications](tasks/0021-push-notifications.md)
   - AWS SNS + APNs integration for iOS push notifications

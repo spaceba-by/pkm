@@ -172,3 +172,38 @@ variable "enable_password_auth_for_testing" {
   type        = bool
   default     = false
 }
+
+# =============================================================================
+# Push Notifications Variables (Task 0021)
+# =============================================================================
+
+variable "apns_signing_key" {
+  description = "APNs signing key (P8 file content) for push notifications"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "apns_signing_key_id" {
+  description = "APNs signing key ID (10-character identifier from Apple Developer portal)"
+  type        = string
+  default     = ""
+}
+
+variable "apns_team_id" {
+  description = "Apple Developer Team ID for APNs"
+  type        = string
+  default     = ""
+}
+
+variable "apns_bundle_id" {
+  description = "iOS app bundle ID for APNs"
+  type        = string
+  default     = ""
+}
+
+variable "apns_use_sandbox" {
+  description = "Use APNs sandbox environment (true for development, false for production)"
+  type        = bool
+  default     = true
+}

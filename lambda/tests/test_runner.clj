@@ -18,6 +18,7 @@
 (require '[api.write-handlers-test])
 (require '[api.graph-data-test])
 (require '[shared.secrets-manager-test])
+(require '[notifications.handler-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -35,7 +36,8 @@
                  'search.semantic-test
                  'api.write-handlers-test
                  'api.graph-data-test
-                 'shared.secrets-manager-test)]
+                 'shared.secrets-manager-test
+                 'notifications.handler-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))

@@ -5,6 +5,7 @@ struct MainTabView: View {
     let apiClient: any APIClientProtocol
     let authService: any AuthServiceProtocol
     @ObservedObject var networkMonitor: NetworkMonitor
+    @ObservedObject var notificationHandler: NotificationHandler = .shared
     @State private var selectedTab = 0
 
     var body: some View {
@@ -25,6 +26,7 @@ struct MainTabView: View {
                         Label("Insights", systemImage: "lightbulb.max")
                     }
                     .tag(1)
+                    .badge(notificationHandler.unreadCount)
 
                 SettingsView(authService: authService)
                     .tabItem {
@@ -40,6 +42,20 @@ struct MainTabView: View {
             }
         }
         .accessibilityIdentifier("MainTabView")
+        .onChange(of: notificationHandler.pendingDeepLink) { _, deepLink in
+            if let deepLink {
+                handleDeepLink(deepLink)
+                notificationHandler.clearDeepLink()
+            }
+        }
+    }
+
+    private func handleDeepLink(_ link: String) {
+        if link.hasPrefix("/summaries") || link.hasPrefix("/reports") {
+            selectedTab = 1
+        } else if link.hasPrefix("/search") {
+            selectedTab = 0
+        }
     }
 }
 

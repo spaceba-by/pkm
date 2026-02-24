@@ -360,4 +360,15 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func getSearchMonitorSummary(monitorId _: String, timestamp _: String) async throws -> SearchSummary {
         throw APIError.invalidResponse
     }
+
+    func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
+        DeviceRegistrationResponse(deviceId: request.deviceId, registered: true)
+    }
+
+    func unregisterDevice(deviceId _: String) async throws {}
+    func listNotifications() async throws -> NotificationListResponse {
+        NotificationListResponse(notifications: [], count: 0)
+    }
+
+    func markNotificationRead(id _: String) async throws {}
 }

@@ -103,6 +103,51 @@
      :documents documents
      :classification_counts classification-counts}))
 
+(defn- get-all-user-pks
+  "Return a set of all user partition keys (PKs) from device token registrations"
+  []
+  (try
+    (let [items (ddb/scan-all ddb-table)]
+      (->> items
+           (map :PK)
+           (filter #(and (string? %) (.startsWith ^String % "user#")))
+           (into #{})))
+    (catch Exception e
+      (println "Warning: failed to scan for user partition keys:" (ex-message e))
+      #{})))
+
+(defn- create-report-notification
+  "Create notification records for the weekly report, one per registered user"
+  [week-str doc-count]
+  (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
+        user-pks (get-all-user-pks)]
+    (if (seq user-pks)
+      (let [failed-users (atom [])]
+        (doseq [user-pk user-pks]
+          (try
+            (let [notification-id (str (java.util.UUID/randomUUID))
+                  notification-sk (str "notification#pending#" now-ts "#" notification-id)]
+              (ddb/put-item ddb-table
+                            {:PK user-pk
+                             :SK notification-sk
+                             :notification_id notification-id
+                             :notification_type "weekly_report"
+                             :title (str "Weekly Report: " week-str)
+                             :body (str "Report covering " doc-count " documents for week " week-str)
+                             :deep_link (str "/reports/" week-str)
+                             :timestamp now-ts
+                             :read false}))
+            (catch Exception e
+              (println "Warning: failed to create notification for user"
+                       user-pk ":" (ex-message e))
+              (swap! failed-users conj user-pk))))
+        (let [total (count user-pks)
+              failures (count @failed-users)]
+          (println "Created weekly report notifications for" (- total failures) "/" total "users on" week-str)
+          (when (pos? failures)
+            (println "Warning:" failures "notification(s) failed for users:" @failed-users))))
+      (println "No registered users found, skipping notification creation for" week-str))))
+
 (defn handler
   "Lambda handler for bblf runtime - receives raw HTTP request from Lambda Runtime API"
   [request]
@@ -155,6 +200,9 @@
                                            report-doc)]
 
        (println "Created weekly report:" report-key)
+
+       ;; Create notification for weekly report
+       (create-report-notification week-str (count week-docs))
 
        {:statusCode 200
         :body (json/generate-string {:week week-str
