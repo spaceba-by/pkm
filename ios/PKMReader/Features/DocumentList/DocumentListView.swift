@@ -5,6 +5,7 @@ struct DocumentListView: View {
     @StateObject private var viewModel: DocumentListViewModel
     @State private var showingFilter = false
     @State private var showingEditor = false
+    @State private var showingMonitors = false
 
     init(apiClient: any APIClientProtocol) {
         _viewModel = StateObject(wrappedValue: DocumentListViewModel(apiClient: apiClient))
@@ -41,8 +42,8 @@ struct DocumentListView: View {
 
                         filterButton
 
-                        NavigationLink {
-                            SearchMonitorListView(apiClient: viewModel.apiClient)
+                        Button {
+                            showingMonitors = true
                         } label: {
                             Image(systemName: "binoculars")
                         }
@@ -81,6 +82,9 @@ struct DocumentListView: View {
                     }
                 )
                 .presentationDetents([.medium, .large])
+            }
+            .navigationDestination(isPresented: $showingMonitors) {
+                SearchMonitorListView(apiClient: viewModel.apiClient)
             }
             .refreshable {
                 if viewModel.isSearchActive {

@@ -37,6 +37,9 @@ struct SearchMonitorListView: View {
                 }
             }
         }
+        .navigationDestination(for: SearchMonitor.self) { monitor in
+            SearchMonitorDetailView(monitorId: monitor.id, apiClient: viewModel.apiClient)
+        }
         .navigationTitle("Search Monitors")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -111,9 +114,6 @@ struct SearchMonitorListView: View {
             }
         }
         .listStyle(.plain)
-        .navigationDestination(for: SearchMonitor.self) { monitor in
-            SearchMonitorDetailView(monitorId: monitor.id, apiClient: viewModel.apiClient)
-        }
     }
 }
 

@@ -51,7 +51,7 @@
     (:N attr-value) (if (re-find #"\." (:N attr-value))
                       (Double/parseDouble (:N attr-value))
                       (Long/parseLong (:N attr-value)))
-    (:BOOL attr-value) (:BOOL attr-value)
+    (contains? attr-value :BOOL) (:BOOL attr-value)
     (:NULL attr-value) nil
     (:L attr-value) (mapv unmarshall-value (:L attr-value))
     (:SS attr-value) (set (:SS attr-value))
