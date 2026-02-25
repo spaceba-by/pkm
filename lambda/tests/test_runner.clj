@@ -19,6 +19,7 @@
 (require '[api.graph-data-test])
 (require '[shared.secrets-manager-test])
 (require '[notifications.handler-test])
+(require '[webhooks.utils-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -37,7 +38,8 @@
                  'api.write-handlers-test
                  'api.graph-data-test
                  'shared.secrets-manager-test
-                 'notifications.handler-test)]
+                 'notifications.handler-test
+                 'webhooks.utils-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))

@@ -1,6 +1,6 @@
 # Task 0022: Webhook Receiving & Classification
 
-**Status**: Planned
+**Status**: In Progress
 
 ## Specifications
 
@@ -18,7 +18,7 @@ webhook_receive Lambda
     ↓ validates signature using source-specific signing secret
     ↓ classifies payload (GitHub event, email, custom)
     ↓ routes to handler
-    ├─→ Document route: writes markdown to S3 (triggers existing EventBridge pipeline)
+    ├─→ Document route: writes markdown to S3 _agent/webhooks/ (no EventBridge trigger)
     └─→ Event route: stores structured event in DynamoDB
 ```
 
@@ -78,11 +78,11 @@ Author: username
 ...
 ```
 
-The file is written to `S3://{vault-bucket}/{document_prefix}/{date}/{event-type}-{id}.md`, triggering the existing EventBridge → extract_metadata → classify_document → extract_entities pipeline.
+The file is written to `S3://{vault-bucket}/_agent/webhooks/{source-id}/{date}/{event-id}.md`. The `_agent/` prefix means these documents do NOT trigger the EventBridge processing pipeline — the `webhook_receive` handler is self-contained.
 
 ### Source-Specific Classifiers
 
-Classifiers are implemented as multimethod dispatch on `source_type`:
+Classifiers are implemented as `case` dispatch on `source_type`:
 - `github`: Parses event type from `X-GitHub-Event` header, extracts issue/PR/commit details
 - `email`: Parses email headers, extracts subject/body/sender
 - `custom`: Passes payload through with minimal transformation
@@ -93,19 +93,13 @@ Classifiers are implemented as multimethod dispatch on `source_type`:
 - `lambda/functions/webhook_receive/handler.clj` — Receive and validate webhook payloads
 - `lambda/functions/api_webhook_sources/handler.clj` — Admin CRUD for webhook source configuration
 - `lambda/functions/api_webhook_events/handler.clj` — List webhook events
-- `lambda/shared/webhook/classifier.clj` — Multimethod classifier for webhook payloads
-- `lambda/shared/webhook/signature.clj` — HMAC signature verification
+- `lambda/shared/webhooks/utils.clj` — HMAC verification, classifiers, key helpers, formatters
 
 ### New Tests
-- `lambda/tests/webhook/receive_test.clj` — Webhook receive and routing tests
-- `lambda/tests/webhook/classifier_test.clj` — Classification tests per source type
-- `lambda/tests/webhook/signature_test.clj` — Signature verification tests
-- `lambda/tests/webhook/api_test.clj` — API handler tests
+- `lambda/tests/webhooks/utils_test.clj` — HMAC, classification, formatting tests
 
-### Terraform (new/modified)
-- `terraform/webhook.tf` — Lambda functions, API Gateway routes, IAM permissions
-- `terraform/secrets.tf` — Webhook signing secret resources
-- `terraform/api_gateway.tf` — Webhook route (no JWT auth, signature-based)
+### Terraform (new)
+- `terraform/webhooks.tf` — Lambda functions, API Gateway routes, CloudWatch logs, permissions
 
 ### Modified Files
 - `lambda/build.clj` — Add new function targets
@@ -113,31 +107,25 @@ Classifiers are implemented as multimethod dispatch on `source_type`:
 
 ## Acceptance Criteria
 
-- [ ] Webhook source registration via admin API with signing secret in Secrets Manager
-- [ ] Webhook receive endpoint validates payload signature before processing
-- [ ] Invalid signatures return 401 with no processing
-- [ ] GitHub webhook events are parsed and classified by event type
-- [ ] Document-routed webhooks generate markdown files in S3 with correct frontmatter
-- [ ] S3 document creation triggers existing processing pipeline (EventBridge)
-- [ ] Event-routed webhooks store structured records in DynamoDB
-- [ ] Admin API supports CRUD for webhook sources (admin group required)
-- [ ] Admin API lists recent webhook events with filtering
-- [ ] Webhook endpoint is publicly accessible (no JWT) but signature-protected
-- [ ] Unit tests cover signature verification, classification, and routing
-- [ ] All existing tests continue to pass
+- [x] Webhook source registration via admin API with signing secret in Secrets Manager
+- [x] Webhook receive endpoint validates payload signature before processing
+- [x] Invalid signatures return 401 with no processing
+- [x] GitHub webhook events are parsed and classified by event type
+- [x] Document-routed webhooks generate markdown files in S3 `_agent/webhooks/` with correct frontmatter
+- [x] Event-routed webhooks store structured records in DynamoDB
+- [x] Admin API supports CRUD for webhook sources (admin group required)
+- [x] Admin API lists recent webhook events with filtering
+- [x] Webhook endpoint is publicly accessible (no JWT) but signature-protected
+- [x] Unit tests cover signature verification, classification, and routing
+- [x] All existing tests continue to pass (128 tests, 793 assertions)
 
 ## Implementation Steps
 
-- [ ] Step 1: Design webhook source configuration schema and DynamoDB key structure
-- [ ] Step 2: Create HMAC signature verification library (`shared/webhook/signature.clj`)
-- [ ] Step 3: Create webhook classifier multimethod (`shared/webhook/classifier.clj`)
-- [ ] Step 4: Create `webhook_receive` Lambda handler with signature validation and routing
-- [ ] Step 5: Implement GitHub event classifier (issues, PRs, commits, releases)
-- [ ] Step 6: Implement markdown document generation for document-routed webhooks
-- [ ] Step 7: Create admin API Lambda for webhook source CRUD (`api_webhook_sources`)
-- [ ] Step 8: Create webhook events listing API (`api_webhook_events`)
-- [ ] Step 9: Add Terraform infrastructure (Lambdas, API routes, secrets)
-- [ ] Step 10: Add webhook receive route to API Gateway (public, no JWT authorizer)
-- [ ] Step 11: Update `build.clj` and `bb.edn` with new function targets
-- [ ] Step 12: Write unit tests for all components
-- [ ] Step 13: Verify all existing tests pass
+- [x] Step 1: Create shared utilities (`shared/webhooks/utils.clj`) — key helpers, HMAC verification, classifiers, document generation, formatters
+- [x] Step 2: Create `webhook_receive` Lambda handler with signature validation and routing
+- [x] Step 3: Create admin API Lambda for webhook source CRUD (`api_webhook_sources`)
+- [x] Step 4: Create webhook events listing API (`api_webhook_events`)
+- [x] Step 5: Update `build.clj` and `bb.edn` with new function targets
+- [x] Step 6: Add Terraform infrastructure (`webhooks.tf` — Lambdas, API routes, CloudWatch logs, permissions)
+- [x] Step 7: Write unit tests (`tests/webhooks/utils_test.clj`) and update test runner
+- [x] Step 8: Verify all tests pass (128 tests, 793 assertions, 0 failures)

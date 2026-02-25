@@ -27,7 +27,10 @@
          "functions/index_embeddings"
          "functions/api_device_tokens"
          "functions/api_notifications"
-         "functions/notification_dispatch"]
+         "functions/notification_dispatch"
+         "functions/webhook_receive"
+         "functions/api_webhook_sources"
+         "functions/api_webhook_events"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}

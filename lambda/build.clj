@@ -122,7 +122,11 @@
    ;; Push notification Lambda functions
    "api_device_tokens"           "handler/handler"
    "api_notifications"           "handler/handler"
-   "notification_dispatch"       "handler/handler"})
+   "notification_dispatch"       "handler/handler"
+   ;; Webhook Lambda functions
+   "webhook_receive"             "handler/handler"
+   "api_webhook_sources"         "handler/handler"
+   "api_webhook_events"          "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")
