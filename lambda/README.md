@@ -12,12 +12,23 @@ lambda/
 │   ├── api/
 │   │   └── response.clj  # API response utilities
 │   ├── aws/
-│   │   ├── bedrock.clj   # AWS Bedrock client wrapper
-│   │   ├── dynamodb.clj  # DynamoDB operations
-│   │   ├── s3.clj        # S3 operations
-│   │   └── lambda.clj    # Lambda invocation utilities
-│   └── markdown/
-│       └── utils.clj     # Markdown parsing & generation
+│   │   ├── bedrock.clj          # AWS Bedrock client wrapper
+│   │   ├── dynamodb.clj         # DynamoDB operations
+│   │   ├── s3.clj               # S3 operations
+│   │   ├── sns.clj              # SNS push notification operations
+│   │   ├── lambda.clj           # Lambda invocation utilities
+│   │   ├── secrets_manager.clj  # Secrets Manager with caching
+│   │   └── brave_search.clj     # Brave Search API client
+│   ├── markdown/
+│   │   └── utils.clj            # Markdown parsing & generation
+│   ├── notifications/
+│   │   └── utils.clj            # Push notification dispatch utilities
+│   └── search/
+│       ├── chunker.clj          # Document chunking by heading
+│       ├── embeddings.clj       # Vector embedding generation
+│       ├── indexer.clj          # Incremental index builder
+│       ├── semantic.clj         # Semantic search engine
+│       └── vector_index.clj     # In-memory vector index
 ├── functions/            # Individual lambda functions
 │   ├── extract_metadata/
 │   ├── classify_document/
@@ -46,7 +57,10 @@ lambda/
 │   ├── api_graph_data/
 │   ├── api_search_monitors/
 │   ├── api_search_monitor_detail/
-│   └── api_search_summaries/
+│   ├── api_search_summaries/
+│   ├── notification_dispatch/
+│   ├── api_device_tokens/
+│   └── api_notifications/
 └── tests/                # Unit tests
 
 ```
@@ -93,7 +107,7 @@ Output ZIPs are placed in `target/`.
 
 ## Lambda Functions
 
-### Processing (10)
+### Processing (11)
 
 | Function | Description |
 |----------|-------------|
@@ -107,8 +121,9 @@ Output ZIPs are placed in `target/`.
 | delete-document | Cascade-delete DynamoDB records on S3 object deletion |
 | persistent-search-execute | Execute search monitors via Brave Search API |
 | persistent-search-summarize | AI-driven summarization of search results |
+| notification-dispatch | Dispatch push notifications via SNS/APNs (DynamoDB Stream trigger) |
 
-### Mobile API (17)
+### Mobile API (19)
 
 | Function | Description |
 |----------|-------------|
@@ -129,6 +144,8 @@ Output ZIPs are placed in `target/`.
 | api-search-monitors | Manage persistent search monitors (CRUD) |
 | api-search-monitor-detail | Single search monitor operations |
 | api-search-summaries | Search result summaries |
+| api-device-tokens | Register/unregister device tokens for push notifications |
+| api-notifications | List and acknowledge push notifications |
 
 ## Advantages over Python
 
