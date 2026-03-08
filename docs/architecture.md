@@ -43,7 +43,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 │  │ • delete-document  │       │ • api-list-reports         │ │
 │  │ • index-embeddings │       │ • api-update-classification│ │
 │  │ • persistent-search│       │ • api-bulk-reclassify      │ │
-│  │ • notif-dispatch   │       │ • api-create/update/delete │ │
+│  │ • notification-disp│       │ • api-create/update/delete │ │
 │  └─────────┬──────────┘       │ • api-graph-data           │ │
 │            │                   │ • api-search-monitors      │ │
 │            │                   │ • api-device-tokens        │ │
@@ -156,8 +156,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `api-search-monitors` | Babashka | 256 MB | 10s | GET /searches | List search monitors |
 | `api-search-monitor-detail` | Babashka | 256 MB | 10s | GET /searches/{id} | Search monitor detail |
 | `api-search-summaries` | Babashka | 256 MB | 10s | GET /searches/{id}/summaries | List search summaries |
-| `api-device-tokens` | Babashka | 256 MB | 10s | POST /devices | Register/unregister device tokens |
-| `api-notifications` | Babashka | 256 MB | 10s | GET /notifications | List and acknowledge notifications |
+| `api-device-tokens` | Babashka | 256 MB | 10s | POST /devices; DELETE /devices/{device-id} | Register/unregister device tokens |
+| `api-notifications` | Babashka | 256 MB | 10s | GET /notifications; PUT /notifications/{id}/read | List and acknowledge notifications |
 
 **Shared Code:**
 - AWS wrappers in `lambda/shared/aws/`: `bedrock.clj`, `dynamodb.clj`, `s3.clj`, `sns.clj`, `lambda.clj`, `secrets_manager.clj`, `brave_search.clj`
