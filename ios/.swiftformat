@@ -73,4 +73,5 @@
 --disable acronyms
 --disable markTypes
 --disable organizeDeclarations
+--disable redundantSendable
 --disable wrapMultilineStatementBraces
