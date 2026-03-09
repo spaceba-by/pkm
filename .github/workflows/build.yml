@@ -122,9 +122,9 @@ jobs:
         env:
           BUILD_TAG: ${{ needs.build.outputs.build_tag }}
           TF_VAR_apns_signing_key: ${{ secrets.APNS_SIGNING_KEY }}
-          TF_VAR_apns_signing_key_id: ${{ secrets.APNS_SIGNING_KEY_ID }}
-          TF_VAR_apns_team_id: ${{ secrets.APNS_TEAM_ID }}
-          TF_VAR_apns_bundle_id: ${{ secrets.APNS_BUNDLE_ID }}
+          TF_VAR_apns_signing_key_id: ${{ vars.APNS_SIGNING_KEY_ID }}
+          TF_VAR_apns_team_id: ${{ vars.APNS_TEAM_ID }}
+          TF_VAR_apns_bundle_id: ${{ vars.APNS_BUNDLE_ID }}
         run: |
           terraform plan \
             -var="lambda_source_type=s3" \
