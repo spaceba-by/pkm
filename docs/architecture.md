@@ -6,72 +6,28 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 ## Architecture Diagram
 
-```
-┌─────────────────┐                    ┌─────────────────┐
-│  Local Vault    │                    │    iOS App      │
-│   (macOS)       │                    │   (SwiftUI)     │
-└────────┬────────┘                    └────────┬────────┘
-         │ rclone bisync (every 5 min)          │ HTTPS
-         ▼                                       ▼
-┌──────────────────────────────────────────────────────────────┐
-│                         AWS Cloud                             │
-│                                                               │
-│  ┌──────────────┐              ┌──────────────────────────┐  │
-│  │  S3 Bucket   │              │     Amazon Cognito       │  │
-│  │  (Source of  │              │  • User Pool (email)     │  │
-│  │   Truth)     │              │  • iOS App Client        │  │
-│  └──────┬───────┘              │  • Identity Pool         │  │
-│         │ S3 Events            └────────────┬─────────────┘  │
-│         ▼                                    │ JWT Auth       │
-│  ┌─────────────────────┐                    ▼                │
-│  │   EventBridge       │       ┌──────────────────────────┐  │
-│  │  • markdown-events  │       │    API Gateway (HTTP)    │  │
-│  │  • daily-schedule   │       │  • JWT Authorizer        │  │
-│  │  • weekly-schedule  │       │  • CORS enabled          │  │
-│  └───┬─────────────────┘       │  • 25 REST endpoints     │  │
-│      │                          └────────────┬─────────────┘  │
-│      ▼                                       │                │
-│  ┌────────────────────┐       ┌──────────────▼─────────────┐ │
-│  │ Processing Lambdas │       │      API Lambdas           │ │
-│  │ • classify-doc     │       │ • api-list-documents       │ │
-│  │ • extract-entity   │       │ • api-get-document         │ │
-│  │ • extract-metadata │       │ • api-search               │ │
-│  │ • daily-summary    │       │ • api-list-tags            │ │
-│  │ • weekly-report    │       │ • api-documents-by-tag     │ │
-│  │ • update-index     │       │ • api-list-classifications │ │
-│  │ • bulk-reclassify  │       │ • api-list-summaries       │ │
-│  │ • delete-document  │       │ • api-list-reports         │ │
-│  │ • index-embeddings │       │ • api-update-classification│ │
-│  │ • persistent-search│       │ • api-bulk-reclassify      │ │
-│  │ • notification-disp│       │ • api-create/update/delete │ │
-│  └─────────┬──────────┘       │ • api-graph-data           │ │
-│            │                   │ • api-search-monitors      │ │
-│            │                   │ • api-device-tokens        │ │
-│            │                   │ • api-notifications        │ │
-│            │                   └──────────────┬─────────────┘ │
-│            │                                  │                │
-│            ▼                                  ▼                │
-│  ┌──────────────────────────────────────────────────────────┐│
-│  │                    DynamoDB Table                         ││
-│  │  PK: doc#path | tag#name | entity#type#name               ││
-│  │  SK: metadata | doc#path | mention#doc                    ││
-│  │  GSI: tag-index, classification-index, entity-index       ││
-│  └──────────────────────────────────────────────────────────┘│
-│                                                               │
-│  ┌──────────────────────────────────────────────────────────┐│
-│  │         Amazon Bedrock                                    ││
-│  │  • Claude Haiku 4.5 (classify, extract)                   ││
-│  │  • Claude Sonnet 4.5 (summaries, reports)                ││
-│  └──────────────────────────────────────────────────────────┘│
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-         │
-         │ rclone bisync
-         ▼
-┌─────────────────┐
-│  Local Vault    │
-│  (_agent/ dir)  │
-└─────────────────┘
+```mermaid
+graph TD
+    Vault[Local Vault<br/>macOS] <-->|rclone bisync<br/>every 5 min| S3
+    iOS[iOS App<br/>SwiftUI] -->|HTTPS| APIGW
+
+    subgraph AWS[AWS Cloud]
+        S3[S3 Bucket<br/>Source of Truth]
+        Cognito[Amazon Cognito<br/>User Pool · App Client · Identity Pool]
+
+        S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
+        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 25 endpoints]
+
+        EB --> ProcLambda[Processing Lambdas<br/>classify-doc · extract-entity · extract-metadata<br/>daily-summary · weekly-report · update-index<br/>bulk-reclassify · delete-document · index-embeddings<br/>persistent-search · notification-dispatch]
+
+        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications]
+
+        ProcLambda --> DynamoDB[DynamoDB Table<br/>PK: doc#path · tag#name · entity#type#name<br/>SK: metadata · doc#path · mention#doc<br/>GSI: tag-index · classification-index · entity-index]
+        APILambda --> DynamoDB
+        ProcLambda --> S3
+
+        ProcLambda --> Bedrock[Amazon Bedrock<br/>Claude Haiku 4.5 — classify, extract<br/>Claude Sonnet 4.5 — summaries, reports]
+    end
 ```
 
 ## Components

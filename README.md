@@ -14,16 +14,20 @@ An intelligent, serverless AWS system for automating Personal Knowledge Manageme
 
 ## Architecture
 
-```
-Local Vault ↔ rclone ↔ S3 → EventBridge → Lambda → Bedrock
-                        │                    │
-                        └────────────────────┴──→ DynamoDB
-                                                  │
-Agent Outputs ← rclone ←────────────────────────┘
+```mermaid
+graph LR
+    subgraph Processing Pipeline
+        Vault[Local Vault] <-->|rclone| S3
+        S3 --> EventBridge --> Lambda --> Bedrock
+        Lambda --> DynamoDB
+        Lambda -->|_agent/ outputs| S3
+    end
 
-iOS App → API Gateway (JWT) → Lambda → DynamoDB/S3
-              ↑
-         Cognito Auth
+    subgraph Mobile API
+        iOS[iOS App] --> APIGW[API Gateway - JWT]
+        Cognito[Cognito Auth] --> APIGW
+        APIGW --> Lambda2[Lambda] --> DB2[DynamoDB/S3]
+    end
 ```
 
 **AWS Services Used:**
