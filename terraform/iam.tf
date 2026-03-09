@@ -981,7 +981,42 @@ resource "aws_iam_role_policy" "github_actions_sns" {
           "sns:TagResource",
           "sns:UntagResource"
         ]
-        Resource = "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:app/APNS*/${var.project_name}-*"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage Lambda event source mappings
+resource "aws_iam_role_policy" "github_actions_lambda_event_source" {
+  for_each = local.github_oidc
+
+  name = "lambda-event-source-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "LambdaEventSourceMappingManagement"
+        Effect = "Allow"
+        Action = [
+          "lambda:CreateEventSourceMapping",
+          "lambda:DeleteEventSourceMapping",
+          "lambda:GetEventSourceMapping",
+          "lambda:UpdateEventSourceMapping",
+          "lambda:ListEventSourceMappings"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DynamoDBStreamAccess"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:DescribeStream",
+          "dynamodb:ListStreams"
+        ]
+        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodb_table_name}/stream/*"
       }
     ]
   })
