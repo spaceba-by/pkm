@@ -48,7 +48,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
     func requestAuthorization() async throws -> Bool {
         let center = UNUserNotificationCenter.current()
         let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
-        Self.logger.info("Notification authorization granted: \(granted)")
+        Self.logger.info("Notification authorization granted: \(granted, privacy: .public)")
         if granted {
             UIApplication.shared.registerForRemoteNotifications()
             Self.logger.info("Called registerForRemoteNotifications")
@@ -66,7 +66,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
     /// Called when APNs returns a device token
     func didRegisterForRemoteNotifications(deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        Self.logger.info("Received APNs device token (\(tokenString.prefix(8))...)")
+        Self.logger.info("Received APNs device token")
         self.deviceToken = tokenString
         registrationError = nil
         Task {
@@ -76,7 +76,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
 
     /// Called when APNs registration fails
     func didFailToRegisterForRemoteNotifications(error: Error) {
-        Self.logger.error("APNs registration failed: \(error.localizedDescription)")
+        Self.logger.error("APNs registration failed: \(error.localizedDescription, privacy: .public)")
         registrationError = "APNs registration failed: \(error.localizedDescription)"
         deviceToken = nil
         isRegistered = false
@@ -102,7 +102,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
             registrationError = nil
             Self.logger.info("Device token registered with backend successfully")
         } catch {
-            Self.logger.error("Backend device registration failed: \(error.localizedDescription)")
+            Self.logger.error("Backend device registration failed: \(error.localizedDescription, privacy: .public)")
             registrationError = "Backend registration failed: \(error.localizedDescription)"
             isRegistered = false
         }
@@ -118,7 +118,7 @@ final class NotificationService: NSObject, NotificationServiceProtocol, Observab
             deviceToken = nil
             registeredDeviceId = nil
         } catch {
-            print("Failed to unregister device: \(error.localizedDescription)")
+            Self.logger.error("Failed to unregister device: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
