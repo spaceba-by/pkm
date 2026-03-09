@@ -78,10 +78,12 @@
 
 (defn handler
   "Lambda handler for DynamoDB Stream trigger.
-   DynamoDB Stream events contain Records directly in the event (not in a body)."
+   The bblf runtime wraps the raw Lambda event as a JSON string in :body."
   [request]
   (try
-    (let [event (json/parse-string (:body request) true)
+    (let [event (if (string? (:body request))
+                  (json/parse-string (:body request) true)
+                  request)
           records (or (:Records event) [])]
 
       (println "Processing" (count records) "DynamoDB Stream records")
