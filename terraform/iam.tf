@@ -958,3 +958,31 @@ resource "aws_iam_role_policy" "github_actions_apigateway" {
     ]
   })
 }
+
+# Policy for GitHub Actions to manage SNS (push notifications)
+resource "aws_iam_role_policy" "github_actions_sns" {
+  for_each = local.github_oidc
+
+  name = "sns-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SNSPlatformApplicationManagement"
+        Effect = "Allow"
+        Action = [
+          "sns:CreatePlatformApplication",
+          "sns:GetPlatformApplicationAttributes",
+          "sns:SetPlatformApplicationAttributes",
+          "sns:DeletePlatformApplication",
+          "sns:ListPlatformApplications",
+          "sns:TagResource",
+          "sns:UntagResource"
+        ]
+        Resource = "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:app/APNS*/${var.project_name}-*"
+      }
+    ]
+  })
+}
