@@ -3,6 +3,7 @@ import SwiftUI
 /// Settings screen with user info, cache management, display preferences, and sign out
 struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
+    @ObservedObject private var notificationService = NotificationService.shared
     @AppStorage("compactListMode")
     private var compactListMode = false
     @AppStorage("showDocumentPreviews")
@@ -60,6 +61,25 @@ struct SettingsView: View {
                     .disabled(viewModel.isSigningOut)
                     .accessibilityHint("Signs out of your account")
                     .accessibilityIdentifier("SignOutButton")
+                }
+
+                Section("Notifications") {
+                    HStack {
+                        Text("Push Notifications")
+                        Spacer()
+                        if notificationService.isRegistered {
+                            Label("Registered", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .labelStyle(.titleAndIcon)
+                        } else if let error = notificationService.registrationError {
+                            Text(error)
+                                .foregroundStyle(.red)
+                                .font(.caption)
+                        } else {
+                            Text("Not registered")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section("About") {
