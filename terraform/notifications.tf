@@ -1,5 +1,5 @@
 # =============================================================================
-# Push Notifications Infrastructure (Task 0021)
+# Push Notifications Infrastructure
 # SNS Platform Application, Lambda functions, DynamoDB Stream, API routes
 # =============================================================================
 
