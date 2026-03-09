@@ -28,6 +28,11 @@ struct NotificationListResponse: Codable, Sendable {
     let count: Int
 }
 
+/// Response from GET /insights/unviewed-count
+struct UnviewedCountResponse: Codable, Sendable {
+    let unviewedCount: Int
+}
+
 /// Request body for POST /devices
 struct DeviceRegistrationRequest: Codable, Sendable {
     let deviceToken: String

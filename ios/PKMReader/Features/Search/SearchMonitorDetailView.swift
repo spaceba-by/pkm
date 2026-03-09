@@ -2,11 +2,13 @@ import SwiftUI
 
 /// Detail view for a single search monitor, showing config and summaries
 struct SearchMonitorDetailView: View {
+    let apiClient: any APIClientProtocol
     @StateObject private var viewModel: SearchMonitorDetailViewModel
     @State private var showingEditForm = false
     @State private var actionError: Error?
 
     init(monitorId: String, apiClient: any APIClientProtocol) {
+        self.apiClient = apiClient
         _viewModel = StateObject(
             wrappedValue: SearchMonitorDetailViewModel(monitorId: monitorId, apiClient: apiClient)
         )
@@ -141,7 +143,11 @@ struct SearchMonitorDetailView: View {
             } else {
                 ForEach(viewModel.summaries) { summary in
                     NavigationLink {
-                        SearchSummaryView(summary: summary)
+                        SearchSummaryView(
+                            summary: summary,
+                            monitorId: viewModel.monitorId,
+                            apiClient: apiClient
+                        )
                     } label: {
                         SearchSummaryRow(summary: summary)
                     }
@@ -159,9 +165,15 @@ struct SearchSummaryRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
+                if !summary.viewed {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 8, height: 8)
+                }
+
                 Text(formatTimestamp(summary.timestamp))
                     .font(.subheadline)
-                    .fontWeight(.medium)
+                    .fontWeight(!summary.viewed ? .bold : .medium)
 
                 Spacer()
 

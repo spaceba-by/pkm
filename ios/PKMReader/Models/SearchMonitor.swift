@@ -33,6 +33,9 @@ struct SearchSummary: Identifiable, Codable, Hashable, Sendable {
     let removedItems: [String]
     let analysis: String?
 
+    /// Whether the user has viewed this search summary (computed server-side from viewed_at vs modified_at)
+    var viewed: Bool = true
+
     var id: String {
         timestamp
     }

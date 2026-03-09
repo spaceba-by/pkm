@@ -57,6 +57,21 @@ struct InsightsView: View {
                 }
             }
             .navigationTitle("Insights")
+            .toolbar {
+                if NotificationHandler.shared.unreadCount > 0 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            Task {
+                                await NotificationHandler.shared.markAllAsViewed()
+                                await viewModel.refresh()
+                            }
+                        } label: {
+                            Text("Mark All Read")
+                        }
+                        .accessibilityIdentifier("MarkAllReadButton")
+                    }
+                }
+            }
             .navigationDestination(item: $selectedSummary) { summary in
                 SummaryDetailView(summary: summary, apiClient: apiClient)
             }

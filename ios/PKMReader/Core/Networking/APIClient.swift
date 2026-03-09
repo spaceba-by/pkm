@@ -312,6 +312,34 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         try await performPutRequestWithRetry(url: url, body: [:])
     }
 
+    // MARK: - Insight Viewed Status
+
+    func markSummaryViewed(date: String) async throws {
+        let url = baseURL.appending(path: APIEndpoints.markSummaryViewed(date: date))
+        try await performPutRequestWithRetry(url: url, body: [:])
+    }
+
+    func markReportViewed(week: String) async throws {
+        let url = baseURL.appending(path: APIEndpoints.markReportViewed(week: week))
+        try await performPutRequestWithRetry(url: url, body: [:])
+    }
+
+    func markSearchSummaryViewed(monitorId: String, timestamp: String) async throws {
+        let url = baseURL.appending(path: APIEndpoints.markSearchSummaryViewed(monitorId: monitorId, timestamp: timestamp))
+        try await performPutRequestWithRetry(url: url, body: [:])
+    }
+
+    func markAllInsightsViewed() async throws {
+        let url = baseURL.appending(path: APIEndpoints.markAllViewed)
+        try await performPutRequestWithRetry(url: url, body: [:])
+    }
+
+    func getUnviewedCount() async throws -> Int {
+        let url = baseURL.appending(path: APIEndpoints.unviewedCount)
+        let response: UnviewedCountResponse = try await performRequestWithRetry(url: url)
+        return response.unviewedCount
+    }
+
     // MARK: - Private
 
     private func performPostRequestWithRetry<T: Decodable>(url: URL, body: [String: String]) async throws -> T {

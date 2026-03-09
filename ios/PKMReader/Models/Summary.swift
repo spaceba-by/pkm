@@ -11,9 +11,13 @@ struct Summary: Identifiable, Codable, Hashable, Sendable {
     /// When the summary was last modified (optional, not always returned by API)
     let modified: Date?
 
-    init(id: String, date: String, modified: Date? = nil) {
+    /// Whether the user has viewed this summary (computed server-side from viewed_at vs modified_at)
+    let viewed: Bool
+
+    init(id: String, date: String, modified: Date? = nil, viewed: Bool = true) {
         self.id = id
         self.date = date
         self.modified = modified
+        self.viewed = viewed
     }
 }

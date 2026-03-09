@@ -31,7 +31,7 @@
 
 (defn- format-summary
   "Format a summary record for API response"
-  [summary]
+  [summary viewed-set]
   {:timestamp (:timestamp summary)
    :summary (:summary_text summary)
    :topics (or (:topics summary) [])
@@ -40,7 +40,8 @@
    :newItems (or (:new_items summary) [])
    :changedItems (or (:changed_items summary) [])
    :removedItems (or (:removed_items summary) [])
-   :analysis (:analysis summary)})
+   :analysis (:analysis summary)
+   :viewed (boolean (get viewed-set (:timestamp summary)))})
 
 (defn handler
   "Lambda handler for GET /searches/{id}"
@@ -71,7 +72,22 @@
                                                            ":prefix" (str "search_monitor#" monitor-id "#summary#")}
                                        :scan-index-forward false
                                        :limit summary-limit)
-                  sorted-summaries (mapv format-summary summaries)]
+                  ;; Build set of viewed timestamps from insight records
+                  insight-items (ddb/query ddb-table
+                                           :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                                           :expr-attr-values {":pk" "insight"
+                                                               ":prefix" (str "search#" monitor-id "#")})
+                  viewed-set (into #{}
+                                   (comp
+                                    (filter (fn [item]
+                                              (let [viewed-at (:viewed_at item)
+                                                    modified-at (:modified_at item)]
+                                                (and (some? viewed-at)
+                                                     (not (pos? (compare modified-at viewed-at)))))))
+                                    (map (fn [item]
+                                           (subs (:SK item) (+ (count "search#") (count monitor-id) 1)))))
+                                   insight-items)
+                  sorted-summaries (mapv #(format-summary % viewed-set) summaries)]
 
               (r/ok {:monitor (format-monitor monitor)
                      :summaries sorted-summaries

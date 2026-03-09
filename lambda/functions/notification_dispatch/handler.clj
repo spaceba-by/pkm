@@ -22,20 +22,23 @@
              :expr-attr-values {":pk" user-pk
                                  ":prefix" "device_token#"}))
 
-(defn- get-unread-count
-  "Get unread notification count for a user"
-  [user-pk]
-  (let [results (ddb/query ddb-table
-                           :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                           :expr-attr-values {":pk" user-pk
-                                               ":prefix" "notification#pending#"}
-                           :select "COUNT")]
-    (or results 0)))
+(defn- get-unviewed-insight-count
+  "Get count of unviewed insight records (summaries, reports, search updates)"
+  []
+  (let [items (ddb/query ddb-table
+                         :key-condition-expr "PK = :pk"
+                         :expr-attr-values {":pk" "insight"})]
+    (count (filter (fn [item]
+                     (let [viewed-at (:viewed_at item)
+                           modified-at (:modified_at item)]
+                       (or (nil? viewed-at)
+                           (pos? (compare modified-at viewed-at)))))
+                   items))))
 
 (defn- build-apns-payload
-  "Build APNs notification payload with dynamic badge count"
+  "Build APNs notification payload with dynamic badge count from unviewed insights"
   [notification]
-  (let [badge-count (try (get-unread-count (:pk notification))
+  (let [badge-count (try (get-unviewed-insight-count)
                          (catch Exception _ 1))]
     (nu/build-apns-payload notification badge-count)))
 

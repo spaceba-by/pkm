@@ -1,47 +1,69 @@
 (ns handler
-  "API Lambda: List weekly reports from _agent directory"
+  "API Lambda: List weekly reports with viewed status.
+   Queries DynamoDB insight records first, falls back to S3 listing."
   (:require [aws.s3 :as s3]
+            [aws.dynamodb :as ddb]
             [api.response :as r]
             [cheshire.core :as json]
             [clojure.string :as str]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
+(def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def reports-prefix "_agent/reports/weekly/")
 (def default-limit 12)
 (def max-limit 52)
 
-(defn list-report-files
-  "List weekly report files from S3.
-   Note: S3 list-objects has a 1000 object limit per request. This is acceptable
-   for weekly reports as it would take 19+ years to exceed this limit.
-   If pagination is needed in the future, implement continuation tokens."
-  []
-  (try
-    (s3/list-objects s3-bucket reports-prefix)
-    (catch Exception e
-      (println "Error listing reports:" (ex-message e))
-      [])))
+(defn- is-viewed?
+  "Check if an insight record has been viewed (viewed_at >= modified_at)"
+  [item]
+  (let [viewed-at (:viewed_at item)
+        modified-at (:modified_at item)]
+    (and (some? viewed-at)
+         (not (pos? (compare modified-at viewed-at))))))
 
-(defn parse-report-key
-  "Extract week date from report file path"
-  [key]
-  (when (and key (str/ends-with? key ".md"))
-    (let [filename (last (str/split key #"/"))
-          week-date (str/replace filename ".md" "")]
-      {:id key
-       :weekOf week-date})))
-
-(defn list-reports
-  "List weekly report files, sorted by date descending"
+(defn- list-from-dynamodb
+  "List reports from DynamoDB insight records with viewed status"
   [limit]
-  (let [objects (list-report-files)]
-    (->> objects
-         (filter #(str/ends-with? (str %) ".md"))
-         (map parse-report-key)
-         (filter some?)
-         (sort-by :weekOf #(compare %2 %1))  ; Most recent first
+  (let [items (ddb/query ddb-table
+                         :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                         :expr-attr-values {":pk" "insight"
+                                             ":prefix" "report#"}
+                         :scan-index-forward false)]
+    (->> items
+         (map (fn [item]
+                {:id (:s3_key item)
+                 :weekOf (subs (:SK item) (count "report#"))
+                 :viewed (is-viewed? item)}))
+         (sort-by :weekOf #(compare %2 %1))
          (take (min limit max-limit))
          (vec))))
+
+(defn- list-from-s3
+  "Fallback: list reports from S3 (pre-migration, all treated as viewed)"
+  [limit]
+  (let [objects (try
+                  (s3/list-objects s3-bucket reports-prefix)
+                  (catch Exception e
+                    (println "Error listing reports from S3:" (ex-message e))
+                    []))]
+    (->> objects
+         (filter #(str/ends-with? (str %) ".md"))
+         (map (fn [key]
+                (let [filename (last (str/split key #"/"))
+                      week-date (str/replace filename ".md" "")]
+                  {:id key :weekOf week-date :viewed true})))
+         (filter #(some? (:weekOf %)))
+         (sort-by :weekOf #(compare %2 %1))
+         (take (min limit max-limit))
+         (vec))))
+
+(defn list-reports
+  "List weekly reports, preferring DynamoDB records, falling back to S3"
+  [limit]
+  (let [ddb-results (list-from-dynamodb limit)]
+    (if (seq ddb-results)
+      ddb-results
+      (list-from-s3 limit))))
 
 (defn handler
   "Lambda handler for GET /reports"

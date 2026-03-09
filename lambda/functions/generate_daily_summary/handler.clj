@@ -197,6 +197,17 @@
 
                    (println "Created daily summary:" summary-key)
 
+                   ;; Write insight record for viewed-status tracking
+                   (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))]
+                     (ddb/put-item ddb-table
+                                   {:PK "insight"
+                                    :SK (str "summary#" date-str)
+                                    :type "daily_summary"
+                                    :title (str "Daily Summary: " date-str)
+                                    :modified_at now-ts
+                                    :s3_key summary-key
+                                    :doc_count (count documents)}))
+
                    ;; Create notification for daily summary
                    (create-summary-notification date-str (count documents))
 

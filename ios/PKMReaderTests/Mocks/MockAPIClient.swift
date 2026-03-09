@@ -373,6 +373,56 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try markNotificationReadResult.get()
     }
 
+    // MARK: - Insight Viewed Status
+
+    var markSummaryViewedResult: Result<Void, Error> = .success(())
+    private(set) var markSummaryViewedCallCount = 0
+    private(set) var lastMarkSummaryViewedDate: String?
+
+    var markReportViewedResult: Result<Void, Error> = .success(())
+    private(set) var markReportViewedCallCount = 0
+    private(set) var lastMarkReportViewedWeek: String?
+
+    var markSearchSummaryViewedResult: Result<Void, Error> = .success(())
+    private(set) var markSearchSummaryViewedCallCount = 0
+    private(set) var lastMarkSearchSummaryViewedMonitorId: String?
+    private(set) var lastMarkSearchSummaryViewedTimestamp: String?
+
+    var markAllInsightsViewedResult: Result<Void, Error> = .success(())
+    private(set) var markAllInsightsViewedCallCount = 0
+
+    var getUnviewedCountResult: Result<Int, Error> = .success(0)
+    private(set) var getUnviewedCountCallCount = 0
+
+    func markSummaryViewed(date: String) async throws {
+        markSummaryViewedCallCount += 1
+        lastMarkSummaryViewedDate = date
+        try markSummaryViewedResult.get()
+    }
+
+    func markReportViewed(week: String) async throws {
+        markReportViewedCallCount += 1
+        lastMarkReportViewedWeek = week
+        try markReportViewedResult.get()
+    }
+
+    func markSearchSummaryViewed(monitorId: String, timestamp: String) async throws {
+        markSearchSummaryViewedCallCount += 1
+        lastMarkSearchSummaryViewedMonitorId = monitorId
+        lastMarkSearchSummaryViewedTimestamp = timestamp
+        try markSearchSummaryViewedResult.get()
+    }
+
+    func markAllInsightsViewed() async throws {
+        markAllInsightsViewedCallCount += 1
+        try markAllInsightsViewedResult.get()
+    }
+
+    func getUnviewedCount() async throws -> Int {
+        getUnviewedCountCallCount += 1
+        return try getUnviewedCountResult.get()
+    }
+
     // MARK: - Test Helpers
 
     /// Reset all call counts and captured values
@@ -420,5 +470,14 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         listNotificationsCallCount = 0
         markNotificationReadCallCount = 0
         lastMarkNotificationReadId = nil
+        markSummaryViewedCallCount = 0
+        lastMarkSummaryViewedDate = nil
+        markReportViewedCallCount = 0
+        lastMarkReportViewedWeek = nil
+        markSearchSummaryViewedCallCount = 0
+        lastMarkSearchSummaryViewedMonitorId = nil
+        lastMarkSearchSummaryViewedTimestamp = nil
+        markAllInsightsViewedCallCount = 0
+        getUnviewedCountCallCount = 0
     }
 }

@@ -5,6 +5,12 @@ import XCTest
 
 @MainActor
 final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
+    private var mockAPIClient: MockAPIClient!
+
+    override func setUp() async throws {
+        try await super.setUp()
+        mockAPIClient = MockAPIClient()
+    }
     func test_fullSummary() {
         let summary = SearchSummary(
             timestamp: "2026-02-20T10:00:00Z",
@@ -30,7 +36,7 @@ final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
         )
 
         let view = NavigationStack {
-            SearchSummaryView(summary: summary)
+            SearchSummaryView(summary: summary, monitorId: "mon-1", apiClient: mockAPIClient)
         }
         assertDeviceSnapshot(of: view)
     }
@@ -49,7 +55,7 @@ final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
         )
 
         let view = NavigationStack {
-            SearchSummaryView(summary: summary)
+            SearchSummaryView(summary: summary, monitorId: "mon-1", apiClient: mockAPIClient)
         }
         assertDeviceSnapshot(of: view)
     }
@@ -68,7 +74,7 @@ final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
         )
 
         let view = NavigationStack {
-            SearchSummaryView(summary: summary)
+            SearchSummaryView(summary: summary, monitorId: "mon-1", apiClient: mockAPIClient)
         }
         assertDeviceSnapshot(of: view)
     }
