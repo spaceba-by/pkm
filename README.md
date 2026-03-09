@@ -19,9 +19,8 @@ graph LR
     subgraph Processing Pipeline
         Vault[Local Vault] <-->|rclone| S3
         S3 --> EventBridge --> Lambda --> Bedrock
-        S3 --> DynamoDB
         Lambda --> DynamoDB
-        DynamoDB -->|rclone| Outputs[Agent Outputs]
+        Lambda -->|_agent/ outputs| S3
     end
 
     subgraph Mobile API

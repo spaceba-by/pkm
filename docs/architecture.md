@@ -8,8 +8,8 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 ```mermaid
 graph TD
-    Vault[Local Vault<br/>macOS] -->|rclone bisync<br/>every 5 min| S3
-    iOS[iOS App<br/>SwiftUI] -->|HTTPS| Cognito
+    Vault[Local Vault<br/>macOS] <-->|rclone bisync<br/>every 5 min| S3
+    iOS[iOS App<br/>SwiftUI] -->|HTTPS| APIGW
 
     subgraph AWS[AWS Cloud]
         S3[S3 Bucket<br/>Source of Truth]
@@ -24,11 +24,10 @@ graph TD
 
         ProcLambda --> DynamoDB[DynamoDB Table<br/>PK: doc#path · tag#name · entity#type#name<br/>SK: metadata · doc#path · mention#doc<br/>GSI: tag-index · classification-index · entity-index]
         APILambda --> DynamoDB
+        ProcLambda --> S3
 
         ProcLambda --> Bedrock[Amazon Bedrock<br/>Claude Haiku 4.5 — classify, extract<br/>Claude Sonnet 4.5 — summaries, reports]
     end
-
-    DynamoDB -->|rclone bisync| VaultOut[Local Vault<br/>_agent/ dir]
 ```
 
 ## Components

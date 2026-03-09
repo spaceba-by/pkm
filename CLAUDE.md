@@ -63,10 +63,10 @@ aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 
 ```mermaid
 graph LR
-    Vault[Local Vault] -->|rclone 5min sync| S3
+    Vault[Local Vault] <-->|rclone 5min sync| S3
     S3 --> EventBridge --> Lambda --> Bedrock[Bedrock - Claude]
     Lambda --> DynamoDB
-    DynamoDB -->|rclone| Outputs[_agent/ outputs]
+    Lambda -->|_agent/ outputs| S3
 ```
 
 **31 functions** in `lambda/functions/` (all Babashka/Clojure): 11 processing + 19 API + 1 CLI utility (`index_embeddings`). See `docs/architecture.md` for the complete function list with endpoints, memory, and timeout details.

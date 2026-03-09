@@ -21,8 +21,7 @@ graph TD
     Vault[Local Vault] <-->|rclone bisync| S3[S3 Bucket]
     S3 --> EventBridge
     EventBridge --> Lambda[Lambda Processing]
-    Lambda --> Outputs[_agent/ outputs]
-    Outputs -->|rclone bisync| Vault
+    Lambda -->|_agent/ outputs| S3
 ```
 
 ### Sync Frequency
