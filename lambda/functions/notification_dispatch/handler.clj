@@ -53,7 +53,9 @@
           (sns/publish-to-endpoint endpoint-arn message)
           (println "Sent notification to device:" (:device_id device)))
         (catch Exception e
-          (println "Error sending to device" (:device_id device) ":" (ex-message e)))))))
+          (println "Error sending to device" (:device_id device) ":" (ex-message e))
+          (when-let [data (ex-data e)]
+            (println "Error details:" (pr-str data))))))))
 
 (defn process-record
   "Process a single DynamoDB Stream record"
@@ -79,7 +81,8 @@
    DynamoDB Stream events contain Records directly in the event (not in a body)."
   [request]
   (try
-    (let [records (or (:Records request) (get request "Records") [])]
+    (let [event (json/parse-string (:body request) true)
+          records (or (:Records event) [])]
 
       (println "Processing" (count records) "DynamoDB Stream records")
 
