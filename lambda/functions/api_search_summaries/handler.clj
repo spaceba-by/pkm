@@ -13,7 +13,7 @@
 
 (defn- format-summary
   "Format a summary record for API response"
-  [summary]
+  [summary viewed-set]
   {:timestamp (:timestamp summary)
    :summary (:summary_text summary)
    :topics (or (:topics summary) [])
@@ -22,7 +22,8 @@
    :newItems (or (:new_items summary) [])
    :changedItems (or (:changed_items summary) [])
    :removedItems (or (:removed_items summary) [])
-   :analysis (:analysis summary)})
+   :analysis (:analysis summary)
+   :viewed (boolean (get viewed-set (:timestamp summary)))})
 
 (defn list-summaries
   "List summaries for a monitor"
@@ -32,10 +33,25 @@
                                :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
                                :expr-attr-values {":pk" pk
                                                    ":prefix" (str "search_monitor#" monitor-id "#summary#")})
+        ;; Build set of viewed timestamps from insight records
+        insight-items (ddb/query-all ddb-table
+                                      :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                                      :expr-attr-values {":pk" "insight"
+                                                          ":prefix" (str "search#" monitor-id "#")})
+        viewed-set (into #{}
+                         (comp
+                          (filter (fn [item]
+                                    (let [viewed-at (:viewed_at item)
+                                          modified-at (:modified_at item)]
+                                      (and (some? viewed-at)
+                                           (not (pos? (compare modified-at viewed-at)))))))
+                          (map (fn [item]
+                                 (subs (:SK item) (+ (count "search#") (count monitor-id) 1)))))
+                         insight-items)
         sorted (->> results
                     (sort-by :timestamp #(compare %2 %1))
                     (take limit)
-                    (mapv format-summary))]
+                    (mapv #(format-summary % viewed-set)))]
     (r/ok {:summaries sorted
            :count (count sorted)
            :monitorId monitor-id})))
@@ -48,7 +64,11 @@
         item (ddb/get-item ddb-table {:PK pk :SK sk})]
     (if (nil? item)
       (r/not-found (str "Summary not found for timestamp: " timestamp))
-      (r/ok (format-summary item)))))
+      (let [insight-sk (str "search#" monitor-id "#" timestamp)
+            insight (ddb/get-item ddb-table {:PK "insight" :SK insight-sk})
+            viewed? (and (some? (:viewed_at insight))
+                         (not (pos? (compare (:modified_at insight) (:viewed_at insight)))))]
+        (r/ok (format-summary item (if viewed? #{timestamp} #{})))))))
 
 (defn handler
   "Lambda handler for search summaries API"

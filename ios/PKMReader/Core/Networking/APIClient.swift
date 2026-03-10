@@ -325,7 +325,10 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
     }
 
     func markSearchSummaryViewed(monitorId: String, timestamp: String) async throws {
-        let url = baseURL.appending(path: APIEndpoints.markSearchSummaryViewed(monitorId: monitorId, timestamp: timestamp))
+        let path = APIEndpoints.markSearchSummaryViewed(
+            monitorId: monitorId, timestamp: timestamp
+        )
+        let url = baseURL.appending(path: path)
         try await performPutRequestWithRetry(url: url, body: [:])
     }
 

@@ -425,6 +425,7 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     // MARK: - Test Helpers
 
+    // swiftlint:disable function_body_length
     /// Reset all call counts and captured values
     func reset() {
         listDocumentsCallCount = 0
@@ -480,4 +481,5 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         markAllInsightsViewedCallCount = 0
         getUnviewedCountCallCount = 0
     }
+    // swiftlint:enable function_body_length
 }

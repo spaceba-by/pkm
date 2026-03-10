@@ -5,12 +5,14 @@ import XCTest
 
 @MainActor
 final class SearchSummaryViewSnapshotTests: SnapshotTestCase {
+    // swiftlint:disable:next implicitly_unwrapped_optional
     private var mockAPIClient: MockAPIClient!
 
     override func setUp() async throws {
         try await super.setUp()
         mockAPIClient = MockAPIClient()
     }
+
     func test_fullSummary() {
         let summary = SearchSummary(
             timestamp: "2026-02-20T10:00:00Z",

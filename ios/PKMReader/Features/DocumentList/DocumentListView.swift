@@ -356,4 +356,12 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     }
 
     func markNotificationRead(id _: String) async throws {}
+    func markSummaryViewed(date _: String) async throws {}
+    func markReportViewed(week _: String) async throws {}
+    func markSearchSummaryViewed(monitorId _: String, timestamp _: String) async throws {}
+    func markAllInsightsViewed() async throws {}
+
+    func getUnviewedCount() async throws -> Int {
+        0
+    }
 }
