@@ -132,6 +132,23 @@ protocol APIClientProtocol: Sendable {
 
     /// Mark a notification as read
     func markNotificationRead(id: String) async throws
+
+    // MARK: - Insight Viewed Status
+
+    /// Mark a daily summary as viewed
+    func markSummaryViewed(date: String) async throws
+
+    /// Mark a weekly report as viewed
+    func markReportViewed(week: String) async throws
+
+    /// Mark a search summary as viewed
+    func markSearchSummaryViewed(monitorId: String, timestamp: String) async throws
+
+    /// Mark all insights as viewed
+    func markAllInsightsViewed() async throws
+
+    /// Get the count of unviewed insights (for badge display)
+    func getUnviewedCount() async throws -> Int
 }
 
 extension APIClientProtocol {

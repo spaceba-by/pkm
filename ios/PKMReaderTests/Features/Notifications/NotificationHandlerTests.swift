@@ -70,26 +70,16 @@ final class NotificationHandlerTests: XCTestCase {
     // MARK: - refreshUnreadCount
 
     func test_refreshUnreadCount_success_updatesCount() async {
-        let notifications = [
-            makeNotification(id: "1", read: false),
-            makeNotification(id: "2", type: .weeklyReport, read: true),
-            makeNotification(id: "3", type: .searchMonitor, read: false),
-        ]
-        mockAPIClient.listNotificationsResult = .success(
-            NotificationListResponse(notifications: notifications, count: 3)
-        )
+        mockAPIClient.getUnviewedCountResult = .success(3)
 
         await sut.refreshUnreadCount()
 
-        XCTAssertEqual(sut.unreadCount, 2)
-        XCTAssertEqual(mockAPIClient.listNotificationsCallCount, 1)
+        XCTAssertEqual(sut.unreadCount, 3)
+        XCTAssertEqual(mockAPIClient.getUnviewedCountCallCount, 1)
     }
 
     func test_refreshUnreadCount_allRead_countsZero() async {
-        let notifications = [makeNotification(id: "1", read: true)]
-        mockAPIClient.listNotificationsResult = .success(
-            NotificationListResponse(notifications: notifications, count: 1)
-        )
+        mockAPIClient.getUnviewedCountResult = .success(0)
 
         await sut.refreshUnreadCount()
 
@@ -97,7 +87,7 @@ final class NotificationHandlerTests: XCTestCase {
     }
 
     func test_refreshUnreadCount_failure_keepsCurrentCount() async {
-        mockAPIClient.listNotificationsResult = .failure(APIError.invalidResponse)
+        mockAPIClient.getUnviewedCountResult = .failure(APIError.invalidResponse)
 
         await sut.refreshUnreadCount()
 
@@ -107,40 +97,41 @@ final class NotificationHandlerTests: XCTestCase {
     func test_refreshUnreadCount_withoutAPIClient_doesNothing() async {
         let handler = NotificationHandler(apiClient: mockAPIClient)
         handler.configure(apiClient: mockAPIClient)
+        mockAPIClient.getUnviewedCountResult = .success(0)
         await handler.refreshUnreadCount()
         XCTAssertEqual(handler.unreadCount, 0)
     }
 
     // MARK: - markAsRead
 
-    func test_markAsRead_success_decrementsUnreadCount() async {
-        let notifications = [makeNotification(id: "1", read: false)]
-        mockAPIClient.listNotificationsResult = .success(
-            NotificationListResponse(notifications: notifications, count: 1)
-        )
-        await sut.refreshUnreadCount()
-        XCTAssertEqual(sut.unreadCount, 1)
-
+    func test_markAsRead_success_callsAPI() async {
         await sut.markAsRead(notificationId: "1")
 
-        XCTAssertEqual(sut.unreadCount, 0)
         XCTAssertEqual(mockAPIClient.markNotificationReadCallCount, 1)
         XCTAssertEqual(mockAPIClient.lastMarkNotificationReadId, "1")
     }
 
-    func test_markAsRead_doesNotGoNegative() async {
-        XCTAssertEqual(sut.unreadCount, 0)
+    func test_markAsRead_doesNotAffectUnreadCount() async {
+        mockAPIClient.getUnviewedCountResult = .success(2)
+        await sut.refreshUnreadCount()
+        XCTAssertEqual(sut.unreadCount, 2)
 
         await sut.markAsRead(notificationId: "1")
+
+        // markAsRead is for notifications, not insight viewed count
+        XCTAssertEqual(sut.unreadCount, 2)
+    }
+
+    func test_markAsRead_doesNotGoNegative() {
+        XCTAssertEqual(sut.unreadCount, 0)
+
+        sut.decrementUnreadCount()
 
         XCTAssertEqual(sut.unreadCount, 0)
     }
 
     func test_markAsRead_failure_keepsCurrentCount() async {
-        let notifications = [makeNotification(id: "1", read: false)]
-        mockAPIClient.listNotificationsResult = .success(
-            NotificationListResponse(notifications: notifications, count: 1)
-        )
+        mockAPIClient.getUnviewedCountResult = .success(1)
         await sut.refreshUnreadCount()
         XCTAssertEqual(sut.unreadCount, 1)
 
@@ -155,16 +146,13 @@ final class NotificationHandlerTests: XCTestCase {
     func test_configure_setsAPIClient() async {
         let handler = NotificationHandler(apiClient: mockAPIClient)
         let newMock = MockAPIClient()
-        let notifications = [makeNotification(id: "1", read: false)]
-        newMock.listNotificationsResult = .success(
-            NotificationListResponse(notifications: notifications, count: 1)
-        )
+        newMock.getUnviewedCountResult = .success(5)
 
         handler.configure(apiClient: newMock)
         await handler.refreshUnreadCount()
 
-        XCTAssertEqual(newMock.listNotificationsCallCount, 1)
-        XCTAssertEqual(handler.unreadCount, 1)
+        XCTAssertEqual(newMock.getUnviewedCountCallCount, 1)
+        XCTAssertEqual(handler.unreadCount, 5)
     }
 
     // MARK: - Helpers

@@ -22,32 +22,32 @@
              :expr-attr-values {":pk" user-pk
                                  ":prefix" "device_token#"}))
 
-(defn- get-unread-count
-  "Get unread notification count for a user"
+(defn- insight-pk-from-user-pk
+  "Convert user PK (user#sub) to insight PK (insight#sub)"
   [user-pk]
-  (let [results (ddb/query ddb-table
-                           :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                           :expr-attr-values {":pk" user-pk
-                                               ":prefix" "notification#pending#"}
-                           :select "COUNT")]
-    (or results 0)))
+  (str "insight#" (subs user-pk (count "user#"))))
 
-(defn- build-apns-payload
-  "Build APNs notification payload with dynamic badge count"
-  [notification]
-  (let [badge-count (try (get-unread-count (:pk notification))
-                         (catch Exception _ 1))]
-    (nu/build-apns-payload notification badge-count)))
+(defn- get-unviewed-insight-count
+  "Get count of unviewed insight records for a specific user"
+  [user-pk]
+  (let [items (ddb/query ddb-table
+                         :key-condition-expr "PK = :pk"
+                         :expr-attr-values {":pk" (insight-pk-from-user-pk user-pk)})]
+    (count (filter (fn [item]
+                     (let [viewed-at (:viewed_at item)
+                           modified-at (:modified_at item)]
+                       (or (nil? viewed-at)
+                           (pos? (compare modified-at viewed-at)))))
+                   items))))
 
 (defn- send-to-device
   "Send notification to a single device via SNS using the server-created endpoint ARN"
-  [device notification]
+  [device apns-payload]
   (let [endpoint-arn (:endpoint_arn device)]
     (if (nil? endpoint-arn)
       (println "Skipping device" (:device_id device) "- no endpoint ARN")
       (try
-        (let [apns-payload (build-apns-payload notification)
-              message (json/generate-string
+        (let [message (json/generate-string
                        {"APNS" apns-payload
                         "APNS_SANDBOX" apns-payload})]
           (sns/publish-to-endpoint endpoint-arn message)
@@ -64,14 +64,20 @@
     (let [new-image (or (get-in record [:dynamodb :NewImage])
                         (get-in record ["dynamodb" "NewImage"]))
           notification (nu/extract-notification-data new-image)
-          device-tokens (get-user-device-tokens (:pk notification))]
+          user-pk (:pk notification)
+          device-tokens (get-user-device-tokens user-pk)
+          ;; Compute badge count once per notification, scoped to user
+          badge-count (try (get-unviewed-insight-count user-pk)
+                           (catch Exception _ 1))
+          apns-payload (nu/build-apns-payload notification badge-count)]
 
       (println "Dispatching notification:" (:notification-id notification)
                "type:" (:notification-type notification)
-               "to" (count device-tokens) "devices")
+               "to" (count device-tokens) "devices"
+               "badge:" badge-count)
 
       (doseq [device device-tokens]
-        (send-to-device device notification))
+        (send-to-device device apns-payload))
 
       {:notification-id (:notification-id notification)
        :devices-notified (count device-tokens)})))

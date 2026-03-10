@@ -3,6 +3,7 @@ import SwiftUI
 /// Visual indicator bar shown on the left edge of a week row that has an associated weekly report
 struct WeekReportIndicator: View {
     let hasReport: Bool
+    let isUnread: Bool
     let onTap: (() -> Void)?
 
     @ScaledMetric private var barWidth: CGFloat = 3
@@ -11,12 +12,12 @@ struct WeekReportIndicator: View {
         if hasReport {
             Button(action: { onTap?() }, label: {
                 RoundedRectangle(cornerRadius: barWidth / 2)
-                    .fill(Color.accentColor)
+                    .fill(barColor)
                     .frame(width: barWidth)
             })
             .buttonStyle(.plain)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Weekly report available")
+            .accessibilityLabel(isUnread ? "Weekly report available, unread" : "Weekly report available")
             .accessibilityHint("Double tap to view weekly report")
             .accessibilityAddTraits(.isButton)
             .accessibilityIdentifier("WeekReportIndicator")
@@ -25,5 +26,9 @@ struct WeekReportIndicator: View {
                 .frame(width: barWidth)
                 .accessibilityHidden(true)
         }
+    }
+
+    private var barColor: Color {
+        isUnread ? Color.accentColor : Color.secondary.opacity(0.4)
     }
 }

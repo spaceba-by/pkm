@@ -266,7 +266,8 @@
                 newItems: ["Isolation regions RFC", "Task executor improvements"],
                 changedItems: ["Actor reentrancy proposal updated"],
                 removedItems: [],
-                analysis: "Significant progress on isolation regions for safer concurrency."
+                analysis: "Significant progress on isolation regions for safer concurrency.",
+                viewed: false
             ),
             SearchSummary(
                 timestamp: "2026-02-19T10:00:00Z",
@@ -451,6 +452,28 @@
 
         func markNotificationRead(id _: String) async throws {
             // No-op for UI tests
+        }
+
+        // MARK: - Insight Viewed Status
+
+        func markSummaryViewed(date _: String) async throws {
+            // No-op for UI tests
+        }
+
+        func markReportViewed(week _: String) async throws {
+            // No-op for UI tests
+        }
+
+        func markSearchSummaryViewed(monitorId _: String, timestamp _: String) async throws {
+            // No-op for UI tests
+        }
+
+        func markAllInsightsViewed() async throws {
+            // No-op for UI tests
+        }
+
+        func getUnviewedCount() async throws -> Int {
+            1
         }
     }
 #endif

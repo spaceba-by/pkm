@@ -3,6 +3,8 @@ import SwiftUI
 /// Detail view for a single search summary
 struct SearchSummaryView: View {
     let summary: SearchSummary
+    let monitorId: String
+    let apiClient: any APIClientProtocol
 
     var body: some View {
         List {
@@ -79,5 +81,18 @@ struct SearchSummaryView: View {
         .navigationTitle("Summary")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("SearchSummaryView")
+        .task {
+            if !summary.viewed {
+                do {
+                    try await apiClient.markSearchSummaryViewed(
+                        monitorId: monitorId,
+                        timestamp: summary.timestamp
+                    )
+                    NotificationHandler.shared.decrementUnreadCount()
+                } catch {
+                    print("Failed to mark search summary viewed: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ import SwiftUI
 struct CalendarDayCell: View {
     let day: CalendarDay
     let hasSummary: Bool
+    let isUnread: Bool
     let onTap: (() -> Void)?
 
     @ScaledMetric private var cellSize: CGFloat = 40
@@ -21,12 +22,13 @@ struct CalendarDayCell: View {
 
                     Text("\(day.dayNumber)")
                         .font(.body)
+                        .fontWeight(hasSummary && isUnread ? .bold : .regular)
                         .foregroundStyle(dayTextColor)
                 }
                 .frame(width: cellSize, height: cellSize)
 
                 Circle()
-                    .fill(hasSummary ? Color.accentColor : Color.clear)
+                    .fill(dotColor)
                     .frame(width: dotSize, height: dotSize)
             }
         })
@@ -37,6 +39,11 @@ struct CalendarDayCell: View {
         .accessibilityAddTraits(onTap != nil ? .isButton : .isStaticText)
         .accessibilityHint(onTap != nil ? "Double tap to view daily summary" : "")
         .accessibilityIdentifier("CalendarDay_\(day.id)")
+    }
+
+    private var dotColor: Color {
+        guard hasSummary else { return .clear }
+        return isUnread ? Color.accentColor : Color.secondary.opacity(0.4)
     }
 
     private var dayTextColor: Color {
@@ -58,11 +65,13 @@ struct CalendarDayCell: View {
     private var accessibilityText: String {
         let dateText = Self.accessibilityDateFormatter.string(from: day.date)
         if day.isToday, hasSummary {
-            return "\(dateText), today, daily summary available"
+            let suffix = isUnread ? ", unread" : ""
+            return "\(dateText), today, daily summary available\(suffix)"
         } else if day.isToday {
             return "\(dateText), today"
         } else if hasSummary {
-            return "\(dateText), daily summary available"
+            let suffix = isUnread ? ", unread" : ""
+            return "\(dateText), daily summary available\(suffix)"
         }
         return dateText
     }

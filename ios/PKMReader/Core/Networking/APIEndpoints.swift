@@ -80,4 +80,29 @@ enum APIEndpoints {
         let encodedTs = timestamp.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? timestamp
         return "/searches/\(encodedId)/summaries/\(encodedTs)"
     }
+
+    // MARK: - Insight Viewed Status
+
+    /// Mark a daily summary as viewed
+    static func markSummaryViewed(date: String) -> String {
+        "/summaries/\(date)/viewed"
+    }
+
+    /// Mark a weekly report as viewed
+    static func markReportViewed(week: String) -> String {
+        "/reports/\(week)/viewed"
+    }
+
+    /// Mark a search summary as viewed
+    static func markSearchSummaryViewed(monitorId: String, timestamp: String) -> String {
+        let encodedId = monitorId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? monitorId
+        let encodedTs = timestamp.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? timestamp
+        return "/searches/\(encodedId)/summaries/\(encodedTs)/viewed"
+    }
+
+    /// Mark all insights as viewed
+    static let markAllViewed = "/insights/mark-all-viewed"
+
+    /// Get unviewed insight count
+    static let unviewedCount = "/insights/unviewed-count"
 }

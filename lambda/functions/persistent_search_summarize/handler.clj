@@ -134,11 +134,23 @@
                                            :removed_items (or (:removed_items diff) [])
                                            :analysis (:analysis diff)})]
 
-            ;; If significant, write to S3 and create notification
+            ;; If significant, write to S3, create insight record, and create notification
             (when significant?
               (println "Significant update detected - writing to S3 and creating notification")
               (write-search-report s3-bucket monitor-id monitor-name
                                    summary-text topics diff snapshot-timestamp)
+
+              ;; Write per-user insight record for viewed-status tracking
+              (ddb/put-item ddb-table
+                            {:PK (str "insight#" (subs user-pk (count "user#")))
+                             :SK (str "search#" monitor-id "#" snapshot-timestamp)
+                             :type "search_monitor"
+                             :monitor_id monitor-id
+                             :monitor_name monitor-name
+                             :novelty_score novelty-score
+                             :modified_at snapshot-timestamp
+                             :s3_key (str "_agent/searches/" monitor-id "/" (today-str) ".md")})
+
               (store-notification ddb-table user-pk monitor-id monitor-name
                                  novelty-score snapshot-timestamp))
 
