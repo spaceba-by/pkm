@@ -201,16 +201,18 @@
 
        (println "Created weekly report:" report-key)
 
-       ;; Write insight record for viewed-status tracking
-       (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))]
-         (ddb/put-item ddb-table
-                       {:PK "insight"
-                        :SK (str "report#" week-str)
-                        :type "weekly_report"
-                        :title (str "Weekly Report: " week-str)
-                        :modified_at now-ts
-                        :s3_key report-key
-                        :doc_count (count week-docs)}))
+       ;; Write per-user insight records for viewed-status tracking
+       (let [now-ts (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS))
+             user-pks (get-all-user-pks)]
+         (doseq [user-pk user-pks]
+           (ddb/put-item ddb-table
+                         {:PK (str "insight#" (subs user-pk (count "user#")))
+                          :SK (str "report#" week-str)
+                          :type "weekly_report"
+                          :title (str "Weekly Report: " week-str)
+                          :modified_at now-ts
+                          :s3_key report-key
+                          :doc_count (count week-docs)})))
 
        ;; Create notification for weekly report
        (create-report-notification week-str (count week-docs))

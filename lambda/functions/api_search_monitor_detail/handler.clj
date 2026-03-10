@@ -75,7 +75,7 @@
                   ;; Build set of viewed timestamps from insight records
                   insight-items (ddb/query ddb-table
                                            :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                                           :expr-attr-values {":pk" "insight"
+                                           :expr-attr-values {":pk" (str "insight#" user-sub)
                                                                ":prefix" (str "search#" monitor-id "#")})
                   viewed-set (into #{}
                                    (comp

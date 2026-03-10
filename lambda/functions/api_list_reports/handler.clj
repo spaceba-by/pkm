@@ -21,12 +21,15 @@
     (and (some? viewed-at)
          (not (pos? (compare modified-at viewed-at))))))
 
+(defn- insight-pk [user-sub]
+  (str "insight#" user-sub))
+
 (defn- list-from-dynamodb
   "List reports from DynamoDB insight records with viewed status"
-  [limit]
+  [user-sub limit]
   (let [items (ddb/query ddb-table
                          :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                         :expr-attr-values {":pk" "insight"
+                         :expr-attr-values {":pk" (insight-pk user-sub)
                                              ":prefix" "report#"}
                          :scan-index-forward false)]
     (->> items
@@ -59,8 +62,8 @@
 
 (defn list-reports
   "List weekly reports, preferring DynamoDB records, falling back to S3"
-  [limit]
-  (let [ddb-results (list-from-dynamodb limit)]
+  [user-sub limit]
+  (let [ddb-results (list-from-dynamodb user-sub limit)]
     (if (seq ddb-results)
       ddb-results
       (list-from-s3 limit))))
@@ -76,7 +79,7 @@
 
           _ (println "User" user-sub "listing reports, limit:" limit)
 
-          reports (list-reports limit)]
+          reports (list-reports user-sub limit)]
 
       (r/ok {:reports reports
              :count (count reports)}))

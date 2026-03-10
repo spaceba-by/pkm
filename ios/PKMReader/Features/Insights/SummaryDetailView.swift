@@ -40,8 +40,12 @@ struct SummaryDetailView: View {
         .task {
             await viewModel.loadContent()
             if !summary.viewed {
-                try? await apiClient.markSummaryViewed(date: summary.date)
-                NotificationHandler.shared.decrementUnreadCount()
+                do {
+                    try await apiClient.markSummaryViewed(date: summary.date)
+                    NotificationHandler.shared.decrementUnreadCount()
+                } catch {
+                    print("Failed to mark summary viewed: \(error.localizedDescription)")
+                }
             }
         }
         .accessibilityIdentifier("SummaryDetailView")

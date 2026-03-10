@@ -101,33 +101,33 @@
 
 (deftest insight-record-structure-test
   (testing "Daily summary insight record has required fields"
-    (let [record {:PK "insight"
+    (let [record {:PK "insight#test-user-sub"
                   :SK "summary#2026-03-08"
                   :type "daily_summary"
                   :title "Daily Summary: 2026-03-08"
                   :modified_at "2026-03-08T06:00:00Z"
                   :s3_key "_agent/summaries/2026-03-08.md"
                   :doc_count 5}]
-      (is (= "insight" (:PK record)))
+      (is (.startsWith (:PK record) "insight#"))
       (is (.startsWith (:SK record) "summary#"))
       (is (= "daily_summary" (:type record)))
       (is (some? (:modified_at record)))
       (is (some? (:s3_key record)))))
 
   (testing "Weekly report insight record has required fields"
-    (let [record {:PK "insight"
+    (let [record {:PK "insight#test-user-sub"
                   :SK "report#2026-W10"
                   :type "weekly_report"
                   :title "Weekly Report: 2026-W10"
                   :modified_at "2026-03-03T06:00:00Z"
                   :s3_key "_agent/reports/weekly/2026-W10.md"
                   :doc_count 42}]
-      (is (= "insight" (:PK record)))
+      (is (.startsWith (:PK record) "insight#"))
       (is (.startsWith (:SK record) "report#"))
       (is (= "weekly_report" (:type record)))))
 
   (testing "Search update insight record has required fields"
-    (let [record {:PK "insight"
+    (let [record {:PK "insight#test-user-sub"
                   :SK "search#abc123#2026-03-08T12:00:00Z"
                   :type "search_monitor"
                   :monitor_id "abc123"
@@ -135,7 +135,7 @@
                   :novelty_score 0.72
                   :modified_at "2026-03-08T12:00:00Z"
                   :s3_key "_agent/searches/abc123/2026-03-08.md"}]
-      (is (= "insight" (:PK record)))
+      (is (.startsWith (:PK record) "insight#"))
       (is (.startsWith (:SK record) "search#"))
       (is (= "search_monitor" (:type record)))
       (is (some? (:monitor_id record))))))

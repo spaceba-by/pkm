@@ -14,24 +14,29 @@
 (defn- now-iso []
   (str (.truncatedTo (Instant/now) ChronoUnit/SECONDS)))
 
+(defn- insight-pk [user-sub]
+  (str "insight#" user-sub))
+
 (defn- mark-insight-viewed
   "Set viewed_at on an insight record"
-  [sk]
-  (let [item (ddb/get-item ddb-table {:PK "insight" :SK sk})]
+  [user-sub sk]
+  (let [pk (insight-pk user-sub)
+        item (ddb/get-item ddb-table {:PK pk :SK sk})]
     (if (nil? item)
       (r/not-found (str "Insight not found: " sk))
       (do
         (ddb/update-item-attrs ddb-table
-                               {:PK "insight" :SK sk}
+                               {:PK pk :SK sk}
                                {:viewed_at (now-iso)})
         (r/ok-no-cache {:sk sk :viewed true})))))
 
 (defn- mark-all-viewed
-  "Set viewed_at on all unviewed insight records"
-  []
-  (let [items (ddb/query ddb-table
+  "Set viewed_at on all unviewed insight records for the authenticated user"
+  [user-sub]
+  (let [pk (insight-pk user-sub)
+        items (ddb/query ddb-table
                          :key-condition-expr "PK = :pk"
-                         :expr-attr-values {":pk" "insight"})
+                         :expr-attr-values {":pk" pk})
         now-ts (now-iso)
         unviewed (filter (fn [item]
                            (let [viewed-at (:viewed_at item)
@@ -41,7 +46,7 @@
                          items)]
     (doseq [item unviewed]
       (ddb/update-item-attrs ddb-table
-                             {:PK "insight" :SK (:SK item)}
+                             {:PK pk :SK (:SK item)}
                              {:viewed_at now-ts}))
     (r/ok-no-cache {:marked (count unviewed)})))
 
@@ -61,29 +66,30 @@
       (cond
         ;; PUT /insights/mark-all-viewed
         (str/ends-with? raw-path "/mark-all-viewed")
-        (mark-all-viewed)
+        (mark-all-viewed user-sub)
+
+        ;; PUT /searches/{id}/summaries/{timestamp}/viewed
+        ;; (must match before /summaries/ to avoid false match)
+        (str/includes? raw-path "/searches/")
+        (let [monitor-id (or (:id path-params) (get path-params "id"))
+              timestamp (or (:timestamp path-params) (get path-params "timestamp"))]
+          (if (or (str/blank? monitor-id) (str/blank? timestamp))
+            (r/bad-request "Monitor ID and timestamp required")
+            (mark-insight-viewed user-sub (str "search#" monitor-id "#" timestamp))))
 
         ;; PUT /summaries/{date}/viewed
         (str/includes? raw-path "/summaries/")
         (let [date (or (:date path-params) (get path-params "date"))]
           (if (str/blank? date)
             (r/bad-request "Date parameter required")
-            (mark-insight-viewed (str "summary#" date))))
+            (mark-insight-viewed user-sub (str "summary#" date))))
 
         ;; PUT /reports/{week}/viewed
         (str/includes? raw-path "/reports/")
         (let [week (or (:week path-params) (get path-params "week"))]
           (if (str/blank? week)
             (r/bad-request "Week parameter required")
-            (mark-insight-viewed (str "report#" week))))
-
-        ;; PUT /searches/{id}/summaries/{timestamp}/viewed
-        (str/includes? raw-path "/searches/")
-        (let [monitor-id (or (:id path-params) (get path-params "id"))
-              timestamp (or (:timestamp path-params) (get path-params "timestamp"))]
-          (if (or (str/blank? monitor-id) (str/blank? timestamp))
-            (r/bad-request "Monitor ID and timestamp required")
-            (mark-insight-viewed (str "search#" monitor-id "#" timestamp))))
+            (mark-insight-viewed user-sub (str "report#" week))))
 
         :else
         (r/bad-request "Unsupported path")))

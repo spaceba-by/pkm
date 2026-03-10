@@ -83,11 +83,15 @@ struct SearchSummaryView: View {
         .accessibilityIdentifier("SearchSummaryView")
         .task {
             if !summary.viewed {
-                try? await apiClient.markSearchSummaryViewed(
-                    monitorId: monitorId,
-                    timestamp: summary.timestamp
-                )
-                NotificationHandler.shared.decrementUnreadCount()
+                do {
+                    try await apiClient.markSearchSummaryViewed(
+                        monitorId: monitorId,
+                        timestamp: summary.timestamp
+                    )
+                    NotificationHandler.shared.decrementUnreadCount()
+                } catch {
+                    print("Failed to mark search summary viewed: \(error.localizedDescription)")
+                }
             }
         }
     }

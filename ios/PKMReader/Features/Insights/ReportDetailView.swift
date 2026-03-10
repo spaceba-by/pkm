@@ -40,8 +40,12 @@ struct ReportDetailView: View {
         .task {
             await viewModel.loadContent()
             if !report.viewed {
-                try? await apiClient.markReportViewed(week: report.weekOf)
-                NotificationHandler.shared.decrementUnreadCount()
+                do {
+                    try await apiClient.markReportViewed(week: report.weekOf)
+                    NotificationHandler.shared.decrementUnreadCount()
+                } catch {
+                    print("Failed to mark report viewed: \(error.localizedDescription)")
+                }
             }
         }
         .accessibilityIdentifier("ReportDetailView")

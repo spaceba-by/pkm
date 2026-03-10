@@ -20,4 +20,12 @@ struct Report: Identifiable, Codable, Hashable, Sendable {
         self.modified = modified
         self.viewed = viewed
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        weekOf = try container.decode(String.self, forKey: .weekOf)
+        modified = try container.decodeIfPresent(Date.self, forKey: .modified)
+        viewed = try container.decodeIfPresent(Bool.self, forKey: .viewed) ?? true
+    }
 }

@@ -140,9 +140,9 @@
               (write-search-report s3-bucket monitor-id monitor-name
                                    summary-text topics diff snapshot-timestamp)
 
-              ;; Write insight record for viewed-status tracking
+              ;; Write per-user insight record for viewed-status tracking
               (ddb/put-item ddb-table
-                            {:PK "insight"
+                            {:PK (str "insight#" (subs user-pk (count "user#")))
                              :SK (str "search#" monitor-id "#" snapshot-timestamp)
                              :type "search_monitor"
                              :monitor_id monitor-id

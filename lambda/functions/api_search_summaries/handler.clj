@@ -36,7 +36,7 @@
         ;; Build set of viewed timestamps from insight records
         insight-items (ddb/query-all ddb-table
                                       :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                                      :expr-attr-values {":pk" "insight"
+                                      :expr-attr-values {":pk" (str "insight#" user-sub)
                                                           ":prefix" (str "search#" monitor-id "#")})
         viewed-set (into #{}
                          (comp
@@ -65,7 +65,7 @@
     (if (nil? item)
       (r/not-found (str "Summary not found for timestamp: " timestamp))
       (let [insight-sk (str "search#" monitor-id "#" timestamp)
-            insight (ddb/get-item ddb-table {:PK "insight" :SK insight-sk})
+            insight (ddb/get-item ddb-table {:PK (str "insight#" user-sub) :SK insight-sk})
             viewed? (and (some? (:viewed_at insight))
                          (not (pos? (compare (:modified_at insight) (:viewed_at insight)))))]
         (r/ok (format-summary item (if viewed? #{timestamp} #{})))))))
