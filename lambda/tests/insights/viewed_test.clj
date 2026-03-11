@@ -1,6 +1,6 @@
 (ns insights.viewed-test
   "Unit tests for insight viewed-status logic"
-  (:require [clojure.test :refer [deftest testing is are]]))
+  (:require [clojure.test :refer [deftest testing is]]))
 
 ;; =============================================================================
 ;; is-viewed? logic (shared across api_list_summaries, api_list_reports,
@@ -147,7 +147,7 @@
 ;; =============================================================================
 
 (defn- merge-summaries
-  "Replicate the merge logic from api_list_summaries/list-daily-summaries"
+  "Replicate the merge logic from handler/list-daily-summaries (api_list_summaries)"
   [ddb-results s3-results limit]
   (let [ddb-dates (set (map :date ddb-results))
         s3-only (remove #(contains? ddb-dates (:date %)) s3-results)]
@@ -157,7 +157,7 @@
          (vec))))
 
 (defn- merge-reports
-  "Replicate the merge logic from api_list_reports/list-reports"
+  "Replicate the merge logic from handler/list-reports (api_list_reports)"
   [ddb-results s3-results limit]
   (let [ddb-weeks (set (map :weekOf ddb-results))
         s3-only (remove #(contains? ddb-weeks (:weekOf %)) s3-results)]
