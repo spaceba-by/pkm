@@ -61,12 +61,18 @@
          (vec))))
 
 (defn list-reports
-  "List weekly reports, preferring DynamoDB records, falling back to S3"
+  "List weekly reports, merging DynamoDB viewed status with S3 listing.
+   DynamoDB records have accurate viewed status; S3-only entries (pre-migration)
+   default to viewed=true."
   [user-sub limit]
-  (let [ddb-results (list-from-dynamodb user-sub limit)]
-    (if (seq ddb-results)
-      ddb-results
-      (list-from-s3 limit))))
+  (let [ddb-results (list-from-dynamodb user-sub limit)
+        ddb-weeks (set (map :weekOf ddb-results))
+        s3-results (list-from-s3 limit)
+        s3-only (remove #(contains? ddb-weeks (:weekOf %)) s3-results)]
+    (->> (concat ddb-results s3-only)
+         (sort-by :weekOf #(compare %2 %1))
+         (take (min limit max-limit))
+         (vec))))
 
 (defn handler
   "Lambda handler for GET /reports"

@@ -61,12 +61,18 @@
          (vec))))
 
 (defn list-daily-summaries
-  "List daily summaries, preferring DynamoDB records, falling back to S3"
+  "List daily summaries, merging DynamoDB viewed status with S3 listing.
+   DynamoDB records have accurate viewed status; S3-only entries (pre-migration)
+   default to viewed=true."
   [user-sub limit]
-  (let [ddb-results (list-from-dynamodb user-sub limit)]
-    (if (seq ddb-results)
-      ddb-results
-      (list-from-s3 limit))))
+  (let [ddb-results (list-from-dynamodb user-sub limit)
+        ddb-dates (set (map :date ddb-results))
+        s3-results (list-from-s3 limit)
+        s3-only (remove #(contains? ddb-dates (:date %)) s3-results)]
+    (->> (concat ddb-results s3-only)
+         (sort-by :date #(compare %2 %1))
+         (take (min limit max-limit))
+         (vec))))
 
 (defn handler
   "Lambda handler for GET /summaries"
