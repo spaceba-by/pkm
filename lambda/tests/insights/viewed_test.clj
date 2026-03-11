@@ -139,3 +139,95 @@
       (is (.startsWith (:SK record) "search#"))
       (is (= "search_monitor" (:type record)))
       (is (some? (:monitor_id record))))))
+
+;; =============================================================================
+;; Merge logic tests (DynamoDB + S3 listing)
+;; These test the merge strategy used by api_list_summaries and api_list_reports
+;; to ensure pre-migration S3-only entries are included alongside DynamoDB records.
+;; =============================================================================
+
+(defn- merge-summaries
+  "Replicate the merge logic from handler/list-daily-summaries (api_list_summaries)"
+  [ddb-results s3-results limit]
+  (let [ddb-dates (set (map :date ddb-results))
+        s3-only (remove #(contains? ddb-dates (:date %)) s3-results)]
+    (->> (concat ddb-results s3-only)
+         (sort-by :date #(compare %2 %1))
+         (take limit)
+         (vec))))
+
+(defn- merge-reports
+  "Replicate the merge logic from handler/list-reports (api_list_reports)"
+  [ddb-results s3-results limit]
+  (let [ddb-weeks (set (map :weekOf ddb-results))
+        s3-only (remove #(contains? ddb-weeks (:weekOf %)) s3-results)]
+    (->> (concat ddb-results s3-only)
+         (sort-by :weekOf #(compare %2 %1))
+         (take limit)
+         (vec))))
+
+(deftest merge-summaries-s3-only-test
+  (testing "When no DynamoDB records exist, all S3 results are returned as viewed"
+    (let [s3 [{:id "_agent/summaries/2026-03-08.md" :date "2026-03-08" :viewed true}
+              {:id "_agent/summaries/2026-03-07.md" :date "2026-03-07" :viewed true}]
+          result (merge-summaries [] s3 100)]
+      (is (= 2 (count result)))
+      (is (every? :viewed result)))))
+
+(deftest merge-summaries-ddb-only-test
+  (testing "When all summaries have DynamoDB records, S3 duplicates are excluded"
+    (let [ddb [{:id "_agent/summaries/2026-03-08.md" :date "2026-03-08" :viewed false}
+               {:id "_agent/summaries/2026-03-07.md" :date "2026-03-07" :viewed true}]
+          s3 [{:id "_agent/summaries/2026-03-08.md" :date "2026-03-08" :viewed true}
+              {:id "_agent/summaries/2026-03-07.md" :date "2026-03-07" :viewed true}]
+          result (merge-summaries ddb s3 100)]
+      (is (= 2 (count result)))
+      ;; DynamoDB viewed status takes precedence
+      (is (not (:viewed (first result))))
+      (is (:viewed (second result))))))
+
+(deftest merge-summaries-mixed-test
+  (testing "Pre-migration S3 summaries are included alongside newer DynamoDB records"
+    (let [;; Recent summaries with DynamoDB insight records
+          ddb [{:id "_agent/summaries/2026-03-08.md" :date "2026-03-08" :viewed false}
+               {:id "_agent/summaries/2026-03-07.md" :date "2026-03-07" :viewed true}]
+          ;; S3 has both recent and older summaries
+          s3 [{:id "_agent/summaries/2026-03-08.md" :date "2026-03-08" :viewed true}
+              {:id "_agent/summaries/2026-03-07.md" :date "2026-03-07" :viewed true}
+              {:id "_agent/summaries/2026-03-01.md" :date "2026-03-01" :viewed true}
+              {:id "_agent/summaries/2026-02-28.md" :date "2026-02-28" :viewed true}]
+          result (merge-summaries ddb s3 100)]
+      ;; All 4 summaries should be present
+      (is (= 4 (count result)))
+      ;; Sorted newest first
+      (is (= ["2026-03-08" "2026-03-07" "2026-03-01" "2026-02-28"]
+             (map :date result)))
+      ;; DynamoDB viewed status for recent, S3 defaults for older
+      (is (not (:viewed (first result))))
+      (is (:viewed (second result)))
+      (is (:viewed (nth result 2)))
+      (is (:viewed (nth result 3))))))
+
+(deftest merge-summaries-respects-limit-test
+  (testing "Merged results are limited correctly"
+    (let [ddb [{:id "s1" :date "2026-03-08" :viewed false}]
+          s3 [{:id "s1" :date "2026-03-08" :viewed true}
+              {:id "s2" :date "2026-03-07" :viewed true}
+              {:id "s3" :date "2026-03-06" :viewed true}]
+          result (merge-summaries ddb s3 2)]
+      (is (= 2 (count result)))
+      (is (= ["2026-03-08" "2026-03-07"] (map :date result))))))
+
+(deftest merge-reports-mixed-test
+  (testing "Pre-migration S3 reports are included alongside newer DynamoDB records"
+    (let [ddb [{:id "r1" :weekOf "2026-W10" :viewed false}]
+          s3 [{:id "r1" :weekOf "2026-W10" :viewed true}
+              {:id "r2" :weekOf "2026-W09" :viewed true}
+              {:id "r3" :weekOf "2026-W08" :viewed true}]
+          result (merge-reports ddb s3 100)]
+      (is (= 3 (count result)))
+      (is (= ["2026-W10" "2026-W09" "2026-W08"] (map :weekOf result)))
+      ;; DynamoDB viewed status for W10, S3 defaults for older
+      (is (not (:viewed (first result))))
+      (is (:viewed (second result)))
+      (is (:viewed (nth result 2))))))
