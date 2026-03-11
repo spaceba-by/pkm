@@ -213,11 +213,12 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 #### Tier 2 — Communication
 
-- **Task 0022: Webhook Receiving & Classification**
+- **Task 0022: Webhook Receiving & Classification** *(In Progress)*
 
   - See: [0022-webhook-receiving](tasks/0022-webhook-receiving.md)
   - API endpoint for receiving external webhooks (GitHub, email, custom)
-  - Signature verification, classification, and routing to processing pipeline
+  - HMAC signature verification, classification, and routing to `_agent/webhooks/` or DynamoDB
+  - Admin CRUD API for webhook source management
   - Depends on: Task 0020 ✅
 
 #### Tier 3 — Command & Intelligence

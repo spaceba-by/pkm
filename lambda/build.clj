@@ -125,7 +125,11 @@
    "notification_dispatch"       "handler/handler"
    ;; Insight viewed-status Lambda functions
    "api_mark_viewed"             "handler/handler"
-   "api_insights_count"          "handler/handler"})
+   "api_insights_count"          "handler/handler"
+   ;; Webhook Lambda functions
+   "webhook_receive"             "handler/handler"
+   "api_webhook_sources"         "handler/handler"
+   "api_webhook_events"          "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")
