@@ -89,7 +89,8 @@
     (case event-type
       "push" {:route :document
               :event-type "push"
-              :title (str "Push to " (get payload :repository (get payload "repository" "unknown")))}
+              :title (str "Push to " (get-in payload [:repository :full_name]
+                                             (get-in payload ["repository" "full_name"] "unknown")))}
       "release" {:route :document
                  :event-type "release"
                  :title (str "Release: " (get-in payload [:release :tag_name]
