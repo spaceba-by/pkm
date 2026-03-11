@@ -99,8 +99,9 @@ struct SearchMonitorListView: View {
     private var monitorList: some View {
         List {
             ForEach(viewModel.monitors) { monitor in
-                // Destination registered via navigationDestination(for:) in DocumentListView
-                NavigationLink(value: monitor) {
+                NavigationLink {
+                    SearchMonitorDetailView(monitorId: monitor.id, apiClient: viewModel.apiClient)
+                } label: {
                     SearchMonitorRow(monitor: monitor)
                 }
                 .accessibilityIdentifier("Monitor_\(monitor.id)")

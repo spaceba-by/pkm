@@ -86,10 +86,6 @@ struct DocumentListView: View {
             .navigationDestination(isPresented: $showingMonitors) {
                 SearchMonitorListView(apiClient: viewModel.apiClient)
             }
-            // Registered here (not in SearchMonitorListView) so the NavigationStack can resolve it
-            .navigationDestination(for: SearchMonitor.self) { monitor in
-                SearchMonitorDetailView(monitorId: monitor.id, apiClient: viewModel.apiClient)
-            }
             .refreshable {
                 if viewModel.isSearchActive {
                     await viewModel.search()

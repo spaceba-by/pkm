@@ -66,6 +66,15 @@ final class SearchMonitorScreenTests: XCTestCase {
         XCTAssertGreaterThan(intervalText.count, 0, "Interval not shown")
     }
 
+    func test_monitorList_tappingMonitorNavigatesToDetail() {
+        let monitorTitle = app.staticTexts["Swift Concurrency Updates"]
+        XCTAssertTrue(monitorTitle.waitForExistence(timeout: 10), "Monitor title not found")
+        monitorTitle.tap()
+
+        let configSection = app.staticTexts["Configuration"]
+        XCTAssertTrue(configSection.waitForExistence(timeout: 5), "Detail view not shown after tapping monitor")
+    }
+
     func test_form_cancelDismisses() {
         let createButton = app.buttons["CreateMonitorButton"].firstMatch
         XCTAssertTrue(createButton.waitForExistence(timeout: 10))
