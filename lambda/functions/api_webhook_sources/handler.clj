@@ -71,6 +71,9 @@
                       (:status body) (assoc :source_status (:status body))
                       (:signingSecretArn body) (assoc :signing_secret_arn (:signingSecretArn body)))]
         (cond
+          (and (:name body) (str/blank? (:name body)))
+          (r/bad-request "name must not be blank")
+
           (and (:status body) (not (valid-statuses (:status body))))
           (r/bad-request (str "status must be one of: " (str/join ", " (sort valid-statuses))))
 

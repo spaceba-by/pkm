@@ -175,7 +175,7 @@
 (defn- generate-generic-body
   "Generate markdown body for a generic webhook."
   [payload]
-  (str "```json\n"
+  (str "```edn\n"
        (pr-str payload)
        "\n```"))
 

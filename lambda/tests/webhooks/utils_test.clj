@@ -232,7 +232,7 @@
                                     "2026-02-25T12:00:00Z"
                                     "Custom webhook"
                                     {:key "value"})]
-      (is (str/includes? md "```json")))))
+      (is (str/includes? md "```edn")))))
 
 ;; =============================================================================
 ;; API Response Formatting

@@ -13,13 +13,12 @@
   [query-params]
   (let [source-id (or (get query-params :sourceId) (get query-params "sourceId"))
         limit (r/parse-int-param query-params :limit 50)
-        query-res (ddb/query ddb-table
-                             :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
-                             :expr-attr-values {":pk" (wu/event-pk)
-                                                 ":prefix" "event#"}
-                             :scan-index-forward false
-                             :limit limit)
-        results (:items query-res)
+        results (ddb/query ddb-table
+                           :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                           :expr-attr-values {":pk" (wu/event-pk)
+                                               ":prefix" "event#"}
+                           :scan-index-forward false
+                           :limit limit)
         filtered (if source-id
                    (filter #(= source-id (:source_id %)) results)
                    results)]
