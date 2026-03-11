@@ -1,45 +1,76 @@
 (ns handler
-  "API Lambda: List daily summaries from _agent directory"
+  "API Lambda: List daily summaries with viewed status.
+   Queries DynamoDB insight records first, falls back to S3 listing."
   (:require [aws.s3 :as s3]
+            [aws.dynamodb :as ddb]
             [api.response :as r]
             [cheshire.core :as json]
             [clojure.string :as str]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
+(def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def summaries-prefix "_agent/summaries/")
 (def default-limit 30)
 (def max-limit 100)
 
-(defn list-summary-files
-  "List daily summary files from S3.
-   Note: S3 list-objects has a 1000 object limit per request. This is acceptable
-   for daily summaries as it would take 2.7+ years to exceed this limit.
-   If pagination is needed in the future, implement continuation tokens."
-  []
-  (try
-    (s3/list-objects s3-bucket summaries-prefix)
-    (catch Exception e
-      (println "Error listing summaries:" (ex-message e))
-      [])))
+(defn- is-viewed?
+  "Check if an insight record has been viewed (viewed_at >= modified_at)"
+  [item]
+  (let [viewed-at (:viewed_at item)
+        modified-at (:modified_at item)]
+    (and (some? viewed-at)
+         (not (pos? (compare modified-at viewed-at))))))
 
-(defn parse-summary-key
-  "Extract date from summary file path"
-  [key]
-  (when (and key (str/ends-with? key ".md"))
-    (let [filename (last (str/split key #"/"))
-          date (str/replace filename ".md" "")]
-      {:id key
-       :date date})))
+(defn- insight-pk [user-sub]
+  (str "insight#" user-sub))
 
-(defn list-daily-summaries
-  "List daily summary files, sorted by date descending"
+(defn- list-from-dynamodb
+  "List summaries from DynamoDB insight records with viewed status"
+  [user-sub limit]
+  (let [items (ddb/query ddb-table
+                         :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                         :expr-attr-values {":pk" (insight-pk user-sub)
+                                             ":prefix" "summary#"}
+                         :scan-index-forward false)]
+    (->> items
+         (map (fn [item]
+                {:id (:s3_key item)
+                 :date (subs (:SK item) (count "summary#"))
+                 :viewed (is-viewed? item)}))
+         (sort-by :date #(compare %2 %1))
+         (take (min limit max-limit))
+         (vec))))
+
+(defn- list-from-s3
+  "Fallback: list summaries from S3 (pre-migration, all treated as viewed)"
   [limit]
-  (let [objects (list-summary-files)]
+  (let [objects (try
+                  (s3/list-objects s3-bucket summaries-prefix)
+                  (catch Exception e
+                    (println "Error listing summaries from S3:" (ex-message e))
+                    []))]
     (->> objects
          (filter #(str/ends-with? (str %) ".md"))
-         (map parse-summary-key)
-         (filter some?)
-         (sort-by :date #(compare %2 %1))  ; Most recent first
+         (map (fn [key]
+                (let [filename (last (str/split key #"/"))
+                      date (str/replace filename ".md" "")]
+                  {:id key :date date :viewed true})))
+         (filter #(some? (:date %)))
+         (sort-by :date #(compare %2 %1))
+         (take (min limit max-limit))
+         (vec))))
+
+(defn list-daily-summaries
+  "List daily summaries, merging DynamoDB viewed status with S3 listing.
+   DynamoDB records have accurate viewed status; S3-only entries (pre-migration)
+   default to viewed=true."
+  [user-sub limit]
+  (let [ddb-results (list-from-dynamodb user-sub limit)
+        ddb-dates (set (map :date ddb-results))
+        s3-results (list-from-s3 limit)
+        s3-only (remove #(contains? ddb-dates (:date %)) s3-results)]
+    (->> (concat ddb-results s3-only)
+         (sort-by :date #(compare %2 %1))
          (take (min limit max-limit))
          (vec))))
 
@@ -54,7 +85,7 @@
 
           _ (println "User" user-sub "listing summaries, limit:" limit)
 
-          summaries (list-daily-summaries limit)]
+          summaries (list-daily-summaries user-sub limit)]
 
       (r/ok {:summaries summaries
              :count (count summaries)}))

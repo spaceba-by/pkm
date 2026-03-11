@@ -16,17 +16,12 @@ cd scripts
 
 The PKM Agent System uses **rclone bisync** for bidirectional synchronization:
 
-```
-Local Vault ←→ rclone bisync ←→ S3 Bucket
-     │                              │
-     │                              ▼
-     │                        EventBridge
-     │                              │
-     │                              ▼
-     │                        Lambda Processing
-     │                              │
-     │                              ▼
-     └────────────────────── _agent/ outputs
+```mermaid
+graph TD
+    Vault[Local Vault] <-->|rclone bisync| S3[S3 Bucket]
+    S3 --> EventBridge
+    EventBridge --> Lambda[Lambda Processing]
+    Lambda -->|_agent/ outputs| S3
 ```
 
 ### Sync Frequency

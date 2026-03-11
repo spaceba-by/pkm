@@ -203,7 +203,7 @@ variable "apns_bundle_id" {
 }
 
 variable "apns_use_sandbox" {
-  description = "Use APNs sandbox environment (true for development, false for production)"
+  description = "Use APNs sandbox environment (true for development, false for production/TestFlight)"
   type        = bool
-  default     = true
+  default     = false
 }

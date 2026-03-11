@@ -200,17 +200,18 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Integrated search bar with keyword/semantic mode, expanded FilterSheet with tags
   - Reduced tab bar from 6 tabs to 4: Documents, Insights, Settings, Graph
 
+- **Task 0021: Push Notifications** ✅
+
+  - See: [0021-push-notifications](tasks/0021-push-notifications.md)
+  - AWS SNS Platform Application with APNs integration for iOS push notifications
+  - Notification dispatch Lambda triggered by DynamoDB Stream on notification records
+  - Device token registration API, notification list/acknowledge API
+  - Daily summary and weekly report Lambdas create notification records
+  - iOS NotificationService and NotificationHandler with deep linking
+
 ### Planned
 
 #### Tier 2 — Communication
-
-- **Task 0021: Push Notifications** *(In Progress)*
-
-  - See: [0021-push-notifications](tasks/0021-push-notifications.md)
-  - AWS SNS + APNs integration for iOS push notifications
-  - Notification dispatch Lambda triggered by DynamoDB events
-  - Extends existing notification records from persistent search
-  - Depends on: Task 0020 ✅
 
 - **Task 0022: Webhook Receiving & Classification** *(In Progress)*
 

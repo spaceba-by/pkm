@@ -4,6 +4,7 @@ import SwiftUI
 struct InsightsView: View {
     let apiClient: any APIClientProtocol
     @StateObject private var viewModel: CalendarViewModel
+    @ObservedObject private var notificationHandler = NotificationHandler.shared
     @State private var selectedSummary: Summary?
     @State private var selectedReport: Report?
 
@@ -57,6 +58,21 @@ struct InsightsView: View {
                 }
             }
             .navigationTitle("Insights")
+            .toolbar {
+                if notificationHandler.unreadCount > 0 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            Task {
+                                await notificationHandler.markAllAsViewed()
+                                await viewModel.refresh()
+                            }
+                        } label: {
+                            Text("Mark All Read")
+                        }
+                        .accessibilityIdentifier("MarkAllReadButton")
+                    }
+                }
+            }
             .navigationDestination(item: $selectedSummary) { summary in
                 SummaryDetailView(summary: summary, apiClient: apiClient)
             }

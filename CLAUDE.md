@@ -61,15 +61,15 @@ aws logs tail /aws/lambda/pkm-agent-classify-document --follow
 - See `docs/ROADMAP.md` for current status and next steps.
 - Task-based development workflow with numbered tasks in `docs/tasks/` directory.
 
-```
-Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock (Claude)
-                                                         ↓
-                                                    DynamoDB
-                                                         ↓
-                              _agent/ outputs ← rclone ←─┘
+```mermaid
+graph LR
+    Vault[Local Vault] <-->|rclone 5min sync| S3
+    S3 --> EventBridge --> Lambda --> Bedrock[Bedrock - Claude]
+    Lambda --> DynamoDB
+    Lambda -->|_agent/ outputs| S3
 ```
 
-**28 functions** in `lambda/functions/` (all Babashka/Clojure): 10 processing + 17 API + 1 CLI utility (`index_embeddings`). See `docs/architecture.md` for the complete function list with endpoints, memory, and timeout details.
+**31 functions** in `lambda/functions/` (all Babashka/Clojure): 11 processing + 19 API + 1 CLI utility (`index_embeddings`). See `docs/architecture.md` for the complete function list with endpoints, memory, and timeout details.
 
 **Bedrock Models** (defined in `terraform/variables.tf`):
 - Haiku 4.5: Fast classification and extraction
@@ -79,17 +79,21 @@ Local Vault → rclone (5min sync) → S3 → EventBridge → Lambda → Bedrock
 
 ```
 lambda/
-├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj, lambda.clj, secrets_manager.clj, brave_search.clj)
+├── shared/aws/           # AWS SDK wrappers (bedrock.clj, dynamodb.clj, s3.clj, sns.clj, lambda.clj, secrets_manager.clj, brave_search.clj)
 ├── shared/api/           # API response utilities (response.clj)
 ├── shared/markdown/      # Markdown parsing utilities
-├── functions/            # 28 functions (10 processing + 17 API + 1 CLI utility)
-└── tests/                # Unit tests (99 tests, 646 assertions)
+├── shared/notifications/ # Notification dispatch utilities
+├── shared/search/        # Vector search and semantic indexing
+├── functions/            # 31 functions (11 processing + 19 API + 1 CLI utility)
+└── tests/                # Unit tests (129 tests, 692 assertions)
 
 terraform/                # All AWS infrastructure
 ├── lambda.tf             # Processing Lambda functions
 ├── api_lambda.tf         # API Lambda functions
 ├── api_gateway.tf        # HTTP API Gateway with JWT auth
 ├── cognito.tf            # User Pool and Identity Pool
+├── notifications.tf      # SNS/APNs push notification infrastructure
+├── secrets.tf            # Secrets Manager resources
 └── ...                   # S3, DynamoDB, EventBridge, Step Functions
 
 scripts/                  # Deployment and testing

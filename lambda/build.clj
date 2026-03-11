@@ -123,6 +123,9 @@
    "api_device_tokens"           "handler/handler"
    "api_notifications"           "handler/handler"
    "notification_dispatch"       "handler/handler"
+   ;; Insight viewed-status Lambda functions
+   "api_mark_viewed"             "handler/handler"
+   "api_insights_count"          "handler/handler"
    ;; Webhook Lambda functions
    "webhook_receive"             "handler/handler"
    "api_webhook_sources"         "handler/handler"

@@ -14,22 +14,26 @@ An intelligent, serverless AWS system for automating Personal Knowledge Manageme
 
 ## Architecture
 
-```
-Local Vault ↔ rclone ↔ S3 → EventBridge → Lambda → Bedrock
-                        │                    │
-                        └────────────────────┴──→ DynamoDB
-                                                  │
-Agent Outputs ← rclone ←────────────────────────┘
+```mermaid
+graph LR
+    subgraph Processing Pipeline
+        Vault[Local Vault] <-->|rclone| S3
+        S3 --> EventBridge --> Lambda --> Bedrock
+        Lambda --> DynamoDB
+        Lambda -->|_agent/ outputs| S3
+    end
 
-iOS App → API Gateway (JWT) → Lambda → DynamoDB/S3
-              ↑
-         Cognito Auth
+    subgraph Mobile API
+        iOS[iOS App] --> APIGW[API Gateway - JWT]
+        Cognito[Cognito Auth] --> APIGW
+        APIGW --> Lambda2[Lambda] --> DB2[DynamoDB/S3]
+    end
 ```
 
 **AWS Services Used:**
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
-- **Lambda:** 28 serverless functions (10 processing + 17 API + 1 CLI utility)
+- **Lambda:** 31 serverless functions (11 processing + 19 API + 1 CLI utility)
 - **Bedrock:** Claude Haiku 4.5 and Sonnet 4.5 for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
@@ -136,6 +140,10 @@ The system includes a REST API for iOS app access:
 | `DELETE /searches/{id}` | Delete search monitor |
 | `POST /searches` | Create search monitor |
 | `GET /searches/{id}/summaries` | List search summaries |
+| `POST /devices` | Register device for push notifications |
+| `DELETE /devices/{device-id}` | Unregister device |
+| `GET /notifications` | List pending notifications |
+| `PUT /notifications/{id}/read` | Mark notification as read |
 
 **Authentication:** Cognito User Pool with JWT tokens
 
@@ -181,6 +189,8 @@ pkm-agent-system/
 │   ├── api_lambda.tf      # API Lambda functions
 │   ├── api_gateway.tf     # HTTP API Gateway
 │   ├── cognito.tf         # User authentication
+│   ├── notifications.tf   # SNS/APNs push notification infrastructure
+│   ├── secrets.tf         # Secrets Manager resources
 │   ├── eventbridge.tf
 │   ├── stepfunctions.tf
 │   ├── iam.tf
@@ -191,9 +201,11 @@ pkm-agent-system/
 │   ├── bb.edn             # Babashka configuration
 │   ├── build.clj          # Build script
 │   ├── shared/            # Shared utilities
-│   │   ├── aws/           # AWS SDK wrappers
+│   │   ├── aws/           # AWS SDK wrappers (bedrock, dynamodb, s3, sns, lambda, secrets_manager, brave_search)
 │   │   ├── api/           # API response utilities
-│   │   └── markdown/      # Markdown parsing
+│   │   ├── markdown/      # Markdown parsing
+│   │   ├── notifications/ # Push notification utilities
+│   │   └── search/        # Vector search and semantic indexing
 │   ├── functions/         # Lambda function implementations
 │   │   ├── classify_document/
 │   │   ├── extract_entities/
@@ -222,7 +234,10 @@ pkm-agent-system/
 │   │   ├── api_graph_data/
 │   │   ├── api_search_monitors/
 │   │   ├── api_search_monitor_detail/
-│   │   └── api_search_summaries/
+│   │   ├── api_search_summaries/
+│   │   ├── notification_dispatch/
+│   │   ├── api_device_tokens/
+│   │   └── api_notifications/
 │   └── tests/             # Unit tests
 ├── ios/                   # iOS app (SwiftUI)
 ├── scripts/               # Deployment and setup scripts
@@ -416,8 +431,9 @@ terraform apply
 - [x] Persistent search monitors (Brave Search API, AI summarization)
 - [x] Persistent search UI (iOS views for search monitors)
 - [x] iOS UI improvements (front matter stripping, checkboxes, wikilinks)
-- [ ] Secrets management
-- [ ] Push notifications
+- [x] Secrets management (centralized Terraform secrets, multi-key caching)
+- [x] Unified documents view (merged Documents, Search, Tags into single tab)
+- [x] Push notifications (SNS/APNs for summaries, reports, search monitors)
 - [ ] Webhook receiving & classification
 - [ ] Interactive chat interface
 - [ ] Task extraction and tracking

@@ -38,10 +38,12 @@ settings:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
       DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+      APS_ENVIRONMENT: development
     Release:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
       DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
       SWIFT_OPTIMIZATION_LEVEL: -O
+      APS_ENVIRONMENT: production
 
 targets:
   PKMReader:
@@ -70,6 +72,8 @@ targets:
         ENABLE_PREVIEWS: YES
     entitlements:
       path: PKMReader/PKMReader.entitlements
+      properties:
+        aps-environment: $(APS_ENVIRONMENT)
     dependencies:
       - package: Textual
       - package: Amplify

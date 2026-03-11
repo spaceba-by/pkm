@@ -11,9 +11,21 @@ struct Report: Identifiable, Codable, Hashable, Sendable {
     /// When the report was last modified (optional, not always returned by API)
     let modified: Date?
 
-    init(id: String, weekOf: String, modified: Date? = nil) {
+    /// Whether the user has viewed this report (computed server-side from viewed_at vs modified_at)
+    let viewed: Bool
+
+    init(id: String, weekOf: String, modified: Date? = nil, viewed: Bool = true) {
         self.id = id
         self.weekOf = weekOf
         self.modified = modified
+        self.viewed = viewed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        weekOf = try container.decode(String.self, forKey: .weekOf)
+        modified = try container.decodeIfPresent(Date.self, forKey: .modified)
+        viewed = try container.decodeIfPresent(Bool.self, forKey: .viewed) ?? true
     }
 }

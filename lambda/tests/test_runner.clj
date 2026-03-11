@@ -19,6 +19,7 @@
 (require '[api.graph-data-test])
 (require '[shared.secrets-manager-test])
 (require '[notifications.handler-test])
+(require '[insights.viewed-test])
 (require '[webhooks.utils-test])
 
 (defn -main [& args]
@@ -39,6 +40,7 @@
                  'api.graph-data-test
                  'shared.secrets-manager-test
                  'notifications.handler-test
+                 'insights.viewed-test
                  'webhooks.utils-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))

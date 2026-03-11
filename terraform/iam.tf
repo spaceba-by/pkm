@@ -225,7 +225,10 @@ resource "aws_iam_role_policy" "lambda_sns_access" {
         Action = [
           "sns:Publish"
         ]
-        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint/APNS*/${var.project_name}-*"
+        Resource = [
+          "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint/APNS*/${var.project_name}-*",
+          "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:app/APNS*/${var.project_name}-*"
+        ]
       },
       {
         Effect = "Allow"
@@ -954,6 +957,72 @@ resource "aws_iam_role_policy" "github_actions_apigateway" {
           "arn:aws:apigateway:${var.aws_region}::/apis/*",
           "arn:aws:apigateway:${var.aws_region}::/tags/*"
         ]
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage SNS (push notifications)
+resource "aws_iam_role_policy" "github_actions_sns" {
+  for_each = local.github_oidc
+
+  name = "sns-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SNSPlatformApplicationManagement"
+        Effect = "Allow"
+        Action = [
+          "sns:CreatePlatformApplication",
+          "sns:GetPlatformApplicationAttributes",
+          "sns:SetPlatformApplicationAttributes",
+          "sns:DeletePlatformApplication",
+          "sns:ListPlatformApplications",
+          "sns:TagResource",
+          "sns:UntagResource"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Policy for GitHub Actions to manage Lambda event source mappings
+resource "aws_iam_role_policy" "github_actions_lambda_event_source" {
+  for_each = local.github_oidc
+
+  name = "lambda-event-source-management"
+  role = aws_iam_role.github_actions["enabled"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "LambdaEventSourceMappingManagement"
+        Effect = "Allow"
+        Action = [
+          "lambda:CreateEventSourceMapping",
+          "lambda:DeleteEventSourceMapping",
+          "lambda:GetEventSourceMapping",
+          "lambda:UpdateEventSourceMapping",
+          "lambda:ListEventSourceMappings",
+          "lambda:TagResource",
+          "lambda:UntagResource",
+          "lambda:ListTags"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DynamoDBStreamAccess"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:DescribeStream",
+          "dynamodb:ListStreams"
+        ]
+        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodb_table_name}/stream/*"
       }
     ]
   })

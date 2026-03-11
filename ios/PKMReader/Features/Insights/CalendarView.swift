@@ -62,6 +62,7 @@ struct CalendarView: View {
         return HStack(spacing: 0) {
             WeekReportIndicator(
                 hasReport: report != nil,
+                isUnread: report.map { !$0.viewed } ?? false,
                 onTap: report.map { r in { onReportTap(r) } }
             )
 
@@ -72,6 +73,7 @@ struct CalendarView: View {
                 CalendarDayCell(
                     day: day,
                     hasSummary: summary != nil,
+                    isUnread: summary.map { !$0.viewed } ?? false,
                     onTap: summary.map { s in { onSummaryTap(s) } }
                 )
                 .frame(maxWidth: .infinity)

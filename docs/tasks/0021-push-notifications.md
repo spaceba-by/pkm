@@ -1,6 +1,6 @@
 # Task 0021: Push Notifications
 
-**Status**: In Progress
+**Status**: Complete ✅
 
 ## Specifications
 
@@ -114,36 +114,53 @@ Extend these existing Lambdas to write notification records:
 
 ## Acceptance Criteria
 
-- [ ] iOS app registers for push notifications and sends device token to backend
-- [ ] Device tokens stored in DynamoDB with user association
-- [ ] SNS Platform Application configured for APNs (sandbox and production)
-- [ ] APNs auth key stored securely in Secrets Manager
-- [ ] Daily summary generation creates notification records
-- [ ] Weekly report generation creates notification records
-- [ ] Persistent search notifications continue to work (no regression)
-- [ ] DynamoDB Stream triggers notification dispatch Lambda
-- [ ] Dispatch Lambda sends push notifications via SNS to registered devices
-- [ ] Notifications include deep link for navigation to relevant content
-- [ ] API endpoint lists pending notifications for authenticated user
-- [ ] API endpoint marks notifications as read
-- [ ] iOS app handles notification taps and navigates to content
-- [ ] Badge count reflects unread notification count
-- [ ] Unit tests cover dispatch, API handlers, and notification record creation
-- [ ] All existing tests continue to pass
+- [x] iOS app registers for push notifications and sends device token to backend
+- [x] Device tokens stored in DynamoDB with user association
+- [x] SNS Platform Application configured for APNs (sandbox and production)
+- [x] APNs auth key stored securely in Secrets Manager
+- [x] Daily summary generation creates notification records
+- [x] Weekly report generation creates notification records
+- [x] Persistent search notifications continue to work (no regression)
+- [x] DynamoDB Stream triggers notification dispatch Lambda
+- [x] Dispatch Lambda sends push notifications via SNS to registered devices
+- [x] Notifications include deep link for navigation to relevant content
+- [x] API endpoint lists pending notifications for authenticated user
+- [x] API endpoint marks notifications as read
+- [x] iOS app handles notification taps and navigates to content
+- [x] Badge count reflects unread notification count
+- [x] Unit tests cover dispatch, API handlers, and notification record creation
+- [x] All existing tests continue to pass
 
 ## Implementation Steps
 
-- [ ] Step 1: Add Push Notifications capability to `ios/project.yml` and create entitlements file
-- [ ] Step 2: Create NotificationService for APNs registration and device token management
-- [ ] Step 3: Add device token API endpoints (POST /devices, DELETE /devices/{device-id})
-- [ ] Step 4: Create device token API Lambda handler
-- [ ] Step 5: Create notification dispatch Lambda triggered by DynamoDB Stream on notification records
-- [ ] Step 6: Configure SNS Platform Application for APNs in Terraform
-- [ ] Step 7: Add notification record creation to `generate_daily_summary` and `generate_weekly_report`
-- [ ] Step 8: Create notifications API Lambda (GET /notifications, PUT /notifications/{id}/read)
-- [ ] Step 9: Add API Gateway routes for device and notification endpoints
-- [ ] Step 10: Implement iOS notification handling and deep linking
-- [ ] Step 11: Add badge count management
-- [ ] Step 12: Write unit tests for all new Lambda handlers
-- [ ] Step 13: Update UITestAPIClient and MockAPIClient with notification fixtures
-- [ ] Step 14: Verify all existing tests pass
+- [x] Step 1: Add Push Notifications capability to `ios/project.yml` and create entitlements file
+- [x] Step 2: Create NotificationService for APNs registration and device token management
+- [x] Step 3: Add device token API endpoints (POST /devices, DELETE /devices/{device-id})
+- [x] Step 4: Create device token API Lambda handler
+- [x] Step 5: Create notification dispatch Lambda triggered by DynamoDB Stream on notification records
+- [x] Step 6: Configure SNS Platform Application for APNs in Terraform
+- [x] Step 7: Add notification record creation to `generate_daily_summary` and `generate_weekly_report`
+- [x] Step 8: Create notifications API Lambda (GET /notifications, PUT /notifications/{id}/read)
+- [x] Step 9: Add API Gateway routes for device and notification endpoints
+- [x] Step 10: Implement iOS notification handling and deep linking
+- [x] Step 11: Add badge count management
+- [x] Step 12: Write unit tests for all new Lambda handlers
+- [x] Step 13: Update UITestAPIClient and MockAPIClient with notification fixtures
+- [x] Step 14: Verify all existing tests pass
+
+## Summary of Changes
+
+### PR #109: Implement push notifications infrastructure (Task 0021)
+
+- Created `notification_dispatch` Lambda triggered by DynamoDB Stream to send push notifications via SNS/APNs
+- Created `api_device_tokens` Lambda for device token registration (POST /devices, DELETE /devices/{device-id})
+- Created `api_notifications` Lambda for listing and acknowledging notifications (GET /notifications, PUT /notifications/{id}/read)
+- Added `lambda/shared/aws/sns.clj` for SNS Platform Application operations
+- Added `lambda/shared/notifications/utils.clj` for notification record creation utilities
+- Extended `generate_daily_summary` and `generate_weekly_report` to write notification records on completion
+- Added `terraform/notifications.tf` with SNS Platform Application, DynamoDB Stream, Lambda functions, and API Gateway routes
+- Created iOS `NotificationService` for APNs registration and token management
+- Created iOS `NotificationHandler` for handling received notifications with deep linking
+- Added push notification entitlements and capability to iOS project
+- Added comprehensive unit tests for dispatch, API handlers, and notification models
+- 35 files changed, 2,337 insertions, 8 deletions

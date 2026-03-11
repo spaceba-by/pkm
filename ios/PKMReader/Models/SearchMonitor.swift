@@ -33,8 +33,49 @@ struct SearchSummary: Identifiable, Codable, Hashable, Sendable {
     let removedItems: [String]
     let analysis: String?
 
+    /// Whether the user has viewed this search summary (computed server-side from viewed_at vs modified_at)
+    var viewed: Bool = true
+
     var id: String {
         timestamp
+    }
+
+    init(
+        timestamp: String,
+        summary: String,
+        topics: [String],
+        noveltyScore: Double,
+        significantUpdate: Bool,
+        newItems: [String],
+        changedItems: [String],
+        removedItems: [String],
+        analysis: String?,
+        viewed: Bool = true
+    ) {
+        self.timestamp = timestamp
+        self.summary = summary
+        self.topics = topics
+        self.noveltyScore = noveltyScore
+        self.significantUpdate = significantUpdate
+        self.newItems = newItems
+        self.changedItems = changedItems
+        self.removedItems = removedItems
+        self.analysis = analysis
+        self.viewed = viewed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        timestamp = try container.decode(String.self, forKey: .timestamp)
+        summary = try container.decode(String.self, forKey: .summary)
+        topics = try container.decode([String].self, forKey: .topics)
+        noveltyScore = try container.decode(Double.self, forKey: .noveltyScore)
+        significantUpdate = try container.decode(Bool.self, forKey: .significantUpdate)
+        newItems = try container.decode([String].self, forKey: .newItems)
+        changedItems = try container.decode([String].self, forKey: .changedItems)
+        removedItems = try container.decode([String].self, forKey: .removedItems)
+        analysis = try container.decodeIfPresent(String.self, forKey: .analysis)
+        viewed = try container.decodeIfPresent(Bool.self, forKey: .viewed) ?? true
     }
 }
 

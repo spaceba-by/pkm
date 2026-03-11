@@ -14,13 +14,11 @@ If you see an error, verify your credentials and check your internet connection.
 
 ### Navigation
 
-The app uses a tab bar at the bottom of the screen with six tabs:
+The app uses a tab bar at the bottom of the screen with four tabs:
 
 | Tab | Purpose |
 |-----|---------|
-| **Documents** | Browse, create, edit, and delete documents in your vault |
-| **Search** | Find documents by keyword or semantic similarity |
-| **Tags** | Browse documents organized by tag |
+| **Documents** | Browse, search, filter by tag/classification, create, edit, and delete documents |
 | **Insights** | Monthly calendar view with daily summaries and weekly reports |
 | **Settings** | Manage preferences, cache, and your account |
 | **Graph** | Interactive knowledge graph of entity relationships |
@@ -37,9 +35,21 @@ The Documents tab displays all documents in your vault, sorted by modification d
 - Pull down on the list to refresh and load the latest documents from the server.
 - The list loads more documents automatically as you scroll to the bottom.
 
-### Filtering by Classification
+### Searching Documents
 
-Your documents are automatically classified by AI into five categories:
+The Documents tab includes an integrated search bar at the top:
+
+1. Tap the search bar and type at least 2 characters to begin searching.
+2. Results appear automatically as you type (with a short delay to avoid excessive requests).
+3. Toggle between **Keyword** and **Semantic** search modes. Keyword matches titles, paths, and tags. Semantic search finds conceptually related documents using AI embeddings.
+4. Tap a result to open the document detail view.
+5. Browse state is preserved while searching — dismiss the search to return to your previous position.
+
+### Filtering by Classification and Tags
+
+Tap the filter icon in the top-right corner to open the filter sheet, which has two sections:
+
+**Classification filter:** Your documents are automatically classified by AI into five categories:
 
 | Classification | Description |
 |----------------|-------------|
@@ -49,13 +59,11 @@ Your documents are automatically classified by AI into five categories:
 | **Journal** | Journal entries and daily logs |
 | **Project** | Project plans, specifications, and task lists |
 
-To filter documents:
+Select a classification or choose **All Documents** to remove the filter.
 
-1. Tap the filter icon in the top-right corner.
-2. Select a classification or choose **All Documents** to remove the filter.
-3. Tap **Apply**.
+**Tag filter:** Browse all tags used across your vault with document counts. Tap a tag to filter the document list to only documents with that tag. Tag and classification filters can be combined.
 
-When a filter is active, the filter icon appears filled in.
+When any filter is active, the filter icon appears filled in.
 
 ### Document Detail
 
@@ -77,25 +85,14 @@ Admin users can create and edit documents directly from the app:
 - **Edit**: In the document detail view, tap the **...** actions menu in the top-right corner and choose **Edit** to modify the document content.
 - **Delete**: In the document detail view, tap the **...** actions menu in the top-right corner and choose **Delete**. A confirmation prompt appears before deletion.
 
-## Search
+## Search Monitors
 
-The Search tab lets you find documents using keyword or semantic search.
+Search monitors let you track topics across the web over time. Access them via the binoculars icon in the Documents tab toolbar.
 
-1. Tap the search bar at the top of the screen.
-2. Type at least 2 characters to begin searching.
-3. Results appear automatically as you type (with a short delay to avoid excessive requests).
-4. Tap a result to open the document detail view.
-5. Toggle between **Keyword** and **Semantic** search modes. Keyword matches titles, paths, and tags. Semantic search finds conceptually related documents using AI embeddings.
-
-Pull down on the results to refresh the search.
-
-## Tags
-
-The Tags tab shows all tags used across your vault, along with a count of how many documents use each tag.
-
-- Tags are listed alphabetically.
-- Tap a tag to see all documents that have that tag.
-- Pull down on the list to refresh the tags.
+- **Create a monitor**: Tap the **+** button, enter a search term, configure the schedule and novelty threshold, then save.
+- **View summaries**: Tap a monitor to see its AI-generated summaries of web search results, with novelty scores indicating how significant each update is.
+- **Manage monitors**: Edit, pause, or delete monitors from the detail view.
+- When a monitor detects significant new results (above the novelty threshold), you receive a push notification.
 
 ## Insights
 
@@ -155,6 +152,7 @@ PKM Reader caches documents locally so you can continue browsing previously view
 - Loading new documents or refreshing lists.
 - Searching for documents.
 - Loading daily summaries and weekly reports.
+- Receiving push notifications.
 - Signing in.
 
 ### How It Works

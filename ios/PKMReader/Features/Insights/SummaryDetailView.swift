@@ -4,10 +4,12 @@ import Textual
 /// Detail view for a daily summary, renders markdown content
 struct SummaryDetailView: View {
     let summary: Summary
+    let apiClient: any APIClientProtocol
     @StateObject private var viewModel: InsightDetailViewModel
 
     init(summary: Summary, apiClient: any APIClientProtocol) {
         self.summary = summary
+        self.apiClient = apiClient
         _viewModel = StateObject(wrappedValue: InsightDetailViewModel(
             key: summary.id,
             apiClient: apiClient
@@ -37,6 +39,14 @@ struct SummaryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadContent()
+            if !summary.viewed {
+                do {
+                    try await apiClient.markSummaryViewed(date: summary.date)
+                    NotificationHandler.shared.decrementUnreadCount()
+                } catch {
+                    print("Failed to mark summary viewed: \(error.localizedDescription)")
+                }
+            }
         }
         .accessibilityIdentifier("SummaryDetailView")
     }

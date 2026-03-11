@@ -39,7 +39,7 @@
 ;; Duplicated from api_search_summaries handler
 (defn- format-summary
   "Format a summary record for API response"
-  [summary]
+  [summary viewed-set]
   {:timestamp (:timestamp summary)
    :summary (:summary_text summary)
    :topics (or (:topics summary) [])
@@ -48,7 +48,8 @@
    :newItems (or (:new_items summary) [])
    :changedItems (or (:changed_items summary) [])
    :removedItems (or (:removed_items summary) [])
-   :analysis (:analysis summary)})
+   :analysis (:analysis summary)
+   :viewed (boolean (get viewed-set (:timestamp summary)))})
 
 ;; =============================================================================
 ;; Key schema tests
@@ -120,7 +121,7 @@
                    :changed_items ["Updated model"]
                    :removed_items ["Deprecated API"]
                    :analysis "Significant changes detected"}
-          result (format-summary summary)]
+          result (format-summary summary #{"2026-02-17T12:00:00Z"})]
       (is (= "2026-02-17T12:00:00Z" (:timestamp result)))
       (is (= "Key findings about AI..." (:summary result)))
       (is (= ["AI" "machine learning"] (:topics result)))
@@ -129,17 +130,19 @@
       (is (= ["New discovery" "New paper"] (:newItems result)))
       (is (= ["Updated model"] (:changedItems result)))
       (is (= ["Deprecated API"] (:removedItems result)))
-      (is (= "Significant changes detected" (:analysis result)))))
+      (is (= "Significant changes detected" (:analysis result)))
+      (is (true? (:viewed result)))))
 
   (testing "Provides defaults for missing list fields"
     (let [summary {:timestamp "2026-02-17T00:00:00Z"
                    :summary_text "Minimal summary"
                    :novelty_score 0.0}
-          result (format-summary summary)]
+          result (format-summary summary #{})]
       (is (= [] (:topics result)))
       (is (= [] (:newItems result)))
       (is (= [] (:changedItems result)))
-      (is (= [] (:removedItems result))))))
+      (is (= [] (:removedItems result)))
+      (is (false? (:viewed result))))))
 
 ;; =============================================================================
 ;; Validation tests

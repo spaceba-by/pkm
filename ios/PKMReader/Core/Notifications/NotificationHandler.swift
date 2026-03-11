@@ -9,7 +9,7 @@ final class NotificationHandler: NSObject, ObservableObject {
     /// Deep link path to navigate to when a notification is tapped
     @Published var pendingDeepLink: String?
 
-    /// Unread notification count for badge display
+    /// Unviewed insight count for badge display
     @Published private(set) var unreadCount: Int = 0
 
     private var apiClient: (any APIClientProtocol)?
@@ -37,25 +37,45 @@ final class NotificationHandler: NSObject, ObservableObject {
         }
     }
 
-    /// Load unread notification count from backend
+    /// Load unviewed insight count from backend and sync app icon badge
     func refreshUnreadCount() async {
         guard let apiClient else { return }
         do {
-            let response = try await apiClient.listNotifications()
-            unreadCount = response.notifications.count(where: { !$0.read })
+            let count = try await apiClient.getUnviewedCount()
+            unreadCount = count
+            try? await UNUserNotificationCenter.current().setBadgeCount(count)
         } catch {
-            print("Failed to refresh unread count: \(error.localizedDescription)")
+            print("Failed to refresh unviewed count: \(error.localizedDescription)")
         }
     }
 
-    /// Mark a notification as read
+    /// Decrement the unread count after marking an item as viewed
+    func decrementUnreadCount() {
+        if unreadCount > 0 {
+            unreadCount -= 1
+        }
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(unreadCount)
+        }
+    }
+
+    /// Mark all insights as viewed
+    func markAllAsViewed() async {
+        guard let apiClient else { return }
+        do {
+            try await apiClient.markAllInsightsViewed()
+            unreadCount = 0
+            try? await UNUserNotificationCenter.current().setBadgeCount(0)
+        } catch {
+            print("Failed to mark all as viewed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Mark a notification as read (legacy, still used for notification badge)
     func markAsRead(notificationId: String) async {
         guard let apiClient else { return }
         do {
             try await apiClient.markNotificationRead(id: notificationId)
-            if unreadCount > 0 {
-                unreadCount -= 1
-            }
         } catch {
             print("Failed to mark notification \(notificationId) as read: \(error.localizedDescription)")
         }

@@ -6,70 +6,28 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 ## Architecture Diagram
 
-```
-┌─────────────────┐                    ┌─────────────────┐
-│  Local Vault    │                    │    iOS App      │
-│   (macOS)       │                    │   (SwiftUI)     │
-└────────┬────────┘                    └────────┬────────┘
-         │ rclone bisync (every 5 min)          │ HTTPS
-         ▼                                       ▼
-┌──────────────────────────────────────────────────────────────┐
-│                         AWS Cloud                             │
-│                                                               │
-│  ┌──────────────┐              ┌──────────────────────────┐  │
-│  │  S3 Bucket   │              │     Amazon Cognito       │  │
-│  │  (Source of  │              │  • User Pool (email)     │  │
-│  │   Truth)     │              │  • iOS App Client        │  │
-│  └──────┬───────┘              │  • Identity Pool         │  │
-│         │ S3 Events            └────────────┬─────────────┘  │
-│         ▼                                    │ JWT Auth       │
-│  ┌─────────────────────┐                    ▼                │
-│  │   EventBridge       │       ┌──────────────────────────┐  │
-│  │  • markdown-events  │       │    API Gateway (HTTP)    │  │
-│  │  • daily-schedule   │       │  • JWT Authorizer        │  │
-│  │  • weekly-schedule  │       │  • CORS enabled          │  │
-│  └───┬─────────────────┘       │  • 21 REST endpoints     │  │
-│      │                          └────────────┬─────────────┘  │
-│      ▼                                       │                │
-│  ┌────────────────────┐       ┌──────────────▼─────────────┐ │
-│  │ Processing Lambdas │       │      API Lambdas           │ │
-│  │ • classify-doc     │       │ • api-list-documents       │ │
-│  │ • extract-entity   │       │ • api-get-document         │ │
-│  │ • extract-metadata │       │ • api-search               │ │
-│  │ • daily-summary    │       │ • api-list-tags            │ │
-│  │ • weekly-report    │       │ • api-documents-by-tag     │ │
-│  │ • update-index     │       │ • api-list-classifications │ │
-│  │ • bulk-reclassify  │       │ • api-list-summaries       │ │
-│  │ • delete-document  │       │ • api-list-reports         │ │
-│  │ • index-embeddings │       │ • api-update-classification│ │
-│  │ • persistent-search│       │ • api-bulk-reclassify      │ │
-│  └─────────┬──────────┘       │ • api-create/update/delete │ │
-│            │                   │ • api-graph-data           │ │
-│            │                   │ • api-search-monitors      │ │
-│            │                   └──────────────┬─────────────┘ │
-│            │                                  │                │
-│            ▼                                  ▼                │
-│  ┌──────────────────────────────────────────────────────────┐│
-│  │                    DynamoDB Table                         ││
-│  │  PK: doc#path | tag#name | entity#type#name               ││
-│  │  SK: metadata | doc#path | mention#doc                    ││
-│  │  GSI: tag-index, classification-index, entity-index       ││
-│  └──────────────────────────────────────────────────────────┘│
-│                                                               │
-│  ┌──────────────────────────────────────────────────────────┐│
-│  │         Amazon Bedrock                                    ││
-│  │  • Claude Haiku 4.5 (classify, extract)                   ││
-│  │  • Claude Sonnet 4.5 (summaries, reports)                ││
-│  └──────────────────────────────────────────────────────────┘│
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-         │
-         │ rclone bisync
-         ▼
-┌─────────────────┐
-│  Local Vault    │
-│  (_agent/ dir)  │
-└─────────────────┘
+```mermaid
+graph TD
+    Vault[Local Vault<br/>macOS] <-->|rclone bisync<br/>every 5 min| S3
+    iOS[iOS App<br/>SwiftUI] -->|HTTPS| APIGW
+
+    subgraph AWS[AWS Cloud]
+        S3[S3 Bucket<br/>Source of Truth]
+        Cognito[Amazon Cognito<br/>User Pool · App Client · Identity Pool]
+
+        S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
+        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 25 endpoints]
+
+        EB --> ProcLambda[Processing Lambdas<br/>classify-doc · extract-entity · extract-metadata<br/>daily-summary · weekly-report · update-index<br/>bulk-reclassify · delete-document · index-embeddings<br/>persistent-search · notification-dispatch]
+
+        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications]
+
+        ProcLambda --> DynamoDB[DynamoDB Table<br/>PK: doc#path · tag#name · entity#type#name<br/>SK: metadata · doc#path · mention#doc<br/>GSI: tag-index · classification-index · entity-index]
+        APILambda --> DynamoDB
+        ProcLambda --> S3
+
+        ProcLambda --> Bedrock[Amazon Bedrock<br/>Claude Haiku 4.5 — classify, extract<br/>Claude Sonnet 4.5 — summaries, reports]
+    end
 ```
 
 ## Components
@@ -111,7 +69,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 
 #### Lambda Functions
 
-**Processing Functions (10):**
+**Processing Functions (11):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
@@ -125,6 +83,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `delete-document` | Babashka | 256 MB | 10s | S3 DELETE | Cascade-delete DynamoDB records |
 | `persistent-search-execute` | Babashka | 512 MB | 60s | Scheduled | Execute search monitors via Brave API |
 | `persistent-search-summarize` | Babashka | 1024 MB | 60s | Invoke | Summarize search results with AI |
+| `notification-dispatch` | Babashka | 256 MB | 30s | DynamoDB Stream | Dispatch push notifications via SNS/APNs |
 
 **CLI Utilities** (run locally, not deployed as Lambda):
 
@@ -132,7 +91,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 |--------|---------|
 | `index-embeddings` | Generate vector embeddings for semantic search index |
 
-**API Functions (17):**
+**API Functions (19):**
 
 | Function | Runtime | Memory | Timeout | Endpoint | Purpose |
 |----------|---------|--------|---------|----------|---------|
@@ -153,10 +112,15 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 | `api-search-monitors` | Babashka | 256 MB | 10s | GET /searches | List search monitors |
 | `api-search-monitor-detail` | Babashka | 256 MB | 10s | GET /searches/{id} | Search monitor detail |
 | `api-search-summaries` | Babashka | 256 MB | 10s | GET /searches/{id}/summaries | List search summaries |
+| `api-device-tokens` | Babashka | 256 MB | 10s | POST /devices; DELETE /devices/{device-id} | Register/unregister device tokens |
+| `api-notifications` | Babashka | 256 MB | 10s | GET /notifications; PUT /notifications/{id}/read | List and acknowledge notifications |
 
 **Shared Code:**
-- Common utilities in `lambda/shared/`: `aws/bedrock.clj`, `aws/dynamodb.clj`, `aws/s3.clj`, `markdown/utils.clj`
+- AWS wrappers in `lambda/shared/aws/`: `bedrock.clj`, `dynamodb.clj`, `s3.clj`, `sns.clj`, `lambda.clj`, `secrets_manager.clj`, `brave_search.clj`
 - API utilities in `lambda/shared/api/`: `response.clj`
+- Markdown parsing in `lambda/shared/markdown/`: `utils.clj`
+- Notification utilities in `lambda/shared/notifications/`: `utils.clj`
+- Vector search in `lambda/shared/search/`: `chunker.clj`, `embeddings.clj`, `indexer.clj`, `semantic.clj`, `vector_index.clj`
 - Bundled into each Lambda's uberjar via `build.clj`
 - Uses `bblf` (Babashka Lambda Framework) for runtime
 
@@ -205,6 +169,10 @@ The PKM Agent System is a serverless AWS architecture that automatically process
   DELETE /searches/{id}                        - Delete search monitor
   GET    /searches/{id}/summaries              - List search summaries
   GET    /searches/{id}/summaries/{timestamp}  - Search summary detail
+  POST   /devices                              - Register device for push notifications
+  DELETE /devices/{device-id}                  - Unregister device
+  GET    /notifications                        - List pending notifications
+  PUT    /notifications/{id}/read              - Mark notification as read
   ```
 
 ### 4. Event-Driven Processing
@@ -412,7 +380,7 @@ The PKM Agent System is a serverless AWS architecture that automatically process
 ## Future Enhancements
 
 1. ~~**Semantic Search:** Add OpenSearch for full-text search~~ ✅ Implemented (Task 0009) — in-memory vector index with cosine similarity
-2. **Real-time Notifications:** SNS/email for summaries
+2. ~~**Real-time Notifications:** SNS/email for summaries~~ ✅ Implemented (Task 0021) — push notifications via SNS/APNs for summaries, reports, and search monitors
 3. **Custom Workflows:** User-defined processing rules
 4. ~~**Knowledge Graph:** Visualization of entity relationships~~ ✅ Implemented (Task 0011) — interactive force-directed graph in iOS
 5. **Multi-user Support:** Separate vaults per user

@@ -11,9 +11,21 @@ struct Summary: Identifiable, Codable, Hashable, Sendable {
     /// When the summary was last modified (optional, not always returned by API)
     let modified: Date?
 
-    init(id: String, date: String, modified: Date? = nil) {
+    /// Whether the user has viewed this summary (computed server-side from viewed_at vs modified_at)
+    let viewed: Bool
+
+    init(id: String, date: String, modified: Date? = nil, viewed: Bool = true) {
         self.id = id
         self.date = date
         self.modified = modified
+        self.viewed = viewed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        date = try container.decode(String.self, forKey: .date)
+        modified = try container.decodeIfPresent(Date.self, forKey: .modified)
+        viewed = try container.decodeIfPresent(Bool.self, forKey: .viewed) ?? true
     }
 }
