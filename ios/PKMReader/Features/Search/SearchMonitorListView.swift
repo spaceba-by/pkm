@@ -37,9 +37,6 @@ struct SearchMonitorListView: View {
                 }
             }
         }
-        .navigationDestination(for: SearchMonitor.self) { monitor in
-            SearchMonitorDetailView(monitorId: monitor.id, apiClient: viewModel.apiClient)
-        }
         .navigationTitle("Search Monitors")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -102,7 +99,9 @@ struct SearchMonitorListView: View {
     private var monitorList: some View {
         List {
             ForEach(viewModel.monitors) { monitor in
-                NavigationLink(value: monitor) {
+                NavigationLink {
+                    SearchMonitorDetailView(monitorId: monitor.id, apiClient: viewModel.apiClient)
+                } label: {
                     SearchMonitorRow(monitor: monitor)
                 }
                 .accessibilityIdentifier("Monitor_\(monitor.id)")
