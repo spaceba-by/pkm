@@ -1,4 +1,5 @@
 import SwiftUI
+import Textual
 
 /// Detail view for a single search summary
 struct SearchSummaryView: View {
@@ -9,14 +10,14 @@ struct SearchSummaryView: View {
     var body: some View {
         List {
             Section("Summary") {
-                Text(summary.summary)
-                    .font(.body)
+                StructuredText(markdown: summary.summary)
+                    .textSelection(.enabled)
             }
 
             if let analysis = summary.analysis, !analysis.isEmpty {
                 Section("Analysis") {
-                    Text(analysis)
-                        .font(.body)
+                    StructuredText(markdown: analysis)
+                        .textSelection(.enabled)
                 }
             }
 
