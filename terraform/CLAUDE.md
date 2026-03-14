@@ -44,6 +44,10 @@ terraform plan -var="lambda_source_type=s3" -var="lambda_build_tag=main-abc123"
 | `eventbridge.tf` | Event rules and schedules |
 | `stepfunctions.tf` | Weekly report workflow |
 | `cloudwatch.tf` | Dashboards, alarms, log groups |
+| `notifications.tf` | SNS/APNs push notification infrastructure |
+| `secrets.tf` | Secrets Manager resources |
+| `webhooks.tf` | Webhook receiving infrastructure and API routes |
+| `insights.tf` | Insights viewed tracking and unviewed counts |
 | `state.tf` | Remote state backend configuration |
 
 ## Naming Conventions

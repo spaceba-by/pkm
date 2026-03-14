@@ -209,17 +209,14 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Daily summary and weekly report Lambdas create notification records
   - iOS NotificationService and NotificationHandler with deep linking
 
-### Planned
-
-#### Tier 2 — Communication
-
-- **Task 0022: Webhook Receiving & Classification** *(In Progress)*
+- **Task 0022: Webhook Receiving & Classification** ✅
 
   - See: [0022-webhook-receiving](tasks/0022-webhook-receiving.md)
   - API endpoint for receiving external webhooks (GitHub, email, custom)
-  - HMAC signature verification, classification, and routing to `_agent/webhooks/` or DynamoDB
+  - HMAC signature verification, classification, and routing
   - Admin CRUD API for webhook source management
-  - Depends on: Task 0020 ✅
+
+### Planned
 
 #### Tier 3 — Command & Intelligence
 
