@@ -18,7 +18,7 @@ graph TD
         S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
         Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 36 endpoints]
 
-        EB --> ProcLambda[Processing Lambdas<br/>classify-doc · extract-entity · extract-metadata<br/>daily-summary · weekly-report · update-index<br/>bulk-reclassify · delete-document · index-embeddings<br/>persistent-search · notification-dispatch<br/>webhook-receive]
+        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document<br/>persistent-search · notification-dispatch · webhook-receive]
 
         APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed]
 
