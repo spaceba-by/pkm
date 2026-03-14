@@ -129,7 +129,12 @@
    ;; Webhook Lambda functions
    "webhook_receive"             "handler/handler"
    "api_webhook_sources"         "handler/handler"
-   "api_webhook_events"          "handler/handler"})
+   "api_webhook_events"          "handler/handler"
+   ;; Chat / Command interface Lambda functions
+   "command_process"              "handler/handler"
+   "api_chat_send"                "handler/handler"
+   "api_chat_list"                "handler/handler"
+   "api_chat_messages"            "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

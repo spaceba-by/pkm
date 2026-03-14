@@ -17,7 +17,10 @@ locals {
     "api-create-document",
     "api-update-document",
     "api-delete-document",
-    "api-graph-data"
+    "api-graph-data",
+    "api-chat-send",
+    "api-chat-list",
+    "api-chat-messages"
   ] : []
 
   api_lambda_environment = {
@@ -639,5 +642,136 @@ resource "aws_lambda_function" "api_graph_data" {
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-api-graph-data"
+  })
+}
+
+# =============================================================================
+# API Chat Send Lambda (POST /chat)
+# =============================================================================
+
+resource "aws_lambda_function" "api_chat_send" {
+  for_each = local.mobile_api
+
+  function_name = "${var.project_name}-api-chat-send"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/api_chat_send.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/api_chat_send.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_chat_send.zip" : null
+
+  environment {
+    variables = merge(local.api_lambda_environment, {
+      COMMAND_PROCESS_FUNCTION_NAME = "${var.project_name}-command-process"
+    })
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.api_lambda_logs
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-api-chat-send"
+  })
+}
+
+# =============================================================================
+# API Chat List Lambda (GET /chat)
+# =============================================================================
+
+resource "aws_lambda_function" "api_chat_list" {
+  for_each = local.mobile_api
+
+  function_name = "${var.project_name}-api-chat-list"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/api_chat_list.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/api_chat_list.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_chat_list.zip" : null
+
+  environment {
+    variables = local.api_lambda_environment
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.api_lambda_logs
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-api-chat-list"
+  })
+}
+
+# =============================================================================
+# API Chat Messages Lambda (GET /chat/{conversationId})
+# =============================================================================
+
+resource "aws_lambda_function" "api_chat_messages" {
+  for_each = local.mobile_api
+
+  function_name = "${var.project_name}-api-chat-messages"
+  role          = aws_iam_role.lambda_execution.arn
+  handler       = "handler/handler"
+  runtime       = "provided.al2023"
+  timeout       = 30
+  memory_size   = 256
+
+  # Local source (default)
+  filename         = local.use_local_source ? "${path.module}/../lambda/target/api_chat_messages.zip" : null
+  source_code_hash = local.use_local_source ? filebase64sha256("${path.module}/../lambda/target/api_chat_messages.zip") : null
+
+  # S3 source (CI/CD)
+  s3_bucket = local.use_s3_source ? var.lambda_artifacts_bucket_name : null
+  s3_key    = local.use_s3_source ? "builds/${var.lambda_build_tag}/api_chat_messages.zip" : null
+
+  environment {
+    variables = local.api_lambda_environment
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  tracing_config {
+    mode = var.enable_xray_tracing ? "Active" : "PassThrough"
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.api_lambda_logs
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-api-chat-messages"
   })
 }

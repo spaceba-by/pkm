@@ -285,6 +285,28 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         return response.documents
     }
 
+    // MARK: - Chat
+
+    func sendChatMessage(message: String, conversationId: String?) async throws -> ChatSendResponse {
+        let url = baseURL.appendingPathComponent("chat")
+        let request = ChatSendRequest(message: message, conversationId: conversationId)
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "POST", body: request)
+    }
+
+    func listConversations() async throws -> [ChatConversation] {
+        let url = baseURL.appendingPathComponent("chat")
+        let response: ChatConversationsResponse = try await performRequestWithRetry(url: url)
+        return response.conversations
+    }
+
+    func getConversationMessages(conversationId: String) async throws -> [ChatMessage] {
+        let url = baseURL
+            .appendingPathComponent("chat")
+            .appendingPathComponent(conversationId)
+        let response: ChatMessagesResponse = try await performRequestWithRetry(url: url)
+        return response.messages
+    }
+
     // MARK: - Device Tokens & Notifications
 
     func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {

@@ -416,6 +416,54 @@
             GraphEdge(source: "entity:people:alice", target: "entity:people:bob", type: "co_occurrence", weight: 1),
         ]
 
+        // MARK: - Chat
+
+        func sendChatMessage(message: String, conversationId: String?) async throws -> ChatSendResponse {
+            ChatSendResponse(
+                conversationId: conversationId ?? "fixture-conv-id",
+                userMessage: ChatMessage(
+                    id: "fixture-user-msg",
+                    role: .user,
+                    content: message,
+                    timestamp: "2026-03-14T00:00:00Z",
+                    status: .complete
+                ),
+                assistantMessageId: "fixture-assistant-msg"
+            )
+        }
+
+        func listConversations() async throws -> [ChatConversation] {
+            [
+                ChatConversation(
+                    id: "conv-1",
+                    title: "What meetings happened...",
+                    created: "2026-03-14T00:00:00Z",
+                    modified: "2026-03-14T00:00:00Z",
+                    messageCount: 2,
+                    status: "active"
+                ),
+            ]
+        }
+
+        func getConversationMessages(conversationId _: String) async throws -> [ChatMessage] {
+            [
+                ChatMessage(
+                    id: "msg-1",
+                    role: .user,
+                    content: "What meetings happened this week?",
+                    timestamp: "2026-03-14T00:00:00Z",
+                    status: .complete
+                ),
+                ChatMessage(
+                    id: "msg-2",
+                    role: .assistant,
+                    content: "Based on your vault, you had 3 meetings this week...",
+                    timestamp: "2026-03-14T00:00:01Z",
+                    status: .complete
+                ),
+            ]
+        }
+
         // MARK: - Device Tokens & Notifications
 
         func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {

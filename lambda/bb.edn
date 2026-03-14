@@ -30,7 +30,11 @@
          "functions/notification_dispatch"
          "functions/webhook_receive"
          "functions/api_webhook_sources"
-         "functions/api_webhook_events"]
+         "functions/api_webhook_events"
+         "functions/command_process"
+         "functions/api_chat_send"
+         "functions/api_chat_list"
+         "functions/api_chat_messages"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}

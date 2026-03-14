@@ -333,6 +333,50 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         throw APIError.invalidResponse
     }
 
+    // MARK: - Chat
+
+    var sendChatMessageResult: Result<ChatSendResponse, Error> = .success(
+        ChatSendResponse(
+            conversationId: "test-conv-id",
+            userMessage: ChatMessage(
+                id: "test-msg-id",
+                role: .user,
+                content: "test message",
+                timestamp: "2026-03-14T00:00:00Z",
+                status: .complete
+            ),
+            assistantMessageId: "test-assistant-msg-id"
+        )
+    )
+    private(set) var sendChatMessageCallCount = 0
+    private(set) var lastSendChatMessage: String?
+    private(set) var lastSendChatConversationId: String?
+
+    var listConversationsResult: Result<[ChatConversation], Error> = .success([])
+    private(set) var listConversationsCallCount = 0
+
+    var getConversationMessagesResult: Result<[ChatMessage], Error> = .success([])
+    private(set) var getConversationMessagesCallCount = 0
+    private(set) var lastGetConversationMessagesId: String?
+
+    func sendChatMessage(message: String, conversationId: String?) async throws -> ChatSendResponse {
+        sendChatMessageCallCount += 1
+        lastSendChatMessage = message
+        lastSendChatConversationId = conversationId
+        return try sendChatMessageResult.get()
+    }
+
+    func listConversations() async throws -> [ChatConversation] {
+        listConversationsCallCount += 1
+        return try listConversationsResult.get()
+    }
+
+    func getConversationMessages(conversationId: String) async throws -> [ChatMessage] {
+        getConversationMessagesCallCount += 1
+        lastGetConversationMessagesId = conversationId
+        return try getConversationMessagesResult.get()
+    }
+
     // MARK: - Device Tokens & Notifications
 
     var registerDeviceResult: Result<DeviceRegistrationResponse, Error> = .success(
@@ -466,6 +510,12 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         getSearchMonitorSummaryCallCount = 0
         lastGetSearchMonitorSummaryMonitorId = nil
         lastGetSearchMonitorSummaryTimestamp = nil
+        sendChatMessageCallCount = 0
+        lastSendChatMessage = nil
+        lastSendChatConversationId = nil
+        listConversationsCallCount = 0
+        getConversationMessagesCallCount = 0
+        lastGetConversationMessagesId = nil
         registerDeviceCallCount = 0
         unregisterDeviceCallCount = 0
         listNotificationsCallCount = 0

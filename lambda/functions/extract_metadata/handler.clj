@@ -2,11 +2,14 @@
   "Lambda function to extract metadata from markdown documents"
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
+            [aws.lambda :as lambda]
+            [command.parser :as parser]
             [markdown.utils :as md]
             [cheshire.core :as json]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
+(def command-process-fn (System/getenv "COMMAND_PROCESS_FUNCTION_NAME"))
 
 (defn should-skip?
   "Check if file should be skipped based on path"
@@ -72,6 +75,15 @@
                            :modified now})
             (catch Exception e
               (println "Error storing tag index for" tag ":" (ex-message e))))))
+
+      ;; Check for @sal commands
+      (when command-process-fn
+        (when-let [commands (seq (parser/parse-commands content))]
+          (println "Found" (count commands) "@sal commands in" object-key)
+          (lambda/invoke-async command-process-fn
+                               {:document-path object-key
+                                :commands (vec commands)
+                                :bucket bucket-name})))
 
       metadata)))
 

@@ -21,6 +21,8 @@
 (require '[notifications.handler-test])
 (require '[insights.viewed-test])
 (require '[webhooks.utils-test])
+(require '[command.parser-test])
+(require '[command.context-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -41,7 +43,9 @@
                  'shared.secrets-manager-test
                  'notifications.handler-test
                  'insights.viewed-test
-                 'webhooks.utils-test)]
+                 'webhooks.utils-test
+                 'command.parser-test
+                 'command.context-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))
