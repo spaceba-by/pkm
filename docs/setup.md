@@ -84,8 +84,8 @@ Amazon Bedrock requires explicit model access:
 2. Navigate to "Model access" in the left sidebar
 3. Click "Manage model access"
 4. Enable access to:
-   - Claude 3 Haiku
-   - Claude 3.5 Sonnet
+   - Claude Haiku 4.5
+   - Claude Sonnet 4.5
 5. Wait for access to be granted (usually instant)
 
 Verify access:
@@ -130,7 +130,7 @@ The script will:
 This creates:
 - S3 bucket for vault storage
 - DynamoDB table for metadata
-- 14 Lambda functions (6 processing + 8 API)
+- 36 Lambda functions (12 processing + 23 API + 1 CLI utility)
 - EventBridge rules for scheduling
 - Step Functions for workflows
 - CloudWatch dashboards and alarms
@@ -246,11 +246,11 @@ Edit `terraform/variables.tf`:
 
 ```hcl
 variable "bedrock_haiku_model_id" {
-  default = "anthropic.claude-3-haiku-20240307-v1:0"
+  default = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "bedrock_sonnet_model_id" {
-  default = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+  default = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
 ```
 
@@ -376,20 +376,9 @@ export TEST_USER_PASSWORD="your-permanent-password"
 
 ### API Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /documents` | List documents (optional `classification` filter) |
-| `GET /documents/{key+}` | Get document with content |
-| `GET /search?q=...` | Search by title, path, tags |
-| `GET /tags` | List all tags with counts |
-| `GET /tags/{tag}/documents` | Documents by tag |
-| `GET /classifications` | Classification types with counts |
-| `GET /summaries` | Daily AI summaries |
-| `GET /reports` | Weekly AI reports |
+See [architecture.md](architecture.md#3-mobile-api-layer) for the complete list of 36 API endpoints.
 
 All endpoints require JWT authentication via Cognito.
-
-For detailed API documentation, see [ios-phase-1-backend-api-plan.md](ios-phase-1-backend-api-plan.md).
 
 ## Updating the System
 

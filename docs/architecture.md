@@ -16,11 +16,11 @@ graph TD
         Cognito[Amazon Cognito<br/>User Pool · App Client · Identity Pool]
 
         S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
-        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 25 endpoints]
+        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 36 endpoints]
 
-        EB --> ProcLambda[Processing Lambdas<br/>classify-doc · extract-entity · extract-metadata<br/>daily-summary · weekly-report · update-index<br/>bulk-reclassify · delete-document · index-embeddings<br/>persistent-search · notification-dispatch]
+        EB --> ProcLambda[Processing Lambdas<br/>classify-doc · extract-entity · extract-metadata<br/>daily-summary · weekly-report · update-index<br/>bulk-reclassify · delete-document · index-embeddings<br/>persistent-search · notification-dispatch<br/>webhook-receive]
 
-        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications]
+        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed]
 
         ProcLambda --> DynamoDB[DynamoDB Table<br/>PK: doc#path · tag#name · entity#type#name<br/>SK: metadata · doc#path · mention#doc<br/>GSI: tag-index · classification-index · entity-index]
         APILambda --> DynamoDB
@@ -69,7 +69,7 @@ graph TD
 
 #### Lambda Functions
 
-**Processing Functions (11):**
+**Processing Functions (12):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
@@ -84,6 +84,7 @@ graph TD
 | `persistent-search-execute` | Babashka | 512 MB | 60s | Scheduled | Execute search monitors via Brave API |
 | `persistent-search-summarize` | Babashka | 1024 MB | 60s | Invoke | Summarize search results with AI |
 | `notification-dispatch` | Babashka | 256 MB | 30s | DynamoDB Stream | Dispatch push notifications via SNS/APNs |
+| `webhook-receive` | Babashka | 256 MB | 30s | API Gateway (POST /webhooks/{source-id}) | Validate and route incoming webhooks |
 
 **CLI Utilities** (run locally, not deployed as Lambda):
 
@@ -91,7 +92,7 @@ graph TD
 |--------|---------|
 | `index-embeddings` | Generate vector embeddings for semantic search index |
 
-**API Functions (19):**
+**API Functions (23):**
 
 | Function | Runtime | Memory | Timeout | Endpoint | Purpose |
 |----------|---------|--------|---------|----------|---------|
@@ -114,12 +115,17 @@ graph TD
 | `api-search-summaries` | Babashka | 256 MB | 10s | GET /searches/{id}/summaries | List search summaries |
 | `api-device-tokens` | Babashka | 256 MB | 10s | POST /devices; DELETE /devices/{device-id} | Register/unregister device tokens |
 | `api-notifications` | Babashka | 256 MB | 10s | GET /notifications; PUT /notifications/{id}/read | List and acknowledge notifications |
+| `api-webhook-sources` | Babashka | 256 MB | 10s | POST/GET/PUT/DELETE /admin/webhook-sources | Manage webhook source registrations |
+| `api-webhook-events` | Babashka | 256 MB | 10s | GET /admin/webhook-events | List received webhook events |
+| `api-insights-count` | Babashka | 256 MB | 10s | GET /insights/unviewed-count | Get unviewed insights count |
+| `api-mark-viewed` | Babashka | 256 MB | 10s | PUT /summaries,reports,searches/viewed; PUT /insights/mark-all-viewed | Mark insights as viewed |
 
 **Shared Code:**
 - AWS wrappers in `lambda/shared/aws/`: `bedrock.clj`, `dynamodb.clj`, `s3.clj`, `sns.clj`, `lambda.clj`, `secrets_manager.clj`, `brave_search.clj`
 - API utilities in `lambda/shared/api/`: `response.clj`
 - Markdown parsing in `lambda/shared/markdown/`: `utils.clj`
 - Notification utilities in `lambda/shared/notifications/`: `utils.clj`
+- Webhook utilities in `lambda/shared/webhooks/`: `utils.clj`
 - Vector search in `lambda/shared/search/`: `chunker.clj`, `embeddings.clj`, `indexer.clj`, `semantic.clj`, `vector_index.clj`
 - Bundled into each Lambda's uberjar via `build.clj`
 - Uses `bblf` (Babashka Lambda Framework) for runtime
@@ -173,6 +179,17 @@ graph TD
   DELETE /devices/{device-id}                  - Unregister device
   GET    /notifications                        - List pending notifications
   PUT    /notifications/{id}/read              - Mark notification as read
+  POST   /webhooks/{source-id}                   - Receive webhook payload
+  POST   /admin/webhook-sources                  - Create webhook source (admin)
+  GET    /admin/webhook-sources                  - List webhook sources (admin)
+  PUT    /admin/webhook-sources/{id}             - Update webhook source (admin)
+  DELETE /admin/webhook-sources/{id}             - Delete webhook source (admin)
+  GET    /admin/webhook-events                   - List webhook events (admin)
+  PUT    /summaries/{date}/viewed                - Mark daily summary as viewed
+  PUT    /reports/{week}/viewed                  - Mark weekly report as viewed
+  PUT    /searches/{id}/summaries/{timestamp}/viewed - Mark search summary as viewed
+  PUT    /insights/mark-all-viewed               - Mark all insights as viewed
+  GET    /insights/unviewed-count                - Get unviewed insights count
   ```
 
 ### 4. Event-Driven Processing
