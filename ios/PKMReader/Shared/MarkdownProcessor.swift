@@ -13,7 +13,7 @@ enum MarkdownProcessor {
     }
 
     /// Strip YAML front matter block from the start of content
-    static func stripFrontmatter(_ content: String) -> String {
+    private static func stripFrontmatter(_ content: String) -> String {
         guard let range = content.range(
             of: #"^---\n(?:[\s\S]*?\n)?---\n?"#,
             options: .regularExpression
@@ -24,7 +24,7 @@ enum MarkdownProcessor {
     }
 
     /// Replace markdown checkbox syntax with Unicode ballot characters
-    static func renderCheckboxes(_ content: String) -> String {
+    private static func renderCheckboxes(_ content: String) -> String {
         var result = content
         // Unchecked: - [ ] → - ☐ ((?m) enables multiline mode for ^ to match line starts)
         result = result.replacingOccurrences(
@@ -43,7 +43,7 @@ enum MarkdownProcessor {
 
     /// Convert [[wikilinks]] to standard markdown links with pkm: scheme.
     /// Targets are percent-encoded so that the resulting string is a valid URL.
-    static func convertWikilinks(_ content: String) -> String {
+    private static func convertWikilinks(_ content: String) -> String {
         // First handle [[target|display]] form, then [[target]] form
         var result = replaceWikilinks(
             in: content,

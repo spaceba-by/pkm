@@ -6,6 +6,7 @@ ruby = "3.4.1"
 swiftlint = "0.63.2"
 xcbeautify = "3.1.4"
 swiftformat = "0.59.1"
+xcodegen = "latest"
 
 # =============================================================================
 # Tasks - run with `mise run <task>` or `mise r <task>`
