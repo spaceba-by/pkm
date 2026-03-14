@@ -45,7 +45,7 @@ final class InsightDetailViewModel: ObservableObject {
         do {
             let document = try await apiClient.getDocument(key: key)
             if let content = document.content {
-                contentState = .loaded(content)
+                contentState = .loaded(MarkdownProcessor.process(content))
             } else {
                 contentState = .loaded("*No content available*")
             }

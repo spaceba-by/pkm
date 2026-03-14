@@ -111,7 +111,7 @@ struct DocumentEditorView: View {
 
     private var previewSection: some View {
         ScrollView {
-            StructuredText(markdown: viewModel.content)
+            StructuredText(markdown: MarkdownProcessor.process(viewModel.content))
                 .padding()
         }
         .accessibilityIdentifier("DocumentPreview")
