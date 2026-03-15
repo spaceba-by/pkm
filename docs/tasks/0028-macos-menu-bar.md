@@ -1,6 +1,6 @@
 # Task 0028: macOS Menu Bar App
 
-**Status**: Planned
+**Status**: In Progress
 
 ## Specifications
 
