@@ -26,9 +26,9 @@ struct ConflictFile: Identifiable, Sendable, Equatable {
     }
 
     func relativePath(from vaultPath: String) -> String {
-        if originalPath.hasPrefix(vaultPath) {
-            let trimmed = String(originalPath.dropFirst(vaultPath.count))
-                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let normalizedVault = vaultPath.hasSuffix("/") ? vaultPath : vaultPath + "/"
+        if originalPath.hasPrefix(normalizedVault) {
+            let trimmed = String(originalPath.dropFirst(normalizedVault.count))
             return trimmed.isEmpty ? originalFileName : trimmed
         }
         return originalFileName

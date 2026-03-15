@@ -79,8 +79,12 @@ final class MenuBarViewModel {
     private(set) var lastError: String?
     private(set) var selectedConflict: ConflictFile?
     private var diffWindow: NSWindow?
+    private var windowDelegate: DiffWindowDelegate?
 
     func showDiff(for conflict: ConflictFile) {
+        // Close any existing diff window before opening a new one
+        diffWindow?.close()
+
         selectedConflict = conflict
 
         let diffViewModel = ConflictDetailViewModel(
@@ -96,9 +100,7 @@ final class MenuBarViewModel {
         let detailView = ConflictDetailView(
             viewModel: diffViewModel,
             onDismiss: { [weak self] in
-                self?.diffWindow?.close()
-                self?.diffWindow = nil
-                self?.selectedConflict = nil
+                self?.closeDiffWindow()
             }
         )
 
@@ -111,10 +113,26 @@ final class MenuBarViewModel {
         window.title = "Conflict: \(conflict.relativePath(from: configuration.vaultPath))"
         window.contentView = NSHostingView(rootView: detailView)
         window.center()
+
+        let delegate = DiffWindowDelegate { [weak self] in
+            self?.diffWindow = nil
+            self?.windowDelegate = nil
+            self?.selectedConflict = nil
+        }
+        window.delegate = delegate
+        windowDelegate = delegate
+
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
         diffWindow = window
+    }
+
+    private func closeDiffWindow() {
+        diffWindow?.close()
+        diffWindow = nil
+        windowDelegate = nil
+        selectedConflict = nil
     }
 
     func resolveConflict(_ conflict: ConflictFile, resolution: ConflictResolution) {
@@ -192,4 +210,17 @@ struct RecentFile: Identifiable, Sendable {
     let name: String
     let relativePath: String
     let modified: Date
+}
+
+@MainActor
+private final class DiffWindowDelegate: NSObject, NSWindowDelegate {
+    private let onClose: () -> Void
+
+    init(onClose: @escaping () -> Void) {
+        self.onClose = onClose
+    }
+
+    func windowWillClose(_: Notification) {
+        onClose()
+    }
 }

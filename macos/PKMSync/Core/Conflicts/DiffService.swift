@@ -1,5 +1,16 @@
 import Foundation
 
+enum DiffError: LocalizedError {
+    case processError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case let .processError(message):
+            "diff failed: \(message)"
+        }
+    }
+}
+
 protocol DiffServiceProtocol: Sendable {
     func diff(originalPath: String, conflictPath: String) async throws -> [DiffLine]
 }
@@ -25,14 +36,25 @@ struct DiffService: DiffServiceProtocol {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/diff")
         process.arguments = ["-u", originalPath, conflictPath]
 
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
 
         try process.run()
+
+        // Read pipe data before waitUntilExit to avoid pipe buffer deadlock
+        let data = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+        let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+
         process.waitUntilExit()
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        // diff exits 0 (identical), 1 (differences), 2 (error)
+        if process.terminationStatus == 2 {
+            let stderrMessage = String(data: stderrData, encoding: .utf8) ?? "Unknown error"
+            throw DiffError.processError(stderrMessage.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
         let output = String(data: data, encoding: .utf8) ?? ""
 
         return parseDiffOutput(output)

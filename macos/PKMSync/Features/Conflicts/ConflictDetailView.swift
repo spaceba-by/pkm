@@ -91,12 +91,16 @@ struct ConflictDetailView: View {
 
             Button("Keep Original") {
                 viewModel.resolve(.keepOriginal)
-                onDismiss()
+                if viewModel.isResolved {
+                    onDismiss()
+                }
             }
 
             Button("Keep Conflict") {
                 viewModel.resolve(.keepConflict)
-                onDismiss()
+                if viewModel.isResolved {
+                    onDismiss()
+                }
             }
             .keyboardShortcut(.defaultAction)
         }

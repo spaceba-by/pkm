@@ -46,4 +46,15 @@ final class ConflictFileTests: XCTestCase {
 
         XCTAssertEqual(conflict.relativePath(from: "/Users/test/vault"), "a/b/c/deep.md")
     }
+
+    func testRelativePathWithSimilarPrefix() {
+        let conflict = ConflictFile(
+            originalPath: "/Users/test/vault2/note.md",
+            conflictPath: "/Users/test/vault2/note.conflict1.md"
+        )
+
+        // "/Users/test/vault" is a string prefix of "/Users/test/vault2/note.md"
+        // but not a path-component prefix — should fall back to filename
+        XCTAssertEqual(conflict.relativePath(from: "/Users/test/vault"), "note.md")
+    }
 }
