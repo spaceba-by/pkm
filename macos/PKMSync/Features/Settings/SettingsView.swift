@@ -50,6 +50,9 @@ struct SettingsView: View {
             Text(viewModel.rcloneStatus)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .onChange(of: viewModel.configuration.rclonePath) {
+                    viewModel.checkRclone()
+                }
 
             HStack {
                 TextField(

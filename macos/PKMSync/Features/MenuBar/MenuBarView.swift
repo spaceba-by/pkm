@@ -36,7 +36,7 @@ struct MenuBarView: View {
                 Text(viewModel.status.label)
                     .font(.headline)
                 if let lastSync = viewModel.lastSyncDate {
-                    Text("Last sync: \(lastSync, style: .relative) ago")
+                    Text("Last sync: \(lastSync, style: .relative)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

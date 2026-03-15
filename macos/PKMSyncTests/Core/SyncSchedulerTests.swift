@@ -85,10 +85,6 @@ final class SyncSchedulerTests: XCTestCase {
     }
 
     func testLogsTrimmedToMax() async {
-        configuration.syncIntervalMinutes = 1
-        let testConfig = SyncConfiguration(defaults: defaults)
-        testConfig.syncIntervalMinutes = 1
-
         for _ in 0 ..< 55 {
             await sut.syncNow()
         }

@@ -70,6 +70,30 @@ final class SyncConfiguration: @unchecked Sendable {
         for candidate in candidates where FileManager.default.isExecutableFile(atPath: candidate) {
             return candidate
         }
-        return "rclone"
+        // Fall back to which(1) to find rclone on PATH
+        if let whichPath = resolveViaWhich("rclone") {
+            return whichPath
+        }
+        return ""
+    }
+
+    private func resolveViaWhich(_ command: String) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+        process.arguments = [command]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return nil }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let path = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return path?.isEmpty == false ? path : nil
+        } catch {
+            return nil
+        }
     }
 }

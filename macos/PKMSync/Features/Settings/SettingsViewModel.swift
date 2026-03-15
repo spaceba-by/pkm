@@ -19,10 +19,10 @@ final class SettingsViewModel {
 
     func checkRclone() {
         let path = configuration.resolvedRclonePath()
-        if FileManager.default.isExecutableFile(atPath: path) {
+        if !path.isEmpty, FileManager.default.isExecutableFile(atPath: path) {
             rcloneStatus = "Found at \(path)"
         } else {
-            rcloneStatus = "Not found"
+            rcloneStatus = "Not found — install with: brew install rclone"
         }
     }
 

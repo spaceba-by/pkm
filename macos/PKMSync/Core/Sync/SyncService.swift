@@ -26,7 +26,7 @@ struct SyncService: SyncServiceProtocol {
         }
 
         let rclonePath = configuration.resolvedRclonePath()
-        guard FileManager.default.isExecutableFile(atPath: rclonePath) else {
+        guard !rclonePath.isEmpty, FileManager.default.isExecutableFile(atPath: rclonePath) else {
             throw SyncError.rcloneNotFound
         }
 

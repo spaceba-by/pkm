@@ -36,8 +36,8 @@ enum RcloneOutputParser {
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
 
-            if trimmed.hasPrefix("Transferred:"), trimmed.contains("Bytes") {
-                // This is the bytes transferred line, skip
+            if trimmed.hasPrefix("Transferred:"), containsSizeUnit(trimmed) {
+                // This is the bytes/size transferred line, skip
                 continue
             } else if let value = extractStatValue(from: trimmed, prefix: "Transferred:") {
                 filesTransferred = value
@@ -59,6 +59,12 @@ enum RcloneOutputParser {
             errors: errors,
             errorMessages: errorMessages
         )
+    }
+
+    private static let sizeUnits = ["Bytes", "KiB", "MiB", "GiB", "TiB", "kB", "MB", "GB", "TB"]
+
+    private static func containsSizeUnit(_ line: String) -> Bool {
+        sizeUnits.contains { line.contains($0) }
     }
 
     private static func extractStatValue(from line: String, prefix: String) -> Int? {

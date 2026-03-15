@@ -66,18 +66,25 @@ final class MenuBarViewModel {
         }
     }
 
+    private(set) var lastError: String?
+
     func resolveConflict(_ conflict: ConflictFile, resolution: ConflictResolution) {
         do {
             try conflictService.resolveConflict(conflict, resolution: resolution)
             conflicts.removeAll { $0.id == conflict.id }
+            lastError = nil
         } catch {
-            // Error resolving conflict is reflected in status
+            lastError = "Failed to resolve conflict: \(error.localizedDescription)"
         }
     }
 
     func refreshRecentFiles() async {
         guard configuration.isConfigured else { return }
-        recentFiles = await loadRecentFiles(from: configuration.vaultPath)
+        let vaultPath = configuration.vaultPath
+        let files = await Task.detached {
+            await Self.loadRecentFiles(from: vaultPath)
+        }.value
+        recentFiles = files
     }
 
     func openInObsidian(_ file: RecentFile) {
@@ -96,7 +103,7 @@ final class MenuBarViewModel {
         }
     }
 
-    private func loadRecentFiles(from vaultPath: String) async -> [RecentFile] {
+    private nonisolated static func loadRecentFiles(from vaultPath: String) async -> [RecentFile] {
         let vaultURL = URL(fileURLWithPath: vaultPath)
         let fileManager = FileManager.default
 
