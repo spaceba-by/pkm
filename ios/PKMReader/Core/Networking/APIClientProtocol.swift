@@ -133,6 +133,17 @@ protocol APIClientProtocol: Sendable {
     /// Mark a notification as read
     func markNotificationRead(id: String) async throws
 
+    // MARK: - Chat
+
+    /// Send a chat message (creates conversation if conversationId is nil)
+    func sendChatMessage(message: String, conversationId: String?) async throws -> ChatSendResponse
+
+    /// List all conversations for the authenticated user
+    func listConversations() async throws -> [ChatConversation]
+
+    /// Get messages for a conversation (used for polling)
+    func getConversationMessages(conversationId: String) async throws -> [ChatMessage]
+
     // MARK: - Insight Viewed Status
 
     /// Mark a daily summary as viewed

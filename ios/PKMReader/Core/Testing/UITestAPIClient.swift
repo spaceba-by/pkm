@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 #if DEBUG
     import Foundation
 
@@ -203,21 +204,14 @@
             fixtureDocuments.filter { $0.metadata.tags.contains(tag) }
         }
 
-        func updateClassification(documentId _: String, classification _: DocumentClassification) async throws {
-            // No-op for UI tests
-        }
+        func updateClassification(documentId _: String, classification _: DocumentClassification) async throws {}
 
         func createDocument(key: String, title: String?, content _: String) async throws -> CreateDocumentResponse {
             CreateDocumentResponse(key: key, title: title ?? key, createdAt: "2024-01-01T00:00:00Z")
         }
 
-        func updateDocument(key _: String, content _: String, ifUnmodifiedSince _: String?) async throws {
-            // No-op for UI tests
-        }
-
-        func deleteDocument(key _: String) async throws {
-            // No-op for UI tests
-        }
+        func updateDocument(key _: String, content _: String, ifUnmodifiedSince _: String?) async throws {}
+        func deleteDocument(key _: String) async throws {}
 
         func getGraphData() async throws -> GraphDataResponse {
             let nodes = Self.fixtureGraphNodes
@@ -328,9 +322,7 @@
             )
         }
 
-        func deleteSearchMonitor(id _: String) async throws {
-            // No-op for UI tests
-        }
+        func deleteSearchMonitor(id _: String) async throws {}
 
         func listSearchMonitorSummaries(monitorId _: String, limit _: Int) async throws -> [SearchSummary] {
             fixtureSummariesForMonitor
@@ -416,15 +408,61 @@
             GraphEdge(source: "entity:people:alice", target: "entity:people:bob", type: "co_occurrence", weight: 1),
         ]
 
+        // MARK: - Chat
+
+        func sendChatMessage(message: String, conversationId: String?) async throws -> ChatSendResponse {
+            ChatSendResponse(
+                conversationId: conversationId ?? "fixture-conv-id",
+                userMessage: ChatMessage(
+                    id: "fixture-user-msg",
+                    role: .user,
+                    content: message,
+                    timestamp: "2026-03-14T00:00:00Z",
+                    status: .complete
+                ),
+                assistantMessageId: "fixture-assistant-msg"
+            )
+        }
+
+        func listConversations() async throws -> [ChatConversation] {
+            [
+                ChatConversation(
+                    id: "conv-1",
+                    title: "What meetings happened...",
+                    created: "2026-03-14T00:00:00Z",
+                    modified: "2026-03-14T00:00:00Z",
+                    messageCount: 2,
+                    status: "active"
+                ),
+            ]
+        }
+
+        func getConversationMessages(conversationId _: String) async throws -> [ChatMessage] {
+            [
+                ChatMessage(
+                    id: "msg-1",
+                    role: .user,
+                    content: "What meetings happened this week?",
+                    timestamp: "2026-03-14T00:00:00Z",
+                    status: .complete
+                ),
+                ChatMessage(
+                    id: "msg-2",
+                    role: .assistant,
+                    content: "Based on your vault, you had 3 meetings this week...",
+                    timestamp: "2026-03-14T00:00:01Z",
+                    status: .complete
+                ),
+            ]
+        }
+
         // MARK: - Device Tokens & Notifications
 
         func registerDevice(request: DeviceRegistrationRequest) async throws -> DeviceRegistrationResponse {
             DeviceRegistrationResponse(deviceId: request.deviceId, registered: true)
         }
 
-        func unregisterDevice(deviceId _: String) async throws {
-            // No-op for UI tests
-        }
+        func unregisterDevice(deviceId _: String) async throws {}
 
         func listNotifications() async throws -> NotificationListResponse {
             let notifications = [
@@ -450,28 +488,14 @@
             return NotificationListResponse(notifications: notifications, count: notifications.count)
         }
 
-        func markNotificationRead(id _: String) async throws {
-            // No-op for UI tests
-        }
+        func markNotificationRead(id _: String) async throws {}
 
         // MARK: - Insight Viewed Status
 
-        func markSummaryViewed(date _: String) async throws {
-            // No-op for UI tests
-        }
-
-        func markReportViewed(week _: String) async throws {
-            // No-op for UI tests
-        }
-
-        func markSearchSummaryViewed(monitorId _: String, timestamp _: String) async throws {
-            // No-op for UI tests
-        }
-
-        func markAllInsightsViewed() async throws {
-            // No-op for UI tests
-        }
-
+        func markSummaryViewed(date _: String) async throws {}
+        func markReportViewed(week _: String) async throws {}
+        func markSearchSummaryViewed(monitorId _: String, timestamp _: String) async throws {}
+        func markAllInsightsViewed() async throws {}
         func getUnviewedCount() async throws -> Int {
             1
         }

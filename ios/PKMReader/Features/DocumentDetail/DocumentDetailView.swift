@@ -379,4 +379,16 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func getUnviewedCount() async throws -> Int {
         0
     }
+
+    func sendChatMessage(message _: String, conversationId _: String?) async throws -> ChatSendResponse {
+        throw APIError.invalidResponse
+    }
+
+    func listConversations() async throws -> [ChatConversation] {
+        []
+    }
+
+    func getConversationMessages(conversationId _: String) async throws -> [ChatMessage] {
+        []
+    }
 }

@@ -42,6 +42,29 @@
                      (check-error "InvokeModel"))]
     (json/parse-string (slurp (:body response)) true)))
 
+(defn invoke-model-multi-turn
+  "Invokes Bedrock Claude model with a multi-turn messages array.
+   Messages should be a vector of {:role \"user\"/\"assistant\" :content \"...\"}
+   Options:
+   - :max-tokens (default 4096)
+   - :temperature (default 0.7)
+   - :system (optional system prompt)"
+  [model-id messages & [{:keys [max-tokens temperature system]
+                         :or {max-tokens 4096 temperature 0.7}}]]
+  (let [body (cond-> {:anthropic_version "bedrock-2023-05-31"
+                      :max_tokens max-tokens
+                      :temperature temperature
+                      :messages messages}
+               system (assoc :system system))
+        response (-> (aws/invoke @bedrock-client
+                                 {:op :InvokeModel
+                                  :request {:modelId model-id
+                                           :contentType "application/json"
+                                           :accept "application/json"
+                                           :body (.getBytes (json/generate-string body) "UTF-8")}})
+                     (check-error "InvokeModel"))]
+    (json/parse-string (slurp (:body response)) true)))
+
 (defn extract-text
   "Extracts text content from Bedrock response"
   [response]

@@ -66,6 +66,14 @@
    :headers {}
    :body ""})
 
+(defn accepted
+  "Create a 202 Accepted response"
+  [body]
+  {:statusCode 202
+   :headers {"Content-Type" "application/json"
+             "Cache-Control" "no-cache, no-store, must-revalidate"}
+   :body (json/generate-string body)})
+
 (defn internal-error
   "Create a 500 Internal Server Error response"
   [message]

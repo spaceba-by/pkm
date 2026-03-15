@@ -28,17 +28,23 @@ struct MainTabView: View {
                     .tag(1)
                     .badge(notificationHandler.unreadCount)
 
+                ChatView(apiClient: apiClient)
+                    .tabItem {
+                        Label("Chat", systemImage: "bubble.left.and.text.bubble.right")
+                    }
+                    .tag(2)
+
                 SettingsView(authService: authService)
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
-                    .tag(2)
+                    .tag(3)
 
                 GraphView(apiClient: apiClient)
                     .tabItem {
                         Label("Graph", systemImage: "circle.hexagongrid")
                     }
-                    .tag(3)
+                    .tag(4)
             }
         }
         .accessibilityIdentifier("MainTabView")

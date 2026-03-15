@@ -551,3 +551,100 @@ resource "aws_lambda_permission" "api_graph_data" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
 }
+
+# =============================================================================
+# API Routes - Chat
+# =============================================================================
+
+# POST /chat - Send a chat message
+resource "aws_apigatewayv2_integration" "chat_send" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_chat_send["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "chat_send" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "POST /chat"
+  target             = "integrations/${aws_apigatewayv2_integration.chat_send["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# GET /chat - List conversations
+resource "aws_apigatewayv2_integration" "chat_list" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_chat_list["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "chat_list" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "GET /chat"
+  target             = "integrations/${aws_apigatewayv2_integration.chat_list["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+# GET /chat/{conversationId} - Get conversation messages
+resource "aws_apigatewayv2_integration" "chat_messages" {
+  for_each = local.mobile_api
+
+  api_id                 = aws_apigatewayv2_api.pkm_api["enabled"].id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_chat_messages["enabled"].arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "chat_messages" {
+  for_each = local.mobile_api
+
+  api_id             = aws_apigatewayv2_api.pkm_api["enabled"].id
+  route_key          = "GET /chat/{conversationId}"
+  target             = "integrations/${aws_apigatewayv2_integration.chat_messages["enabled"].id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito["enabled"].id
+}
+
+resource "aws_lambda_permission" "api_chat_send" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_chat_send["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_chat_list" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_chat_list["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "api_chat_messages" {
+  for_each = local.mobile_api
+
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_chat_messages["enabled"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.pkm_api["enabled"].execution_arn}/*/*"
+}
