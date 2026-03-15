@@ -3,8 +3,8 @@ import XCTest
 
 @MainActor
 final class ChatViewModelTests: XCTestCase {
-    private var sut: ChatViewModel!
-    private var mockAPIClient: MockAPIClient!
+    private var sut: ChatViewModel! // swiftlint:disable:this implicitly_unwrapped_optional
+    private var mockAPIClient: MockAPIClient! // swiftlint:disable:this implicitly_unwrapped_optional
 
     override func setUp() async throws {
         mockAPIClient = MockAPIClient()
@@ -21,8 +21,12 @@ final class ChatViewModelTests: XCTestCase {
     func testLoadConversationsSuccess() async {
         let conversations = [
             ChatConversation(
-                id: "conv-1", title: "Test Chat", created: "2026-03-14T00:00:00Z",
-                modified: "2026-03-14T00:00:00Z", messageCount: 2, status: "active"
+                id: "conv-1",
+                title: "Test Chat",
+                created: "2026-03-14T00:00:00Z",
+                modified: "2026-03-14T00:00:00Z",
+                messageCount: 2,
+                status: "active"
             ),
         ]
         mockAPIClient.listConversationsResult = .success(conversations)
@@ -51,8 +55,11 @@ final class ChatViewModelTests: XCTestCase {
     func testOpenConversationLoadsMessages() async {
         let messages = [
             ChatMessage(
-                id: "msg-1", role: .user, content: "Hello",
-                timestamp: "2026-03-14T00:00:00Z", status: .complete
+                id: "msg-1",
+                role: .user,
+                content: "Hello",
+                timestamp: "2026-03-14T00:00:00Z",
+                status: .complete
             ),
         ]
         mockAPIClient.getConversationMessagesResult = .success(messages)

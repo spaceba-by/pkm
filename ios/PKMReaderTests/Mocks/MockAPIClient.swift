@@ -5,180 +5,72 @@ import Foundation
 final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     // MARK: - Configurable Results
 
-    /// Result to return from listDocuments
     var listDocumentsResult: Result<DocumentListResponse, Error> = .success(
         DocumentListResponse(documents: [], nextCursor: nil)
     )
-
-    /// Result to return from getDocument
     var getDocumentResult: Result<Document, Error>?
-
-    /// Result to return from search
     var searchResult: Result<[Document], Error> = .success([])
-
-    /// Result to return from listTags
     var listTagsResult: Result<[Tag], Error> = .success([])
-
-    /// Result to return from listClassifications
     var listClassificationsResult: Result<[ClassificationCount], Error> = .success([])
-
-    /// Result to return from listSummaries
     var listSummariesResult: Result<[Summary], Error> = .success([])
-
-    /// Result to return from listReports
     var listReportsResult: Result<[Report], Error> = .success([])
-
-    /// Result to return from documentsByTag
     var documentsByTagResult: Result<[Document], Error> = .success([])
-
-    /// Result to return from updateClassification
     var updateClassificationResult: Result<Void, Error> = .success(())
-
-    /// Result to return from createDocument
     var createDocumentResult: Result<CreateDocumentResponse, Error> = .success(
         CreateDocumentResponse(key: "test.md", title: "Test", createdAt: "2024-01-01T00:00:00Z")
     )
-
-    /// Result to return from updateDocument
     var updateDocumentResult: Result<Void, Error> = .success(())
-
-    /// Result to return from deleteDocument
     var deleteDocumentResult: Result<Void, Error> = .success(())
-
-    /// Result to return from getGraphData
     var getGraphDataResult: Result<GraphDataResponse, Error> = .success(
         GraphDataResponse(nodes: [], edges: [], nodeCount: 0, edgeCount: 0)
     )
-
-    /// Result to return from listSearchMonitors
     var listSearchMonitorsResult: Result<[SearchMonitor], Error> = .success([])
-
-    /// Result to return from getSearchMonitor
     var getSearchMonitorResult: Result<SearchMonitorDetailResponse, Error>?
-
-    /// Result to return from createSearchMonitor
     var createSearchMonitorResult: Result<SearchMonitor, Error>?
-
-    /// Result to return from updateSearchMonitor
     var updateSearchMonitorResult: Result<SearchMonitor, Error>?
-
-    /// Result to return from deleteSearchMonitor
     var deleteSearchMonitorResult: Result<Void, Error> = .success(())
-
-    /// Result to return from listSearchMonitorSummaries
     var listSearchMonitorSummariesResult: Result<[SearchSummary], Error> = .success([])
-
-    /// Result to return from getSearchMonitorSummary
     var getSearchMonitorSummaryResult: Result<SearchSummary, Error>?
 
     // MARK: - Call Tracking
 
-    /// Number of times listDocuments was called
     private(set) var listDocumentsCallCount = 0
-
-    /// Last classification passed to listDocuments
     private(set) var lastListDocumentsClassification: DocumentClassification?
-
-    /// Last limit passed to listDocuments
     private(set) var lastListDocumentsLimit: Int?
-
-    /// Last cursor passed to listDocuments
     private(set) var lastListDocumentsCursor: String?
-
-    /// Last sort order passed to listDocuments
     private(set) var lastListDocumentsSort: DocumentSortOrder?
-
-    /// Number of times getDocument was called
     private(set) var getDocumentCallCount = 0
-
-    /// Last key passed to getDocument
     private(set) var lastGetDocumentKey: String?
-
-    /// Number of times search was called
     private(set) var searchCallCount = 0
-
-    /// Last query passed to search
     private(set) var lastSearchQuery: String?
-
-    /// Last limit passed to search
     private(set) var lastSearchLimit: Int?
-
-    /// Number of times listTags was called
+    private(set) var lastSearchMode: SearchMode?
     private(set) var listTagsCallCount = 0
-
-    /// Number of times documentsByTag was called
     private(set) var documentsByTagCallCount = 0
-
-    /// Last tag passed to documentsByTag
     private(set) var lastDocumentsByTagTag: String?
-
-    /// Last limit passed to documentsByTag
     private(set) var lastDocumentsByTagLimit: Int?
-
-    /// Number of times updateClassification was called
     private(set) var updateClassificationCallCount = 0
-
-    /// Last document ID passed to updateClassification
     private(set) var lastUpdateClassificationDocumentId: String?
-
-    /// Last classification passed to updateClassification
     private(set) var lastUpdateClassificationValue: DocumentClassification?
-
-    /// Number of times createDocument was called
     private(set) var createDocumentCallCount = 0
-
-    /// Number of times updateDocument was called
     private(set) var updateDocumentCallCount = 0
-
-    /// Number of times deleteDocument was called
     private(set) var deleteDocumentCallCount = 0
-
-    /// Number of times listSearchMonitors was called
+    private(set) var getGraphDataCallCount = 0
     private(set) var listSearchMonitorsCallCount = 0
-
-    /// Number of times getSearchMonitor was called
     private(set) var getSearchMonitorCallCount = 0
-
-    /// Last ID passed to getSearchMonitor
     private(set) var lastGetSearchMonitorId: String?
-
-    /// Number of times createSearchMonitor was called
     private(set) var createSearchMonitorCallCount = 0
-
-    /// Last request passed to createSearchMonitor
     private(set) var lastCreateSearchMonitorRequest: SearchMonitorRequest?
-
-    /// Number of times updateSearchMonitor was called
     private(set) var updateSearchMonitorCallCount = 0
-
-    /// Last ID passed to updateSearchMonitor
     private(set) var lastUpdateSearchMonitorId: String?
-
-    /// Last request passed to updateSearchMonitor
     private(set) var lastUpdateSearchMonitorRequest: SearchMonitorRequest?
-
-    /// Number of times deleteSearchMonitor was called
     private(set) var deleteSearchMonitorCallCount = 0
-
-    /// Last ID passed to deleteSearchMonitor
     private(set) var lastDeleteSearchMonitorId: String?
-
-    /// Number of times listSearchMonitorSummaries was called
     private(set) var listSearchMonitorSummariesCallCount = 0
-
-    /// Last monitorId passed to listSearchMonitorSummaries
     private(set) var lastListSearchMonitorSummariesMonitorId: String?
-
-    /// Last limit passed to listSearchMonitorSummaries
     private(set) var lastListSearchMonitorSummariesLimit: Int?
-
-    /// Number of times getSearchMonitorSummary was called
     private(set) var getSearchMonitorSummaryCallCount = 0
-
-    /// Last monitorId passed to getSearchMonitorSummary
     private(set) var lastGetSearchMonitorSummaryMonitorId: String?
-
-    /// Last timestamp passed to getSearchMonitorSummary
     private(set) var lastGetSearchMonitorSummaryTimestamp: String?
 
     // MARK: - APIClientProtocol
@@ -200,15 +92,11 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     func getDocument(key: String) async throws -> Document {
         getDocumentCallCount += 1
         lastGetDocumentKey = key
-
         if let result = getDocumentResult {
             return try result.get()
         }
         throw APIError.invalidResponse
     }
-
-    /// Last mode passed to search
-    private(set) var lastSearchMode: SearchMode?
 
     func search(query: String, limit: Int, mode: SearchMode = .keyword) async throws -> [Document] {
         searchCallCount += 1
@@ -266,9 +154,6 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         deleteDocumentCallCount += 1
         try deleteDocumentResult.get()
     }
-
-    /// Number of times getGraphData was called
-    private(set) var getGraphDataCallCount = 0
 
     func getGraphData() async throws -> GraphDataResponse {
         getGraphDataCallCount += 1
@@ -383,15 +268,12 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         DeviceRegistrationResponse(deviceId: "mock-device", registered: true)
     )
     private(set) var registerDeviceCallCount = 0
-
     var unregisterDeviceResult: Result<Void, Error> = .success(())
     private(set) var unregisterDeviceCallCount = 0
-
     var listNotificationsResult: Result<NotificationListResponse, Error> = .success(
         NotificationListResponse(notifications: [], count: 0)
     )
     private(set) var listNotificationsCallCount = 0
-
     var markNotificationReadResult: Result<Void, Error> = .success(())
     private(set) var markNotificationReadCallCount = 0
     private(set) var lastMarkNotificationReadId: String?
@@ -422,19 +304,15 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     var markSummaryViewedResult: Result<Void, Error> = .success(())
     private(set) var markSummaryViewedCallCount = 0
     private(set) var lastMarkSummaryViewedDate: String?
-
     var markReportViewedResult: Result<Void, Error> = .success(())
     private(set) var markReportViewedCallCount = 0
     private(set) var lastMarkReportViewedWeek: String?
-
     var markSearchSummaryViewedResult: Result<Void, Error> = .success(())
     private(set) var markSearchSummaryViewedCallCount = 0
     private(set) var lastMarkSearchSummaryViewedMonitorId: String?
     private(set) var lastMarkSearchSummaryViewedTimestamp: String?
-
     var markAllInsightsViewedResult: Result<Void, Error> = .success(())
     private(set) var markAllInsightsViewedCallCount = 0
-
     var getUnviewedCountResult: Result<Int, Error> = .success(0)
     private(set) var getUnviewedCountCallCount = 0
 
@@ -470,7 +348,6 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     // MARK: - Test Helpers
 
     // swiftlint:disable function_body_length
-    /// Reset all call counts and captured values
     func reset() {
         listDocumentsCallCount = 0
         lastListDocumentsClassification = nil

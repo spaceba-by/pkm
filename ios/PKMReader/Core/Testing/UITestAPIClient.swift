@@ -203,21 +203,14 @@
             fixtureDocuments.filter { $0.metadata.tags.contains(tag) }
         }
 
-        func updateClassification(documentId _: String, classification _: DocumentClassification) async throws {
-            // No-op for UI tests
-        }
+        func updateClassification(documentId _: String, classification _: DocumentClassification) async throws {}
 
         func createDocument(key: String, title: String?, content _: String) async throws -> CreateDocumentResponse {
             CreateDocumentResponse(key: key, title: title ?? key, createdAt: "2024-01-01T00:00:00Z")
         }
 
-        func updateDocument(key _: String, content _: String, ifUnmodifiedSince _: String?) async throws {
-            // No-op for UI tests
-        }
-
-        func deleteDocument(key _: String) async throws {
-            // No-op for UI tests
-        }
+        func updateDocument(key _: String, content _: String, ifUnmodifiedSince _: String?) async throws {}
+        func deleteDocument(key _: String) async throws {}
 
         func getGraphData() async throws -> GraphDataResponse {
             let nodes = Self.fixtureGraphNodes
@@ -328,9 +321,7 @@
             )
         }
 
-        func deleteSearchMonitor(id _: String) async throws {
-            // No-op for UI tests
-        }
+        func deleteSearchMonitor(id _: String) async throws {}
 
         func listSearchMonitorSummaries(monitorId _: String, limit _: Int) async throws -> [SearchSummary] {
             fixtureSummariesForMonitor
@@ -470,9 +461,7 @@
             DeviceRegistrationResponse(deviceId: request.deviceId, registered: true)
         }
 
-        func unregisterDevice(deviceId _: String) async throws {
-            // No-op for UI tests
-        }
+        func unregisterDevice(deviceId _: String) async throws {}
 
         func listNotifications() async throws -> NotificationListResponse {
             let notifications = [
@@ -498,28 +487,14 @@
             return NotificationListResponse(notifications: notifications, count: notifications.count)
         }
 
-        func markNotificationRead(id _: String) async throws {
-            // No-op for UI tests
-        }
+        func markNotificationRead(id _: String) async throws {}
 
         // MARK: - Insight Viewed Status
 
-        func markSummaryViewed(date _: String) async throws {
-            // No-op for UI tests
-        }
-
-        func markReportViewed(week _: String) async throws {
-            // No-op for UI tests
-        }
-
-        func markSearchSummaryViewed(monitorId _: String, timestamp _: String) async throws {
-            // No-op for UI tests
-        }
-
-        func markAllInsightsViewed() async throws {
-            // No-op for UI tests
-        }
-
+        func markSummaryViewed(date _: String) async throws {}
+        func markReportViewed(week _: String) async throws {}
+        func markSearchSummaryViewed(monitorId _: String, timestamp _: String) async throws {}
+        func markAllInsightsViewed() async throws {}
         func getUnviewedCount() async throws -> Int {
             1
         }
