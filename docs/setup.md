@@ -130,7 +130,7 @@ The script will:
 This creates:
 - S3 bucket for vault storage
 - DynamoDB table for metadata
-- 43 Lambda functions (14 processing + 28 API + 1 CLI utility)
+- 42 Lambda functions (14 processing + 28 API) + 1 CLI utility
 - EventBridge rules for scheduling
 - Step Functions for workflows
 - CloudWatch dashboards and alarms

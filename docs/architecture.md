@@ -16,9 +16,9 @@ graph TD
         Cognito[Amazon Cognito<br/>User Pool · App Client · Identity Pool]
 
         S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
-        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 43 endpoints]
+        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 41 routes]
 
-        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata · extract-tasks<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document · command-process<br/>persistent-search · notification-dispatch · webhook-receive]
+        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata · extract-tasks<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document · command-process<br/>persistent-search-execute · persistent-search-summarize<br/>notification-dispatch · webhook-receive]
 
         APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed<br/>chat-list · chat-messages · chat-send<br/>tasks · tasks-stats]
 
@@ -82,7 +82,7 @@ graph TD
 | `update-classification-index` | Babashka | 256 MB | 30s | Scheduled (every 6 hours) | Update classification index |
 | `bulk-reclassify` | Babashka | 512 MB | 300s | API invoke | Bulk reclassification with dry-run |
 | `delete-document` | Babashka | 256 MB | 10s | S3 DELETE | Cascade-delete DynamoDB records |
-| `command-process` | Babashka | 1024 MB | 120s | Async invoke | Process @sal commands and chat messages via Bedrock |
+| `command-process` | Babashka | 512 MB | 120s | Async invoke | Process @sal commands and chat messages via Bedrock |
 | `persistent-search-execute` | Babashka | 512 MB | 60s | Scheduled | Execute search monitors via Brave API |
 | `persistent-search-summarize` | Babashka | 1024 MB | 60s | Invoke | Summarize search results with AI |
 | `notification-dispatch` | Babashka | 256 MB | 30s | DynamoDB Stream | Dispatch push notifications via SNS/APNs |
