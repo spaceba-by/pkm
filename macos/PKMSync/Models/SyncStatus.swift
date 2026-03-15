@@ -10,7 +10,7 @@ enum SyncStatus: Sendable, Equatable {
         case .idle:
             "arrow.triangle.2.circlepath"
         case .syncing:
-            "arrow.triangle.2.circlepath"
+            "arrow.triangle.2.circlepath.circle"
         case .error:
             "exclamationmark.triangle"
         }
