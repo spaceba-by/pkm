@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import SwiftUI
 
 @MainActor
 @Observable
@@ -76,6 +77,45 @@ final class MenuBarViewModel {
     }
 
     private(set) var lastError: String?
+    private(set) var selectedConflict: ConflictFile?
+    private var diffWindow: NSWindow?
+
+    func showDiff(for conflict: ConflictFile) {
+        selectedConflict = conflict
+
+        let diffViewModel = ConflictDetailViewModel(
+            conflict: conflict,
+            vaultPath: configuration.vaultPath,
+            conflictService: conflictService
+        )
+        diffViewModel.onResolved = { [weak self] in
+            self?.conflicts.removeAll { $0.id == conflict.id }
+            self?.selectedConflict = nil
+        }
+
+        let detailView = ConflictDetailView(
+            viewModel: diffViewModel,
+            onDismiss: { [weak self] in
+                self?.diffWindow?.close()
+                self?.diffWindow = nil
+                self?.selectedConflict = nil
+            }
+        )
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Conflict: \(conflict.relativePath(from: configuration.vaultPath))"
+        window.contentView = NSHostingView(rootView: detailView)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        diffWindow = window
+    }
 
     func resolveConflict(_ conflict: ConflictFile, resolution: ConflictResolution) {
         do {

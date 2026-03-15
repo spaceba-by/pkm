@@ -24,6 +24,15 @@ struct ConflictFile: Identifiable, Sendable, Equatable {
     var originalFileName: String {
         (originalPath as NSString).lastPathComponent
     }
+
+    func relativePath(from vaultPath: String) -> String {
+        if originalPath.hasPrefix(vaultPath) {
+            let trimmed = String(originalPath.dropFirst(vaultPath.count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            return trimmed.isEmpty ? originalFileName : trimmed
+        }
+        return originalFileName
+    }
 }
 
 enum ConflictResolution: Sendable {

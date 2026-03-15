@@ -71,4 +71,18 @@ final class MenuBarViewModelTests: XCTestCase {
         XCTAssertEqual(mockConflictService.resolveCallCount, 1)
         XCTAssertFalse(sut.hasConflicts)
     }
+
+    func testShowDiffSetsSelectedConflict() async {
+        let conflict = ConflictFile(
+            originalPath: "/Users/test/vault/note.md",
+            conflictPath: "/Users/test/vault/note.conflict1.md"
+        )
+        mockConflictService.conflicts = [conflict]
+        await sut.refreshConflicts()
+
+        sut.showDiff(for: sut.conflicts[0])
+
+        XCTAssertNotNil(sut.selectedConflict)
+        XCTAssertEqual(sut.selectedConflict?.originalPath, "/Users/test/vault/note.md")
+    }
 }
