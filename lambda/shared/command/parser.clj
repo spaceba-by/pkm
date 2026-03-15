@@ -2,9 +2,17 @@
   "Detects and parses @sal commands in markdown document content")
 
 (defn- strip-code-blocks
-  "Remove fenced code blocks from content to avoid matching commands inside them"
+  "Remove fenced code blocks from content to avoid matching commands inside them,
+   while preserving line count so line numbers stay aligned with the original content."
   [content]
-  (clojure.string/replace content #"(?s)```[^`]*```" ""))
+  (clojure.string/replace
+   content
+   #"(?s)```[^`]*```"
+   (fn [match]
+     (let [newline-count (count (re-seq #"\n" match))
+           ;; A block with N newlines spans N+1 lines; replace with that many newlines
+           placeholder-newlines (inc newline-count)]
+       (apply str (repeat placeholder-newlines "\n"))))))
 
 (defn parse-commands
   "Parse @sal commands from markdown content.
