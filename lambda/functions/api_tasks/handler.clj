@@ -29,8 +29,7 @@
 (defn- query-tasks-by-status
   "Query tasks using the task-index GSI filtered by status."
   [status limit cursor]
-  (let [pk (str "task#" status)
-        start-key (decode-cursor cursor)
+  (let [start-key (decode-cursor cursor)
         [items last-key] (ddb/query-to-limit ddb-table
                                               :index-name "task-index"
                                               :key-condition-expr "task_status = :status"

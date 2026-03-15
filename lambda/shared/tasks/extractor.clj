@@ -21,10 +21,6 @@
 ;; Date extraction
 ;; =============================================================================
 
-(def ^:private date-pattern
-  "Match ISO-like dates (YYYY-MM-DD) in task text"
-  #"\b(\d{4}-\d{2}-\d{2})\b")
-
 (defn- extract-due-date
   "Extract a potential due date from task text. Looks for date patterns
    preceded by keywords like 'by', 'due', 'before', 'deadline'."
