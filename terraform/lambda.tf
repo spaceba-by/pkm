@@ -24,7 +24,8 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
     "update-classification-index",
     "bulk-reclassify",
     "delete-document",
-    "command-process"
+    "command-process",
+    "extract-tasks"
   ])
 
   name              = "/aws/lambda/${var.project_name}-${each.key}"

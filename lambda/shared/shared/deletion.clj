@@ -18,7 +18,8 @@
       (let [tags (or (:tags metadata) [])
             entities (or (:entities metadata) {})
             deleted-tags (atom 0)
-            deleted-entities (atom 0)]
+            deleted-entities (atom 0)
+            deleted-tasks (atom 0)]
 
         ;; Delete tag index entries
         (doseq [tag tags]
@@ -38,12 +39,28 @@
             (catch Exception e
               (println "Error deleting entity index for" entity-name ":" (ex-message e)))))
 
+        ;; Delete task index entries
+        (doseq [status-key ["task#open" "task#completed"]]
+          (try
+            (let [doc-prefix (str "doc#" object-key "#")
+                  entries (ddb/query table-name
+                                     :key-condition-expr "PK = :pk AND begins_with(SK, :prefix)"
+                                     :expr-attr-values {":pk" status-key
+                                                         ":prefix" doc-prefix})]
+              (doseq [entry entries]
+                (ddb/delete-item table-name {:PK (:PK entry) :SK (:SK entry)})
+                (swap! deleted-tasks inc)))
+            (catch Exception e
+              (println "Error deleting task index for" status-key ":" (ex-message e)))))
+
         ;; Delete the METADATA record last
         (ddb/delete-item table-name {:PK object-key :SK "METADATA"})
 
         (let [result {:document object-key
                       :deleted-tags @deleted-tags
-                      :deleted-entities @deleted-entities}]
+                      :deleted-entities @deleted-entities
+                      :deleted-tasks @deleted-tasks}]
           (println "Cascade-deleted records for" object-key
-                   "- tags:" @deleted-tags "entities:" @deleted-entities)
+                   "- tags:" @deleted-tags "entities:" @deleted-entities
+                   "tasks:" @deleted-tasks)
           result)))))

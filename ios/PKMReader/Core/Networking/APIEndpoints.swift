@@ -105,4 +105,19 @@ enum APIEndpoints {
 
     /// Get unviewed insight count
     static let unviewedCount = "/insights/unviewed-count"
+
+    // MARK: - Tasks
+
+    /// List extracted tasks with optional filtering
+    static func tasks(status: String = "open", limit: Int = 50, cursor: String? = nil) -> String {
+        var path = "/tasks?status=\(status)&limit=\(limit)"
+        if let cursor {
+            let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cursor
+            path += "&cursor=\(encoded)"
+        }
+        return path
+    }
+
+    /// Task statistics
+    static let taskStats = "/tasks/stats"
 }

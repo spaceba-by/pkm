@@ -334,6 +334,18 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         try await performPutRequestWithRetry(url: url, body: [:])
     }
 
+    // MARK: - Tasks
+
+    func listTasks(status: String, limit: Int, cursor: String?) async throws -> TaskListResponse {
+        let url = baseURL.appending(path: APIEndpoints.tasks(status: status, limit: limit, cursor: cursor))
+        return try await performRequestWithRetry(url: url)
+    }
+
+    func getTaskStats() async throws -> TaskStatsResponse {
+        let url = baseURL.appending(path: APIEndpoints.taskStats)
+        return try await performRequestWithRetry(url: url)
+    }
+
     // MARK: - Insight Viewed Status
 
     func markSummaryViewed(date: String) async throws {

@@ -7,6 +7,7 @@ struct InsightsView: View {
     @ObservedObject private var notificationHandler = NotificationHandler.shared
     @State private var selectedSummary: Summary?
     @State private var selectedReport: Report?
+    @State private var taskStats: TaskStatsResponse?
 
     init(apiClient: any APIClientProtocol, calendar: Calendar = .current, today: Date = Date()) {
         self.apiClient = apiClient
@@ -27,6 +28,31 @@ struct InsightsView: View {
                 case .loaded:
                     ScrollView {
                         VStack(spacing: 16) {
+                            // Tasks section
+                            NavigationLink {
+                                TaskListView(apiClient: apiClient)
+                            } label: {
+                                HStack {
+                                    Label("Tasks", systemImage: "checklist")
+                                        .font(.headline)
+                                    Spacer()
+                                    if let stats = taskStats, stats.open > 0 {
+                                        Text("\(stats.open) open")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding()
+                                .background(.regularMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal)
+                            .accessibilityIdentifier("TasksNavigationLink")
+
                             CalendarView(
                                 viewModel: viewModel,
                                 onSummaryTap: { summary in
@@ -49,6 +75,7 @@ struct InsightsView: View {
                     }
                     .refreshable {
                         await viewModel.refresh()
+                        await loadTaskStats()
                     }
 
                 case let .error(error):
@@ -79,10 +106,22 @@ struct InsightsView: View {
             .navigationDestination(item: $selectedReport) { report in
                 ReportDetailView(report: report, apiClient: apiClient)
             }
+            .navigationDestination(for: String.self) { documentPath in
+                DocumentLoaderView(documentPath: documentPath, apiClient: apiClient)
+            }
         }
         .task {
             await viewModel.loadData()
+            await loadTaskStats()
         }
         .accessibilityIdentifier("InsightsView")
+    }
+
+    private func loadTaskStats() async {
+        do {
+            taskStats = try await apiClient.getTaskStats()
+        } catch {
+            // Non-critical, task stats badge just won't show
+        }
     }
 }

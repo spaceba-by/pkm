@@ -490,6 +490,47 @@
 
         func markNotificationRead(id _: String) async throws {}
 
+        // MARK: - Tasks
+
+        func listTasks(status _: String, limit _: Int, cursor _: String?) async throws -> TaskListResponse {
+            let fixtureTasks = [
+                ExtractedTask(
+                    taskId: "t-00000001",
+                    description: "Review Q2 budget proposal",
+                    status: "open",
+                    source: "pattern",
+                    marker: "checkbox",
+                    documentPath: "notes/meeting-notes.md",
+                    lineNumber: 15,
+                    dueDate: "2026-03-20",
+                    priority: "high"
+                ),
+                ExtractedTask(
+                    taskId: "t-00000002",
+                    description: "Update API documentation",
+                    status: "open",
+                    source: "pattern",
+                    marker: "todo",
+                    documentPath: "ideas/app-redesign.md",
+                    lineNumber: 8
+                ),
+                ExtractedTask(
+                    taskId: "t-00000003",
+                    description: "Schedule follow-up with design team",
+                    status: "completed",
+                    source: "ai",
+                    marker: "implicit",
+                    documentPath: "notes/meeting-notes.md",
+                    lineNumber: 22
+                ),
+            ]
+            return TaskListResponse(tasks: fixtureTasks, count: fixtureTasks.count, nextCursor: nil)
+        }
+
+        func getTaskStats() async throws -> TaskStatsResponse {
+            TaskStatsResponse(open: 5, completed: 12, total: 17)
+        }
+
         // MARK: - Insight Viewed Status
 
         func markSummaryViewed(date _: String) async throws {}

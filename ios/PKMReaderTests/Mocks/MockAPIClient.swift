@@ -299,6 +299,29 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         try markNotificationReadResult.get()
     }
 
+    // MARK: - Tasks
+
+    var listTasksResult: Result<TaskListResponse, Error> = .success(
+        TaskListResponse(tasks: [], count: 0, nextCursor: nil)
+    )
+    private(set) var listTasksCallCount = 0
+    private(set) var lastListTasksStatus: String?
+    var getTaskStatsResult: Result<TaskStatsResponse, Error> = .success(
+        TaskStatsResponse(open: 0, completed: 0, total: 0)
+    )
+    private(set) var getTaskStatsCallCount = 0
+
+    func listTasks(status: String, limit _: Int, cursor _: String?) async throws -> TaskListResponse {
+        listTasksCallCount += 1
+        lastListTasksStatus = status
+        return try listTasksResult.get()
+    }
+
+    func getTaskStats() async throws -> TaskStatsResponse {
+        getTaskStatsCallCount += 1
+        return try getTaskStatsResult.get()
+    }
+
     // MARK: - Insight Viewed Status
 
     var markSummaryViewedResult: Result<Void, Error> = .success(())
@@ -398,6 +421,9 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         listNotificationsCallCount = 0
         markNotificationReadCallCount = 0
         lastMarkNotificationReadId = nil
+        listTasksCallCount = 0
+        lastListTasksStatus = nil
+        getTaskStatsCallCount = 0
         markSummaryViewedCallCount = 0
         lastMarkSummaryViewedDate = nil
         markReportViewedCallCount = 0

@@ -144,6 +144,14 @@ protocol APIClientProtocol: Sendable {
     /// Get messages for a conversation (used for polling)
     func getConversationMessages(conversationId: String) async throws -> [ChatMessage]
 
+    // MARK: - Tasks
+
+    /// List extracted tasks with optional status filtering
+    func listTasks(status: String, limit: Int, cursor: String?) async throws -> TaskListResponse
+
+    /// Get task statistics (open/completed counts)
+    func getTaskStats() async throws -> TaskStatsResponse
+
     // MARK: - Insight Viewed Status
 
     /// Mark a daily summary as viewed

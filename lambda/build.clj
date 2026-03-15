@@ -130,6 +130,10 @@
    "webhook_receive"             "handler/handler"
    "api_webhook_sources"         "handler/handler"
    "api_webhook_events"          "handler/handler"
+   ;; Task extraction Lambda functions
+   "extract_tasks"                "handler/handler"
+   "api_tasks"                    "handler/handler"
+   "api_tasks_stats"              "handler/handler"
    ;; Chat / Command interface Lambda functions
    "command_process"              "handler/handler"
    "api_chat_send"                "handler/handler"
