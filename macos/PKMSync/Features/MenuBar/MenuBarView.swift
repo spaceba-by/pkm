@@ -30,7 +30,6 @@ struct MenuBarView: View {
     private var statusHeader: some View {
         HStack {
             Image(systemName: viewModel.status.iconName)
-                .symbolEffect(.rotate, isActive: viewModel.status == .syncing)
                 .foregroundStyle(statusColor)
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.status.label)

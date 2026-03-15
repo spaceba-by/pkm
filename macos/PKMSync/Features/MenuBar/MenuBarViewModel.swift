@@ -83,6 +83,7 @@ final class MenuBarViewModel {
 
     func showDiff(for conflict: ConflictFile) {
         // Close any existing diff window before opening a new one
+        diffWindow?.orderOut(nil)
         diffWindow?.close()
 
         selectedConflict = conflict
@@ -129,6 +130,7 @@ final class MenuBarViewModel {
     }
 
     private func closeDiffWindow() {
+        diffWindow?.orderOut(nil)
         diffWindow?.close()
         diffWindow = nil
         windowDelegate = nil

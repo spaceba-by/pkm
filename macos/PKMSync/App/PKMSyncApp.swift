@@ -2,14 +2,13 @@ import SwiftUI
 
 @main
 struct PKMSyncApp: App {
-    @State private var viewModel = MenuBarViewModel()
+    @State private var viewModel: MenuBarViewModel
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(viewModel: viewModel)
         } label: {
             Image(systemName: viewModel.status.iconName)
-                .symbolEffect(.rotate, isActive: viewModel.status == .syncing)
         }
         .menuBarExtraStyle(.window)
 
@@ -20,6 +19,5 @@ struct PKMSyncApp: App {
 
     init() {
         _viewModel = State(initialValue: MenuBarViewModel())
-        viewModel.startScheduler()
     }
 }
