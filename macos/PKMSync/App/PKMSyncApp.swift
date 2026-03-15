@@ -18,6 +18,8 @@ struct PKMSyncApp: App {
     }
 
     init() {
-        _viewModel = State(initialValue: MenuBarViewModel())
+        let vm = MenuBarViewModel()
+        _viewModel = State(initialValue: vm)
+        vm.startScheduler()
     }
 }
