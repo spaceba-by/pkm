@@ -53,6 +53,11 @@ resource "aws_dynamodb_table" "metadata" {
     type = "S"
   }
 
+  attribute {
+    name = "task_status"
+    type = "S"
+  }
+
   # GSI for listing all documents by modified date
   global_secondary_index {
     name            = "all-documents-modified-index"
@@ -98,6 +103,14 @@ resource "aws_dynamodb_table" "metadata" {
     name            = "search-schedule-index"
     hash_key        = "monitor_status"
     range_key       = "next_execution"
+    projection_type = "ALL"
+  }
+
+  # GSI for task status queries (open/completed tasks by recency)
+  global_secondary_index {
+    name            = "task-index"
+    hash_key        = "task_status"
+    range_key       = "modified"
     projection_type = "ALL"
   }
 

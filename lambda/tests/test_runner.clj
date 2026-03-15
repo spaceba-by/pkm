@@ -23,6 +23,8 @@
 (require '[webhooks.utils-test])
 (require '[command.parser-test])
 (require '[command.context-test])
+(require '[tasks.extractor-test])
+(require '[tasks.api-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -45,7 +47,9 @@
                  'insights.viewed-test
                  'webhooks.utils-test
                  'command.parser-test
-                 'command.context-test)]
+                 'command.context-test
+                 'tasks.extractor-test
+                 'tasks.api-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))

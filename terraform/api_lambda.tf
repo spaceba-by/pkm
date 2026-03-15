@@ -20,7 +20,9 @@ locals {
     "api-graph-data",
     "api-chat-send",
     "api-chat-list",
-    "api-chat-messages"
+    "api-chat-messages",
+    "api-tasks",
+    "api-tasks-stats"
   ] : []
 
   api_lambda_environment = {
