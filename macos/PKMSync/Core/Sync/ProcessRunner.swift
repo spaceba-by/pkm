@@ -6,41 +6,43 @@ struct ProcessRunner: ProcessRunnerProtocol {
         arguments: [String],
         environment: [String: String]?
     ) async throws -> ProcessOutput {
-        try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: executablePath)
-            process.arguments = arguments
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.arguments = arguments
 
-            if let environment {
-                var env = ProcessInfo.processInfo.environment
-                for (key, value) in environment {
-                    env[key] = value
-                }
-                process.environment = env
+        if let environment {
+            var env = ProcessInfo.processInfo.environment
+            for (key, value) in environment {
+                env[key] = value
             }
-
-            let stdoutPipe = Pipe()
-            let stderrPipe = Pipe()
-            process.standardOutput = stdoutPipe
-            process.standardError = stderrPipe
-
-            process.terminationHandler = { process in
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-
-                let output = ProcessOutput(
-                    stdout: String(data: stdoutData, encoding: .utf8) ?? "",
-                    stderr: String(data: stderrData, encoding: .utf8) ?? "",
-                    exitCode: process.terminationStatus
-                )
-                continuation.resume(returning: output)
-            }
-
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: error)
-            }
+            process.environment = env
         }
+
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+
+        try process.run()
+
+        // Read pipes on background threads to avoid deadlock when the OS
+        // pipe buffer fills before the process terminates.
+        async let stdoutData = Task.detached {
+            stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+        }.value
+        async let stderrData = Task.detached {
+            stderrPipe.fileHandleForReading.readDataToEndOfFile()
+        }.value
+
+        let stdout = await stdoutData
+        let stderr = await stderrData
+
+        process.waitUntilExit()
+
+        return ProcessOutput(
+            stdout: String(data: stdout, encoding: .utf8) ?? "",
+            stderr: String(data: stderr, encoding: .utf8) ?? "",
+            exitCode: process.terminationStatus
+        )
     }
 }

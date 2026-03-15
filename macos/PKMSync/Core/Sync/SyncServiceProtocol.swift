@@ -8,7 +8,6 @@ protocol SyncServiceProtocol: Sendable {
 enum SyncError: Error, LocalizedError, Sendable {
     case rcloneNotFound
     case notConfigured
-    case processError(exitCode: Int32, stderr: String)
 
     var errorDescription: String? {
         switch self {
@@ -16,8 +15,6 @@ enum SyncError: Error, LocalizedError, Sendable {
             "rclone binary not found"
         case .notConfigured:
             "Sync is not configured. Set vault path and bucket name in Settings."
-        case let .processError(exitCode, stderr):
-            "rclone exited with code \(exitCode): \(stderr.prefix(200))"
         }
     }
 }

@@ -18,11 +18,15 @@ final class MenuBarViewModel {
         conflictService: ConflictServiceProtocol = ConflictService()
     ) {
         self.configuration = configuration
-        let syncService = SyncService(configuration: configuration)
-        self.scheduler = scheduler ?? SyncScheduler(
-            syncService: syncService,
-            configuration: configuration
-        )
+        if let scheduler {
+            self.scheduler = scheduler
+        } else {
+            let syncService = SyncService(configuration: configuration)
+            self.scheduler = SyncScheduler(
+                syncService: syncService,
+                configuration: configuration
+            )
+        }
         self.conflictService = conflictService
     }
 
@@ -59,8 +63,13 @@ final class MenuBarViewModel {
 
     func refreshConflicts() async {
         guard configuration.isConfigured else { return }
+        let vaultPath = configuration.vaultPath
+        let service = conflictService
         do {
-            conflicts = try await conflictService.scanForConflicts(in: configuration.vaultPath)
+            let found = try await Task.detached {
+                try await service.scanForConflicts(in: vaultPath)
+            }.value
+            conflicts = found
         } catch {
             conflicts = []
         }
@@ -89,16 +98,17 @@ final class MenuBarViewModel {
 
     func openInObsidian(_ file: RecentFile) {
         let vaultName = (configuration.vaultPath as NSString).lastPathComponent
-        let relativePath = file.relativePath
-            .replacingOccurrences(of: ".md", with: "")
-        let encoded = relativePath.addingPercentEncoding(
-            withAllowedCharacters: .urlQueryAllowed
-        ) ?? relativePath
-        let vaultEncoded = vaultName.addingPercentEncoding(
-            withAllowedCharacters: .urlQueryAllowed
-        ) ?? vaultName
+        let filePath = (file.relativePath as NSString).deletingPathExtension
 
-        if let url = URL(string: "obsidian://open?vault=\(vaultEncoded)&file=\(encoded)") {
+        var components = URLComponents()
+        components.scheme = "obsidian"
+        components.host = "open"
+        components.queryItems = [
+            URLQueryItem(name: "vault", value: vaultName),
+            URLQueryItem(name: "file", value: filePath),
+        ]
+
+        if let url = components.url {
             NSWorkspace.shared.open(url)
         }
     }

@@ -17,4 +17,9 @@ struct PKMSyncApp: App {
             SettingsView()
         }
     }
+
+    init() {
+        _viewModel = State(initialValue: MenuBarViewModel())
+        viewModel.startScheduler()
+    }
 }
