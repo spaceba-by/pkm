@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import SwiftUI
 
 @MainActor
 @Observable
@@ -76,6 +77,63 @@ final class MenuBarViewModel {
     }
 
     private(set) var lastError: String?
+    private(set) var selectedConflict: ConflictFile?
+    private var diffWindow: NSWindow?
+    private var windowDelegate: DiffWindowDelegate?
+
+    func showDiff(for conflict: ConflictFile) {
+        // Close any existing diff window before opening a new one
+        diffWindow?.close()
+
+        selectedConflict = conflict
+
+        let diffViewModel = ConflictDetailViewModel(
+            conflict: conflict,
+            vaultPath: configuration.vaultPath,
+            conflictService: conflictService
+        )
+        diffViewModel.onResolved = { [weak self] in
+            self?.conflicts.removeAll { $0.id == conflict.id }
+            self?.selectedConflict = nil
+        }
+
+        let detailView = ConflictDetailView(
+            viewModel: diffViewModel,
+            onDismiss: { [weak self] in
+                self?.closeDiffWindow()
+            }
+        )
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Conflict: \(conflict.relativePath(from: configuration.vaultPath))"
+        window.contentView = NSHostingView(rootView: detailView)
+        window.center()
+
+        let delegate = DiffWindowDelegate { [weak self] in
+            self?.diffWindow = nil
+            self?.windowDelegate = nil
+            self?.selectedConflict = nil
+        }
+        window.delegate = delegate
+        windowDelegate = delegate
+
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        diffWindow = window
+    }
+
+    private func closeDiffWindow() {
+        diffWindow?.close()
+        diffWindow = nil
+        windowDelegate = nil
+        selectedConflict = nil
+    }
 
     func resolveConflict(_ conflict: ConflictFile, resolution: ConflictResolution) {
         do {
@@ -152,4 +210,17 @@ struct RecentFile: Identifiable, Sendable {
     let name: String
     let relativePath: String
     let modified: Date
+}
+
+@MainActor
+private final class DiffWindowDelegate: NSObject, NSWindowDelegate {
+    private let onClose: () -> Void
+
+    init(onClose: @escaping () -> Void) {
+        self.onClose = onClose
+    }
+
+    func windowWillClose(_: Notification) {
+        onClose()
+    }
 }

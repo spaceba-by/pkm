@@ -106,6 +106,10 @@ struct MenuBarView: View {
             ForEach(viewModel.conflicts) { conflict in
                 ConflictRow(
                     conflict: conflict,
+                    vaultPath: viewModel.configuration.vaultPath,
+                    onDiff: {
+                        viewModel.showDiff(for: conflict)
+                    },
                     onResolve: { resolution in
                         viewModel.resolveConflict(conflict, resolution: resolution)
                     }
@@ -164,6 +168,7 @@ struct MenuBarView: View {
 
 private struct SyncLogRow: View {
     let entry: SyncLogEntry
+    @State private var isExpanded = false
 
     var body: some View {
         HStack {
@@ -181,7 +186,11 @@ private struct SyncLogRow: View {
                     Text(error)
                         .font(.caption2)
                         .foregroundStyle(.red)
-                        .lineLimit(1)
+                        .lineLimit(isExpanded ? nil : 2)
+                        .help(error)
+                        .onTapGesture {
+                            isExpanded.toggle()
+                        }
                 }
             }
             Spacer()
@@ -206,6 +215,8 @@ private struct SyncLogRow: View {
 
 private struct ConflictRow: View {
     let conflict: ConflictFile
+    let vaultPath: String
+    let onDiff: () -> Void
     let onResolve: (ConflictResolution) -> Void
 
     var body: some View {
@@ -213,10 +224,19 @@ private struct ConflictRow: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
                 .font(.caption)
-            Text(conflict.originalFileName)
+            Text(conflict.relativePath(from: vaultPath))
                 .font(.caption)
                 .lineLimit(1)
+                .truncationMode(.middle)
+                .help(conflict.relativePath(from: vaultPath))
             Spacer()
+            Button {
+                onDiff()
+            } label: {
+                Image(systemName: "eye")
+            }
+            .font(.caption2)
+            .help("View diff")
             Button("Keep Original") {
                 onResolve(.keepOriginal)
             }
