@@ -16,11 +16,11 @@ graph TD
         Cognito[Amazon Cognito<br/>User Pool · App Client · Identity Pool]
 
         S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
-        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 36 endpoints]
+        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 43 endpoints]
 
-        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document<br/>persistent-search · notification-dispatch · webhook-receive]
+        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata · extract-tasks<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document · command-process<br/>persistent-search · notification-dispatch · webhook-receive]
 
-        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed]
+        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed<br/>chat-list · chat-messages · chat-send<br/>tasks · tasks-stats]
 
         ProcLambda --> DynamoDB[DynamoDB Table<br/>PK: doc#path · tag#name · entity#type#name<br/>SK: metadata · doc#path · mention#doc<br/>GSI: tag-index · classification-index · entity-index]
         APILambda --> DynamoDB
@@ -69,18 +69,20 @@ graph TD
 
 #### Lambda Functions
 
-**Processing Functions (12):**
+**Processing Functions (14):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
 | `classify-document` | Babashka | 512 MB | 30s | S3 PUT | Classify doc type using Bedrock |
 | `extract-entities` | Babashka | 512 MB | 30s | S3 PUT | Extract named entities |
 | `extract-metadata` | Babashka | 256 MB | 10s | S3 PUT | Parse frontmatter, links, tags |
+| `extract-tasks` | Babashka | 512 MB | 30s | S3 PUT | Extract TODOs, action items, and tasks |
 | `generate-daily-summary` | Babashka | 1024 MB | 60s | Cron (6 AM) | Generate daily summary |
 | `generate-weekly-report` | Babashka | 2048 MB | 120s | Step Function | Generate weekly report |
 | `update-classification-index` | Babashka | 256 MB | 30s | Scheduled (every 6 hours) | Update classification index |
 | `bulk-reclassify` | Babashka | 512 MB | 300s | API invoke | Bulk reclassification with dry-run |
 | `delete-document` | Babashka | 256 MB | 10s | S3 DELETE | Cascade-delete DynamoDB records |
+| `command-process` | Babashka | 1024 MB | 120s | Async invoke | Process @sal commands and chat messages via Bedrock |
 | `persistent-search-execute` | Babashka | 512 MB | 60s | Scheduled | Execute search monitors via Brave API |
 | `persistent-search-summarize` | Babashka | 1024 MB | 60s | Invoke | Summarize search results with AI |
 | `notification-dispatch` | Babashka | 256 MB | 30s | DynamoDB Stream | Dispatch push notifications via SNS/APNs |
@@ -92,7 +94,7 @@ graph TD
 |--------|---------|
 | `index-embeddings` | Generate vector embeddings for semantic search index |
 
-**API Functions (23):**
+**API Functions (28):**
 
 | Function | Runtime | Memory | Timeout | Endpoint | Purpose |
 |----------|---------|--------|---------|----------|---------|
@@ -119,6 +121,11 @@ graph TD
 | `api-webhook-events` | Babashka | 256 MB | 10s | GET /admin/webhook-events | List received webhook events |
 | `api-insights-count` | Babashka | 256 MB | 10s | GET /insights/unviewed-count | Get unviewed insights count |
 | `api-mark-viewed` | Babashka | 256 MB | 10s | PUT /summaries,reports,searches/viewed; PUT /insights/mark-all-viewed | Mark insights as viewed |
+| `api-chat-send` | Babashka | 256 MB | 10s | POST /chat | Send chat message (async command processing) |
+| `api-chat-list` | Babashka | 256 MB | 10s | GET /chat | List conversations |
+| `api-chat-messages` | Babashka | 256 MB | 10s | GET /chat/{conversationId} | Get conversation messages |
+| `api-tasks` | Babashka | 256 MB | 10s | GET /tasks | List extracted tasks with filters |
+| `api-tasks-stats` | Babashka | 256 MB | 10s | GET /tasks/stats | Task statistics (open/completed counts) |
 
 **Shared Code:**
 - AWS wrappers in `lambda/shared/aws/`: `bedrock.clj`, `dynamodb.clj`, `s3.clj`, `sns.clj`, `lambda.clj`, `secrets_manager.clj`, `brave_search.clj`
@@ -126,7 +133,9 @@ graph TD
 - Markdown parsing in `lambda/shared/markdown/`: `utils.clj`
 - Notification utilities in `lambda/shared/notifications/`: `utils.clj`
 - Webhook utilities in `lambda/shared/webhooks/`: `utils.clj`
-- Vector search in `lambda/shared/search/`: `chunker.clj`, `embeddings.clj`, `indexer.clj`, `semantic.clj`, `vector_index.clj`
+- Command parsing in `lambda/shared/command/`: `parser.clj`, `context.clj`
+- Task extraction in `lambda/shared/tasks/`: `extractor.clj`
+- Vector search in `lambda/shared/search/`: `chunker.clj`, `embeddings.clj`, `indexer.clj`, `provider.clj`, `semantic.clj`, `summarizer.clj`, `vector_index.clj`
 - Bundled into each Lambda's uberjar via `build.clj`
 - Uses `bblf` (Babashka Lambda Framework) for runtime
 
@@ -190,6 +199,11 @@ graph TD
   PUT    /searches/{id}/summaries/{timestamp}/viewed - Mark search summary as viewed
   PUT    /insights/mark-all-viewed               - Mark all insights as viewed
   GET    /insights/unviewed-count                - Get unviewed insights count
+  POST   /chat                                  - Send chat message (async processing)
+  GET    /chat                                  - List conversations
+  GET    /chat/{conversationId}                 - Get conversation messages
+  GET    /tasks                                 - List extracted tasks
+  GET    /tasks/stats                           - Task statistics
   ```
 
 ### 4. Event-Driven Processing

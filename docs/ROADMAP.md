@@ -216,22 +216,23 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - HMAC signature verification, classification, and routing
   - Admin CRUD API for webhook source management
 
-### Planned
-
-#### Tier 3 — Command & Intelligence
-
-- **Task 0023: Command Interface**
+- **Task 0023: Command Interface** ✅
 
   - See: [0023-command-interface](tasks/0023-command-interface.md)
   - Chat API with Bedrock-powered reasoning agent querying PKM data
-  - @command parsing in PKM notes, response delivery via API and S3
+  - @sal command parsing in PKM notes, async command_process Lambda
+  - Conversation state in DynamoDB, response delivery via API and S3
   - iOS chat view
 
-- **Task 0024: Automated Task Extraction**
+- **Task 0024: Automated Task Extraction** ✅
 
   - See: [0024-task-extraction](tasks/0024-task-extraction.md)
-  - Detect TODOs, action items, and tasks in processed documents
-  - API endpoints and iOS view for browsing extracted tasks
+  - extract_tasks Lambda runs in parallel with document processing pipeline
+  - Pattern matching (checkboxes, TODOs) and AI detection for meetings/projects
+  - Task index in DynamoDB with open/completed partitions
+  - API endpoints (GET /tasks, GET /tasks/stats) for browsing extracted tasks
+
+### Planned
 
 #### Tier 4 — Advanced Agents
 

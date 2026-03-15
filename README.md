@@ -33,7 +33,7 @@ graph LR
 **AWS Services Used:**
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
-- **Lambda:** 31 serverless functions (11 processing + 19 API + 1 CLI utility)
+- **Lambda:** 43 serverless functions (14 processing + 28 API + 1 CLI utility)
 - **Bedrock:** Claude Haiku 4.5 and Sonnet 4.5 for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
@@ -144,6 +144,21 @@ The system includes a REST API for iOS app access:
 | `DELETE /devices/{device-id}` | Unregister device |
 | `GET /notifications` | List pending notifications |
 | `PUT /notifications/{id}/read` | Mark notification as read |
+| `POST /webhooks/{source-id}` | Receive webhook payload |
+| `POST /admin/webhook-sources` | Create webhook source (admin) |
+| `GET /admin/webhook-sources` | List webhook sources (admin) |
+| `PUT /admin/webhook-sources/{id}` | Update webhook source (admin) |
+| `DELETE /admin/webhook-sources/{id}` | Delete webhook source (admin) |
+| `GET /admin/webhook-events` | List received webhook events |
+| `PUT /summaries/{date}/viewed` | Mark daily summary as viewed |
+| `PUT /reports/{week}/viewed` | Mark weekly report as viewed |
+| `PUT /insights/mark-all-viewed` | Mark all insights as viewed |
+| `GET /insights/unviewed-count` | Get unviewed insights count |
+| `POST /chat` | Send chat message (async command processing) |
+| `GET /chat` | List conversations |
+| `GET /chat/{conversationId}` | Get conversation messages |
+| `GET /tasks` | List extracted tasks with filters |
+| `GET /tasks/stats` | Task statistics (open/completed counts) |
 
 **Authentication:** Cognito User Pool with JWT tokens
 
@@ -191,6 +206,9 @@ pkm-agent-system/
 │   ├── cognito.tf         # User authentication
 │   ├── notifications.tf   # SNS/APNs push notification infrastructure
 │   ├── secrets.tf         # Secrets Manager resources
+│   ├── webhooks.tf        # Webhook receiving infrastructure
+│   ├── task_extraction.tf # Task extraction pipeline
+│   ├── insights.tf        # Insights viewed tracking
 │   ├── eventbridge.tf
 │   ├── stepfunctions.tf
 │   ├── iam.tf
@@ -205,6 +223,9 @@ pkm-agent-system/
 │   │   ├── api/           # API response utilities
 │   │   ├── markdown/      # Markdown parsing
 │   │   ├── notifications/ # Push notification utilities
+│   │   ├── webhooks/      # Webhook signature verification
+│   │   ├── command/       # Command parsing (parser, context)
+│   │   ├── tasks/         # Task extraction
 │   │   └── search/        # Vector search and semantic indexing
 │   ├── functions/         # Lambda function implementations
 │   │   ├── classify_document/
@@ -237,7 +258,19 @@ pkm-agent-system/
 │   │   ├── api_search_summaries/
 │   │   ├── notification_dispatch/
 │   │   ├── api_device_tokens/
-│   │   └── api_notifications/
+│   │   ├── api_notifications/
+│   │   ├── webhook_receive/
+│   │   ├── api_webhook_sources/
+│   │   ├── api_webhook_events/
+│   │   ├── api_insights_count/
+│   │   ├── api_mark_viewed/
+│   │   ├── command_process/
+│   │   ├── extract_tasks/
+│   │   ├── api_chat_list/
+│   │   ├── api_chat_messages/
+│   │   ├── api_chat_send/
+│   │   ├── api_tasks/
+│   │   └── api_tasks_stats/
 │   └── tests/             # Unit tests
 ├── ios/                   # iOS app (SwiftUI)
 ├── scripts/               # Deployment and setup scripts
@@ -434,9 +467,9 @@ terraform apply
 - [x] Secrets management (centralized Terraform secrets, multi-key caching)
 - [x] Unified documents view (merged Documents, Search, Tags into single tab)
 - [x] Push notifications (SNS/APNs for summaries, reports, search monitors)
-- [ ] Webhook receiving & classification
-- [ ] Interactive chat interface
-- [ ] Task extraction and tracking
+- [x] Webhook receiving & classification
+- [x] Interactive chat interface (@sal commands, chat API)
+- [x] Task extraction and tracking
 - [ ] Email/calendar integration
 
 ## Contributing
