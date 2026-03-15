@@ -57,23 +57,23 @@ struct DiffService: DiffServiceProtocol {
                 continue
             }
 
-            let type: DiffLineType
-            if line.hasPrefix("@@") {
-                type = .header
-            } else if line.hasPrefix("+") {
-                type = .added
-            } else if line.hasPrefix("-") {
-                type = .removed
-            } else {
-                type = .context
-            }
+            let type: DiffLineType =
+                if line.hasPrefix("@@") {
+                    .header
+                } else if line.hasPrefix("+") {
+                    .added
+                } else if line.hasPrefix("-") {
+                    .removed
+                } else {
+                    .context
+                }
 
-            let displayText: String
-            if type == .added || type == .removed {
-                displayText = String(line.dropFirst())
-            } else {
-                displayText = line
-            }
+            let displayText: String =
+                if type == .added || type == .removed {
+                    String(line.dropFirst())
+                } else {
+                    line
+                }
 
             result.append(DiffLine(id: index, text: displayText, type: type))
         }
