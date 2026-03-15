@@ -15,7 +15,7 @@ final class SyncServiceTests: XCTestCase {
         configuration = SyncConfiguration(defaults: defaults)
         configuration.vaultPath = "/Users/test/vault"
         configuration.bucketName = "test-bucket"
-        configuration.rclonePath = "/opt/homebrew/bin/rclone"
+        configuration.rclonePath = "/usr/bin/true"
         sut = SyncService(configuration: configuration, processRunner: mockRunner)
     }
 
