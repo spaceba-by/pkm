@@ -59,20 +59,6 @@ When responding:
                {:role (:role msg)
                 :content (:content msg)}))))
 
-(defn- store-message
-  "Store a message in DynamoDB"
-  [conversation-id message-id role content status]
-  (let [now (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS))
-        sk (str "msg#" now "#" message-id)]
-    (ddb/put-item ddb-table
-                  {:PK (str "chat#" conversation-id)
-                   :SK sk
-                   :message_id message-id
-                   :role role
-                   :content content
-                   :timestamp now
-                   :status status})))
-
 (defn- update-message-status
   "Update the status and content of an existing message"
   [conversation-id message-id content status]
@@ -81,7 +67,7 @@ When responding:
                                           :key-condition-expr "PK = :pk AND begins_with(SK, :sk)"
                                           :expr-attr-values {":pk" (str "chat#" conversation-id)
                                                              ":sk" "msg#"}
-                                          :limit 100
+                                          :limit 500
                                           :scan-index-forward false)]
     (when-let [msg (first (filter #(= message-id (:message_id %)) messages))]
       (ddb/update-item-attrs ddb-table
@@ -140,8 +126,17 @@ When responding:
       (when (empty? messages)
         (throw (ex-info "No messages found in conversation" {:conversation-id conversation-id})))
 
-      ;; Build PKM context from the latest user message
-      (let [last-user-msg (last (filter #(= "user" (:role %)) messages))
+      ;; Find the user message that precedes this assistant message
+      ;; to avoid race conditions with concurrent sends
+      (let [history-with-ids (filter #(and (:role %) (:content %)) history)
+            assistant-idx (some #(when (= assistant-message-id (:message_id (second %))) (first %))
+                                (map-indexed vector history-with-ids))
+            preceding-user-msg (when assistant-idx
+                                 (->> (take assistant-idx history-with-ids)
+                                      (filter #(= "user" (:role %)))
+                                      last))
+            last-user-msg (or preceding-user-msg
+                              (last (filter #(= "user" (:role %)) messages)))
             command-text (:content last-user-msg)
             pkm-context (context/build-context ddb-table s3-bucket command-text)
             full-system (str system-prompt "\n\nBelow is context from the user's PKM vault:\n<context>\n"

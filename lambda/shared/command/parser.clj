@@ -7,7 +7,7 @@
   [content]
   (clojure.string/replace
    content
-   #"(?s)```[^`]*```"
+   #"(?s)```.*?```"
    (fn [match]
      (let [newline-count (count (re-seq #"\n" match))
            ;; A block with N newlines spans N+1 lines; replace with that many newlines
