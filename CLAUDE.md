@@ -145,6 +145,8 @@ macos/                    # macOS menu bar app (PKMSync / Sal Sync)
 ├── test.yml              # Lambda test pipeline
 ├── ios-build.yml         # iOS build pipeline
 ├── ios-test.yml          # iOS test pipeline
+├── macos-build.yml       # macOS build pipeline
+├── macos-test.yml        # macOS test pipeline
 └── claude.yml            # Claude Code automation
 ```
 

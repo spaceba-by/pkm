@@ -33,7 +33,7 @@ graph LR
 **AWS Services Used:**
 - **S3:** Vault storage (source of truth)
 - **DynamoDB:** Metadata and entity index
-- **Lambda:** 42 deployed Lambda functions (14 processing + 28 API) + 1 CLI utility
+- **Lambda:** 43 deployed Lambda functions (14 processing + 28 API) + 1 CLI utility
 - **Bedrock:** Claude Haiku 4.5 and Sonnet 4.5 for AI capabilities
 - **EventBridge:** Event routing and scheduling
 - **Step Functions:** Workflow orchestration
