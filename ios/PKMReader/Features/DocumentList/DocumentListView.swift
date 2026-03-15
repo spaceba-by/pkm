@@ -376,4 +376,12 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func getConversationMessages(conversationId _: String) async throws -> [ChatMessage] {
         []
     }
+
+    func listTasks(status _: String, limit _: Int, cursor _: String?) async throws -> TaskListResponse {
+        TaskListResponse(tasks: [], count: 0, nextCursor: nil)
+    }
+
+    func getTaskStats() async throws -> TaskStatsResponse {
+        TaskStatsResponse(open: 0, completed: 0, total: 0)
+    }
 }
