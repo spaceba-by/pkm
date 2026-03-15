@@ -6,10 +6,6 @@
   [content]
   (clojure.string/replace content #"(?s)```[^`]*```" ""))
 
-(def ^:private command-pattern
-  "Regex to match @sal commands on their own line"
-  #"(?m)^@sal\s+(.+)$")
-
 (defn parse-commands
   "Parse @sal commands from markdown content.
    Returns a vector of maps with :command and :line-number keys.

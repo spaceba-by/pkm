@@ -16,6 +16,9 @@
 (defn- now-iso []
   (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS)))
 
+(defn- now-millis []
+  (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/MILLIS)))
+
 (defn- create-conversation
   "Create a new conversation record"
   [user-sub conversation-id title]
@@ -31,9 +34,10 @@
                    :status "active"})))
 
 (defn- store-message
-  "Store a message in DynamoDB"
+  "Store a message in DynamoDB. Uses millisecond-precision timestamps
+   in SK to ensure correct ordering of back-to-back messages."
   [conversation-id message-id role content status]
-  (let [now (now-iso)]
+  (let [now (now-millis)]
     (ddb/put-item ddb-table
                   {:PK (str "chat#" conversation-id)
                    :SK (str "msg#" now "#" message-id)
