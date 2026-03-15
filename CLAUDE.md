@@ -43,6 +43,17 @@ mise run lint:fix      # Auto-fix SwiftLint issues
 mise run generate      # Regenerate Xcode project from project.yml
 ```
 
+### macOS (from `macos/` directory)
+
+```bash
+cd macos
+mise run test          # Run unit tests
+mise run build         # Build for development
+mise run lint          # Check code with SwiftLint
+mise run lint:fix      # Auto-fix SwiftLint issues
+mise run generate      # Regenerate Xcode project from project.yml
+```
+
 ## Deployment
 
 Deployments happen automatically via CI/CD after PRs are merged to `main`. Do NOT build or deploy manually. Instead:
@@ -120,6 +131,13 @@ ios/                      # iOS app (PKMReader)
 ├── PKMReaderTests/       # Unit tests, snapshots, performance benchmarks
 ├── PKMReaderUITests/     # UI tests (Page Object pattern)
 ├── fastlane/             # Build automation
+└── project.yml           # XcodeGen project definition
+
+macos/                    # macOS menu bar app (PKMSync / Sal Sync)
+├── PKMSync/              # SwiftUI app source (MenuBarExtra)
+│   ├── Core/             # Services (Sync, Scheduler, Conflicts, Configuration)
+│   └── Features/         # MenuBar, Settings views and view models
+├── PKMSyncTests/         # Unit tests and mocks
 └── project.yml           # XcodeGen project definition
 
 .github/workflows/        # CI/CD pipelines

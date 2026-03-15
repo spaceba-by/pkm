@@ -38,6 +38,12 @@ graph TD
 
 ### macOS
 
+#### Option 1: PKMSync Menu Bar App (Recommended)
+
+The **PKMSync** (Sal Sync) menu bar app provides a native GUI for managing rclone sync. It shows sync status, supports configurable intervals, conflict detection/resolution, and recently modified file links. See `macos/` for the source and `macos/.mise.toml` for build/test commands.
+
+#### Option 2: launchd (CLI-only)
+
 Uses **launchd** for automatic sync:
 
 ```bash

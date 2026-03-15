@@ -1,0 +1,30 @@
+# Xcode
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcworkspace/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.moved-aside
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcindexdb*
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Test results
+TestResults/
+coverage/
+coverage.json
+
+# Build artifacts
+build/
+
+# macOS
+.DS_Store

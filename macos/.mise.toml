@@ -1,0 +1,57 @@
+[settings]
+experimental = true
+
+[tools]
+swiftlint = "0.63.2"
+xcbeautify = "3.1.4"
+swiftformat = "0.59.1"
+xcodegen = "latest"
+
+# =============================================================================
+# Tasks - run with `mise run <task>` or `mise r <task>`
+# =============================================================================
+
+[tasks.test]
+description = "Run unit tests"
+run = """
+set -o pipefail
+xcodebuild test \
+  -project PKMSync.xcodeproj \
+  -scheme PKMSync \
+  -destination 'platform=macOS' \
+  -enableCodeCoverage YES \
+  CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO 2>&1 \
+  | xcbeautify
+"""
+
+[tasks.lint]
+description = "Run SwiftLint"
+run = "swiftlint lint --config .swiftlint.yml"
+
+[tasks."lint:fix"]
+description = "Auto-fix SwiftLint issues"
+run = "swiftlint --fix --config .swiftlint.yml"
+
+[tasks.format]
+description = "Format code with SwiftFormat"
+run = "swiftformat . --config .swiftformat"
+
+[tasks."format:check"]
+description = "Check code formatting (CI mode)"
+run = "swiftformat . --config .swiftformat --lint"
+
+[tasks.build]
+description = "Build for development"
+run = """
+set -o pipefail
+xcodebuild build \
+  -project PKMSync.xcodeproj \
+  -scheme PKMSync \
+  -destination 'platform=macOS' \
+  CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO 2>&1 \
+  | xcbeautify
+"""
+
+[tasks.generate]
+description = "Regenerate Xcode project from project.yml"
+run = "xcodegen generate"
