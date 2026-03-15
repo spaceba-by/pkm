@@ -155,9 +155,9 @@ resource "aws_lambda_function" "extract_metadata" {
 
   environment {
     variables = {
-      S3_BUCKET_NAME                 = aws_s3_bucket.vault.id
-      DYNAMODB_TABLE_NAME            = aws_dynamodb_table.metadata.name
-      COMMAND_PROCESS_FUNCTION_NAME  = "${var.project_name}-command-process"
+      S3_BUCKET_NAME                = aws_s3_bucket.vault.id
+      DYNAMODB_TABLE_NAME           = aws_dynamodb_table.metadata.name
+      COMMAND_PROCESS_FUNCTION_NAME = "${var.project_name}-command-process"
     }
   }
 

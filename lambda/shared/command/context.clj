@@ -10,7 +10,7 @@
 (def ^:private max-relevant-docs 10)
 (def ^:private max-summary-days 7)
 
-(defn- extract-keywords
+(defn extract-keywords
   "Extract simple keywords from command text for document matching"
   [command-text]
   (let [stop-words #{"the" "a" "an" "is" "are" "was" "were" "be" "been"
@@ -88,7 +88,7 @@
       (println "Error gathering summaries:" (ex-message e))
       [])))
 
-(defn- format-context
+(defn format-context
   "Assemble gathered data into a structured context string"
   [{:keys [recent-docs relevant-docs summaries]}]
   (let [sections []
