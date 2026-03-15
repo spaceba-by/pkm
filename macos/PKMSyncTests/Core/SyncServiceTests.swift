@@ -1,6 +1,5 @@
-import XCTest
-
 @testable import PKMSync
+import XCTest
 
 final class SyncServiceTests: XCTestCase {
     private var mockRunner: MockProcessRunner!

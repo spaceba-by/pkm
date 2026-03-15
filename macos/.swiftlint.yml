@@ -26,10 +26,10 @@ opt_in_rules:
   - file_name
   - first_where
   - flatmap_over_map_reduce
-  - force_unwrapping
+  # force_unwrapping excluded: standard XCTest setUp pattern uses IUOs
   - identical_operands
   - implicit_return
-  - implicitly_unwrapped_optional
+  # implicitly_unwrapped_optional excluded: standard XCTest setUp pattern uses IUOs
   - joined_default_parameter
   - last_where
   - legacy_multiple
@@ -111,3 +111,4 @@ cyclomatic_complexity:
   error: 25
 
 reporter: "xcode"
+

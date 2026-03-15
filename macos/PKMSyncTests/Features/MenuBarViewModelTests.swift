@@ -1,6 +1,5 @@
-import XCTest
-
 @testable import PKMSync
+import XCTest
 
 @MainActor
 final class MenuBarViewModelTests: XCTestCase {

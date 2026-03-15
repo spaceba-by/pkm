@@ -1,6 +1,5 @@
-import XCTest
-
 @testable import PKMSync
+import XCTest
 
 @MainActor
 final class SyncSchedulerTests: XCTestCase {
@@ -77,7 +76,7 @@ final class SyncSchedulerTests: XCTestCase {
 
         XCTAssertEqual(sut.recentLogs.count, 1)
         XCTAssertFalse(sut.recentLogs[0].success)
-        if case .error(let msg) = sut.status {
+        if case let .error(msg) = sut.status {
             XCTAssertEqual(msg, "bisync aborted")
         } else {
             XCTFail("Expected error status")

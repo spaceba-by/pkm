@@ -195,11 +195,11 @@ private struct SyncLogRow: View {
 
     private func formatDuration(_ duration: TimeInterval) -> String {
         if duration < 1 {
-            return "<1s"
+            "<1s"
         } else if duration < 60 {
-            return "\(Int(duration))s"
+            "\(Int(duration))s"
         } else {
-            return "\(Int(duration / 60))m \(Int(duration.truncatingRemainder(dividingBy: 60)))s"
+            "\(Int(duration / 60))m \(Int(duration.truncatingRemainder(dividingBy: 60)))s"
         }
     }
 }

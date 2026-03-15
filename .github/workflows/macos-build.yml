@@ -1,0 +1,260 @@
+name: macOS Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'macos/**'
+      - '.github/workflows/macos-*.yml'
+    tags:
+      - 'macos/v*'
+
+concurrency:
+  group: macos-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Release
+    runs-on: macos-26
+
+    steps:
+      - name: Check signing secrets
+        id: check-secrets
+        run: |
+          has_cert="${MACOS_CERTIFICATE:+1}"
+          has_pass="${MACOS_CERTIFICATE_PASSWORD:+1}"
+          has_team="${APPLE_TEAM_ID:+1}"
+
+          if [ -z "$has_cert" ] && [ -z "$has_pass" ]; then
+            echo "No code signing secrets detected; building unsigned."
+            echo "has_signing=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -n "$has_cert" ] && [ -n "$has_pass" ] && [ -n "$has_team" ]; then
+            echo "All code signing secrets detected; building signed."
+            echo "has_signing=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "::error::Partial code signing secrets detected. Set all or none of: MACOS_CERTIFICATE, MACOS_CERTIFICATE_PASSWORD, APPLE_TEAM_ID"
+          exit 1
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Check notarization secrets
+        id: check-notary
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        run: |
+          has_key_id="${ASC_KEY_ID:+1}"
+          has_issuer="${ASC_ISSUER_ID:+1}"
+          has_key="${ASC_KEY:+1}"
+
+          if [ -n "$has_key_id" ] && [ -n "$has_issuer" ] && [ -n "$has_key" ]; then
+            echo "has_notary=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Notarization secrets not configured; skipping notarization."
+            echo "has_notary=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY: ${{ secrets.ASC_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.0'
+
+      - uses: jdx/mise-action@v3
+        with:
+          working_directory: macos
+
+      - name: Generate Xcode project
+        working-directory: macos
+        run: mise run generate
+
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-macos-dd-${{ hashFiles('macos/project.yml') }}-${{ hashFiles('macos/PKMSync/**/*.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-macos-dd-${{ hashFiles('macos/project.yml') }}-
+            ${{ runner.os }}-macos-dd-
+
+      # --- Signed build path ---
+
+      - name: Setup signing keychain
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" \
+            -k "$KEYCHAIN_PATH" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+
+      - name: Build signed archive
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        working-directory: macos
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project PKMSync.xcodeproj \
+            -scheme PKMSync \
+            -destination 'platform=macOS' \
+            -archivePath build/PKMSync.xcarchive \
+            -configuration Release \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic 2>&1 \
+            | xcbeautify --renderer github-actions
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Export signed app
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        working-directory: macos
+        run: |
+          mkdir -p build/export
+          cat > build/ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+          </dict>
+          </plist>
+          PLIST
+          sed -i '' "s/\${APPLE_TEAM_ID}/$APPLE_TEAM_ID/" build/ExportOptions.plist
+
+          xcodebuild -exportArchive \
+            -archivePath build/PKMSync.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Notarize app
+        if: steps.check-secrets.outputs.has_signing == 'true' && steps.check-notary.outputs.has_notary == 'true'
+        working-directory: macos
+        run: |
+          # Create API key file for notarytool
+          mkdir -p ~/.private_keys
+          echo "$ASC_KEY" > ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8
+
+          # Create zip for notarization
+          ditto -c -k --keepParent build/export/PKMSync.app build/PKMSync-notarize.zip
+
+          xcrun notarytool submit build/PKMSync-notarize.zip \
+            --key ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8 \
+            --key-id "$ASC_KEY_ID" \
+            --issuer "$ASC_ISSUER_ID" \
+            --wait
+
+          xcrun stapler staple build/export/PKMSync.app
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY: ${{ secrets.ASC_KEY }}
+
+      # --- Unsigned build path (fallback) ---
+
+      - name: Build (unsigned)
+        if: steps.check-secrets.outputs.has_signing != 'true'
+        working-directory: macos
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project PKMSync.xcodeproj \
+            -scheme PKMSync \
+            -destination 'platform=macOS' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO 2>&1 \
+            | xcbeautify --renderer github-actions
+
+      # --- Package and upload ---
+
+      - name: Create DMG
+        if: steps.check-secrets.outputs.has_signing == 'true'
+        working-directory: macos
+        run: |
+          APP_PATH="build/export/PKMSync.app"
+          DMG_PATH="build/PKMSync.dmg"
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist")
+
+          hdiutil create -volname "PKMSync $VERSION" \
+            -srcfolder "$APP_PATH" \
+            -ov -format UDZO \
+            "$DMG_PATH"
+
+          echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Create build info
+        run: |
+          mkdir -p macos/build
+          echo "{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"signed\": ${{ steps.check-secrets.outputs.has_signing }}}" > macos/build/build-info.json
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PKMSync-${{ github.sha }}
+          path: |
+            macos/build/PKMSync.dmg
+            macos/build/build-info.json
+          retention-days: 30
+
+    outputs:
+      has_signing: ${{ steps.check-secrets.outputs.has_signing }}
+      has_notary: ${{ steps.check-notary.outputs.has_notary }}
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/macos/v')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PKMSync-${{ github.sha }}
+          path: artifacts/
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#macos/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "PKMSync ${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            artifacts/PKMSync.dmg

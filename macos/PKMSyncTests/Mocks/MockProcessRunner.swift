@@ -1,5 +1,4 @@
 import Foundation
-
 @testable import PKMSync
 
 final class MockProcessRunner: ProcessRunnerProtocol, @unchecked Sendable {
@@ -13,7 +12,7 @@ final class MockProcessRunner: ProcessRunnerProtocol, @unchecked Sendable {
     func run(
         executablePath: String,
         arguments: [String],
-        environment: [String: String]?
+        environment _: [String: String]?
     ) async throws -> ProcessOutput {
         runCallCount += 1
         lastExecutablePath = executablePath

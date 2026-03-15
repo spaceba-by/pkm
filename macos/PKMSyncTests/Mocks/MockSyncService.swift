@@ -1,5 +1,4 @@
 import Foundation
-
 @testable import PKMSync
 
 final class MockSyncService: SyncServiceProtocol, @unchecked Sendable {

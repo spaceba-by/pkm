@@ -1,6 +1,5 @@
-import XCTest
-
 @testable import PKMSync
+import XCTest
 
 final class ConflictServiceTests: XCTestCase {
     private var tempDir: URL!
@@ -49,7 +48,7 @@ final class ConflictServiceTests: XCTestCase {
         XCTAssertTrue(conflicts.isEmpty)
     }
 
-    func testResolveKeepOriginal() async throws {
+    func testResolveKeepOriginal() throws {
         let original = tempDir.appendingPathComponent("note.md")
         let conflict = tempDir.appendingPathComponent("note.conflict1.md")
         try "original".write(to: original, atomically: true, encoding: .utf8)
@@ -66,7 +65,7 @@ final class ConflictServiceTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: conflict.path))
     }
 
-    func testResolveKeepConflict() async throws {
+    func testResolveKeepConflict() throws {
         let original = tempDir.appendingPathComponent("note.md")
         let conflict = tempDir.appendingPathComponent("note.conflict1.md")
         try "original".write(to: original, atomically: true, encoding: .utf8)

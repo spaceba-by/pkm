@@ -28,9 +28,9 @@ final class SyncScheduler: SyncSchedulerProtocol {
         schedulerTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                await self.performSync()
+                await performSync()
                 do {
-                    try await Task.sleep(for: .seconds(self.configuration.syncIntervalSeconds))
+                    try await Task.sleep(for: .seconds(configuration.syncIntervalSeconds))
                 } catch {
                     break
                 }

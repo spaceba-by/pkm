@@ -1,5 +1,4 @@
 import Foundation
-
 @testable import PKMSync
 
 final class MockConflictService: ConflictServiceProtocol, @unchecked Sendable {
@@ -8,12 +7,12 @@ final class MockConflictService: ConflictServiceProtocol, @unchecked Sendable {
     private(set) var resolveCallCount = 0
     private(set) var lastResolution: ConflictResolution?
 
-    func scanForConflicts(in vaultPath: String) async throws -> [ConflictFile] {
+    func scanForConflicts(in _: String) async throws -> [ConflictFile] {
         scanCallCount += 1
         return conflicts
     }
 
-    func resolveConflict(_ conflict: ConflictFile, resolution: ConflictResolution) throws {
+    func resolveConflict(_: ConflictFile, resolution: ConflictResolution) throws {
         resolveCallCount += 1
         lastResolution = resolution
     }

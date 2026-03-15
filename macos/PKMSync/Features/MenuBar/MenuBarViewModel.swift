@@ -103,7 +103,7 @@ final class MenuBarViewModel {
         }
     }
 
-    private nonisolated static func loadRecentFiles(from vaultPath: String) async -> [RecentFile] {
+    nonisolated private static func loadRecentFiles(from vaultPath: String) async -> [RecentFile] {
         let vaultURL = URL(fileURLWithPath: vaultPath)
         let fileManager = FileManager.default
 

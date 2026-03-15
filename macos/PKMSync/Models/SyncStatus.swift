@@ -22,7 +22,7 @@ enum SyncStatus: Sendable, Equatable {
             "Idle"
         case .syncing:
             "Syncing..."
-        case .error(let message):
+        case let .error(message):
             "Error: \(message)"
         }
     }
