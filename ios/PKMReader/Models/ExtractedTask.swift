@@ -35,10 +35,17 @@ struct ExtractedTask: Identifiable, Codable, Hashable, Sendable {
     /// Last modified timestamp (optional)
     let modified: Date?
 
-    var id: String { taskId }
+    var id: String {
+        taskId
+    }
 
-    var isOpen: Bool { status == "open" }
-    var isCompleted: Bool { status == "completed" }
+    var isOpen: Bool {
+        status == "open"
+    }
+
+    var isCompleted: Bool {
+        status == "completed"
+    }
 
     var displayMarker: String {
         switch marker {

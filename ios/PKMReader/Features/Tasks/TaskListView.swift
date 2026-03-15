@@ -40,8 +40,7 @@ struct TaskListView: View {
         }
     }
 
-    @ViewBuilder
-    private var taskContent: some View {
+    @ViewBuilder private var taskContent: some View {
         if viewModel.tasks.isEmpty {
             ContentUnavailableView {
                 Label("No Tasks", systemImage: "checkmark.circle")
@@ -69,7 +68,6 @@ struct TaskListView: View {
         }
     }
 
-    @ViewBuilder
     private func statsSection(stats: TaskStatsResponse) -> some View {
         Section {
             HStack {
