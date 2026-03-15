@@ -34,7 +34,7 @@ private struct ConversationListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.conversations.isEmpty {
+            if viewModel.isLoading, viewModel.conversations.isEmpty {
                 ProgressView("Loading conversations...")
             } else if viewModel.conversations.isEmpty {
                 ContentUnavailableView(
@@ -186,7 +186,7 @@ private struct TypingIndicator: View {
     var body: some View {
         HStack {
             HStack(spacing: 4) {
-                ForEach(0..<3) { index in
+                ForEach(0 ..< 3) { index in
                     Circle()
                         .fill(Color(.systemGray3))
                         .frame(width: 8, height: 8)
@@ -223,7 +223,7 @@ private struct ChatInputBar: View {
         HStack(spacing: 12) {
             TextField("Ask about your vault...", text: $text, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
-                .lineLimit(1...4)
+                .lineLimit(1 ... 4)
                 .disabled(isSending)
                 .accessibilityIdentifier("ChatInput")
                 .onSubmit {

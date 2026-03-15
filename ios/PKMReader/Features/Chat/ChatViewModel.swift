@@ -3,7 +3,7 @@ import Foundation
 /// View model for the Chat feature
 @MainActor
 @Observable
-final class ChatViewModel: Sendable {
+final class ChatViewModel {
     enum ViewState: Equatable {
         case conversationList
         case conversation(String)
@@ -89,8 +89,10 @@ final class ChatViewModel: Sendable {
             isSending = false
 
             // Start polling for the response
-            startPolling(conversationId: response.conversationId,
-                         assistantMessageId: response.assistantMessageId)
+            startPolling(
+                conversationId: response.conversationId,
+                assistantMessageId: response.assistantMessageId
+            )
         } catch {
             isSending = false
             errorMessage = "Failed to send message"
@@ -116,17 +118,17 @@ final class ChatViewModel: Sendable {
         stopPolling()
         pollingTask = Task { [weak self] in
             // Poll every 2 seconds, up to 60 seconds
-            for _ in 0..<30 {
+            for _ in 0 ..< 30 {
                 guard !Task.isCancelled else { return }
                 try? await Task.sleep(for: .seconds(2))
                 guard !Task.isCancelled else { return }
 
                 do {
                     guard let self else { return }
-                    let updatedMessages = try await self.apiClient.getConversationMessages(
+                    let updatedMessages = try await apiClient.getConversationMessages(
                         conversationId: conversationId
                     )
-                    self.messages = updatedMessages
+                    messages = updatedMessages
 
                     // Check if the assistant message is complete
                     if let assistantMsg = updatedMessages.first(where: { $0.id == assistantMessageId }),
