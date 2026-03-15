@@ -47,6 +47,13 @@ final class ChatViewModel {
         errorMessage = nil
         do {
             messages = try await apiClient.getConversationMessages(conversationId: conversationId)
+            // Resume polling if there's a pending assistant message
+            if let pendingMsg = messages.first(where: { $0.role == .assistant && $0.status == .pending }) {
+                startPolling(
+                    conversationId: conversationId,
+                    assistantMessageId: pendingMsg.id
+                )
+            }
         } catch {
             errorMessage = "Failed to load messages"
         }
@@ -145,6 +152,10 @@ final class ChatViewModel {
     private func stopPolling() {
         pollingTask?.cancel()
         pollingTask = nil
+    }
+
+    func clearError() {
+        errorMessage = nil
     }
 
     /// Whether any assistant message is still pending

@@ -66,9 +66,14 @@
       (when (or (nil? message) (clojure.string/blank? message))
         (throw (ex-info "Message is required" {:type :validation})))
 
-      ;; Create conversation if new
-      (when is-new
-        (create-conversation user-sub conversation-id (generate-title message)))
+      ;; Create conversation if new, verify ownership if existing
+      (if is-new
+        (create-conversation user-sub conversation-id (generate-title message))
+        (let [existing (ddb/get-item ddb-table
+                                      {:PK (str "user#" user-sub)
+                                       :SK (str "chat#" conversation-id)})]
+          (when-not existing
+            (throw (ex-info "Conversation not found" {:type :not-found})))))
 
       ;; Store user message
       (let [user-msg-id (generate-id)
@@ -77,6 +82,13 @@
 
         ;; Store pending assistant message
         (store-message conversation-id assistant-msg-id "assistant" "" "pending")
+
+        ;; Update conversation message count and modified timestamp
+        (ddb/update-item ddb-table
+                          {:PK (str "user#" user-sub)
+                           :SK (str "chat#" conversation-id)}
+                          "SET modified = :now, message_count = message_count + :inc"
+                          {":now" (now-iso) ":inc" 2})
 
         ;; Invoke command_process async
         (lambda/invoke-async command-process-fn
@@ -94,8 +106,9 @@
                      :assistantMessageId assistant-msg-id})))
 
     (catch clojure.lang.ExceptionInfo e
-      (if (= :validation (:type (ex-data e)))
-        (r/bad-request (ex-message e))
+      (case (:type (ex-data e))
+        :validation (r/bad-request (ex-message e))
+        :not-found (r/not-found (ex-message e))
         (do
           (println "Error in chat send:" (ex-message e))
           (r/internal-error "Failed to send message"))))

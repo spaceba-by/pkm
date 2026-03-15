@@ -134,9 +134,15 @@ private struct ChatConversationView: View {
                 .accessibilityIdentifier("BackToConversations")
             }
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.clearError() } }
+            )
+        ) {
             Button("OK") {
-                viewModel.inputText = ""
+                viewModel.clearError()
             }
         } message: {
             Text(viewModel.errorMessage ?? "")

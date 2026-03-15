@@ -31,14 +31,14 @@
         (when-not conversation
           (throw (ex-info "Conversation not found" {:type :not-found})))
 
-        ;; Get messages in chronological order
-        (let [messages (ddb/query ddb-table
-                                  :key-condition-expr "PK = :pk AND begins_with(SK, :sk)"
-                                  :expr-attr-values {":pk" (str "chat#" conversation-id)
-                                                     ":sk" "msg#"}
-                                  :limit 100
-                                  :scan-index-forward true)
-              formatted (mapv format-message messages)]
+        ;; Get most recent 100 messages (query descending, reverse for chronological)
+        (let [[messages _] (ddb/query-to-limit ddb-table
+                                                :key-condition-expr "PK = :pk AND begins_with(SK, :sk)"
+                                                :expr-attr-values {":pk" (str "chat#" conversation-id)
+                                                                   ":sk" "msg#"}
+                                                :limit 100
+                                                :scan-index-forward false)
+              formatted (mapv format-message (reverse messages))]
           (r/ok-no-cache {:conversationId conversation-id
                           :messages formatted}))))
 

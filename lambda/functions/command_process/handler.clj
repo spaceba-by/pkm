@@ -41,8 +41,9 @@ When responding:
                                             :expr-attr-values {":pk" (str "chat#" conversation-id)
                                                                ":sk" "msg#"}
                                             :limit max-history-messages
-                                            :scan-index-forward true)]
-      messages)
+                                            :scan-index-forward false)]
+      ;; Reverse to get chronological order (queried newest-first for recency)
+      (vec (reverse messages)))
     (catch Exception e
       (println "Error loading conversation history:" (ex-message e))
       [])))
@@ -103,10 +104,12 @@ When responding:
   "Write @sal command response to S3"
   [document-path command-text response-text]
   (let [now (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS))
+        response-id (str (java.util.UUID/randomUUID))
         doc-base (str/replace document-path #"\.md$" "")
-        s3-key (str "_agent/responses/" doc-base "/" now ".md")
+        s3-key (str "_agent/responses/" doc-base "/" now "-" response-id ".md")
+        escaped-command (str/replace (str/replace command-text "\"" "\\\"") "\n" " ")
         content (str "---\n"
-                     "command: \"" command-text "\"\n"
+                     "command: \"" escaped-command "\"\n"
                      "source_document: " document-path "\n"
                      "generated_at: " now "\n"
                      "---\n\n"
@@ -117,7 +120,7 @@ When responding:
     ;; Track in DynamoDB
     (ddb/put-item ddb-table
                   {:PK document-path
-                   :SK (str "COMMAND_RESPONSE#" now)
+                   :SK (str "COMMAND_RESPONSE#" now "#" response-id)
                    :command_text command-text
                    :response_s3_key s3-key
                    :status "complete"
