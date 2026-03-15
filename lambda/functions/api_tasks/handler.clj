@@ -94,9 +94,11 @@
         ;; Query by status using GSI
         (if (= status "all")
           ;; For "all", query both open and completed, merge
-          (let [[open-tasks open-cursor] (query-tasks-by-status "open" limit cursor)
-                formatted (mapv format-task open-tasks)]
-            ;; Return open tasks first (most useful default)
+          (let [half-limit (max 1 (quot limit 2))
+                [open-tasks open-cursor] (query-tasks-by-status "open" half-limit cursor)
+                [completed-tasks _] (query-tasks-by-status "completed" half-limit nil)
+                all-tasks (into (vec open-tasks) completed-tasks)
+                formatted (mapv format-task all-tasks)]
             (r/ok {:tasks formatted
                    :count (count formatted)
                    :nextCursor open-cursor}))

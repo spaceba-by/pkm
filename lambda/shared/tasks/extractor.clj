@@ -15,7 +15,7 @@
   [doc-path line-number description]
   (let [desc-prefix (subs description 0 (min 80 (count description)))
         input (str doc-path "|" line-number "|" desc-prefix)]
-    (str "t-" (format "%08x" (Math/abs (hash input))))))
+    (str "t-" (format "%08x" (bit-and (hash input) 0x7fffffff)))))
 
 ;; =============================================================================
 ;; Date extraction
@@ -97,8 +97,9 @@
     (->> lines
          (map-indexed
           (fn [idx line]
-            ;; Skip lines that are checkboxes (avoid double extraction)
-            (when-not (re-matches checkbox-pattern line)
+            ;; Skip lines that are checkboxes or headings (avoid double extraction)
+            (when-not (or (re-matches checkbox-pattern line)
+                          (re-find #"^\s*#" line))
               (some (fn [[marker-type pattern]]
                       (when-let [match (re-find pattern line)]
                         (let [description (str/trim (second match))]
