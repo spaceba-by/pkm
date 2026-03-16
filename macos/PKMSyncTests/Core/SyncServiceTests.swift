@@ -103,10 +103,10 @@ final class SyncServiceTests: XCTestCase {
         let entry = try await sut.sync()
 
         XCTAssertFalse(entry.success)
-        XCTAssertNotNil(entry.rawOutput)
-        XCTAssertTrue(entry.rawOutput!.contains("bisync aborted"))
-        XCTAssertTrue(entry.rawOutput!.contains("something else went wrong"))
-        XCTAssertTrue(entry.rawOutput!.contains("Transferred"))
+        let rawOutput = try XCTUnwrap(entry.rawOutput)
+        XCTAssertTrue(rawOutput.contains("bisync aborted"))
+        XCTAssertTrue(rawOutput.contains("something else went wrong"))
+        XCTAssertTrue(rawOutput.contains("Transferred"))
     }
 
     func testSyncStoresRawOutputOnSuccess() async throws {
@@ -119,8 +119,8 @@ final class SyncServiceTests: XCTestCase {
         let entry = try await sut.sync()
 
         XCTAssertTrue(entry.success)
-        XCTAssertNotNil(entry.rawOutput)
-        XCTAssertTrue(entry.rawOutput!.contains("Transferred"))
+        let rawOutput = try XCTUnwrap(entry.rawOutput)
+        XCTAssertTrue(rawOutput.contains("Transferred"))
     }
 
     func testThrowsWhenNotConfigured() async {

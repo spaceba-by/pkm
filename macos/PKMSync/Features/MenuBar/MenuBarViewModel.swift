@@ -80,8 +80,8 @@ final class MenuBarViewModel {
     private(set) var selectedConflict: ConflictFile?
     private var diffWindow: NSWindow?
     private var logWindow: NSWindow?
-    private var windowDelegate: DiffWindowDelegate?
-    private var logWindowDelegate: DiffWindowDelegate?
+    private var windowDelegate: WindowCloseDelegate?
+    private var logWindowDelegate: WindowCloseDelegate?
 
     func showDiff(for conflict: ConflictFile) {
         // Close any existing diff window before opening a new one
@@ -117,7 +117,7 @@ final class MenuBarViewModel {
         window.contentView = NSHostingView(rootView: detailView)
         window.center()
 
-        let delegate = DiffWindowDelegate { [weak self] in
+        let delegate = WindowCloseDelegate { [weak self] in
             self?.diffWindow = nil
             self?.windowDelegate = nil
             self?.selectedConflict = nil
@@ -159,7 +159,7 @@ final class MenuBarViewModel {
         window.contentView = NSHostingView(rootView: logView)
         window.center()
 
-        let delegate = DiffWindowDelegate { [weak self] in
+        let delegate = WindowCloseDelegate { [weak self] in
             self?.logWindow = nil
             self?.logWindowDelegate = nil
         }
@@ -250,7 +250,7 @@ struct RecentFile: Identifiable, Sendable {
 }
 
 @MainActor
-private final class DiffWindowDelegate: NSObject, NSWindowDelegate {
+private final class WindowCloseDelegate: NSObject, NSWindowDelegate {
     private let onClose: () -> Void
 
     init(onClose: @escaping () -> Void) {
