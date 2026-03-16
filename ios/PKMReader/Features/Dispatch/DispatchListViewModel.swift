@@ -16,7 +16,9 @@ final class DispatchListViewModel {
         case completed
         case failed
 
-        var displayName: String { rawValue.capitalized }
+        var displayName: String {
+            rawValue.capitalized
+        }
     }
 
     private(set) var state: State = .loading

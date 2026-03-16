@@ -18,11 +18,21 @@ struct DispatchJob: Identifiable, Codable, Hashable, Sendable {
     let claimedBy: String?
     let createdBy: String?
 
-    var id: String { jobId }
+    var id: String {
+        jobId
+    }
 
-    var isActive: Bool { status == "pending" || status == "running" }
-    var isComplete: Bool { status == "completed" }
-    var isFailed: Bool { status == "failed" }
+    var isActive: Bool {
+        status == "pending" || status == "running"
+    }
+
+    var isComplete: Bool {
+        status == "completed"
+    }
+
+    var isFailed: Bool {
+        status == "failed"
+    }
 
     var statusIcon: String {
         switch status {
@@ -81,10 +91,17 @@ struct AgentType: Identifiable, Codable, Hashable, Sendable {
     let cpu: Int?
     let memory: Int?
 
-    var id: String { name }
+    var id: String {
+        name
+    }
 
-    var isLocal: Bool { target == "local" }
-    var isECS: Bool { target == "ecs" }
+    var isLocal: Bool {
+        target == "local"
+    }
+
+    var isECS: Bool {
+        target == "ecs"
+    }
 
     var targetIcon: String {
         isLocal ? "desktopcomputer" : "cloud"

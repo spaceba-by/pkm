@@ -14,7 +14,7 @@ struct DispatchListView: View {
                 ProgressView("Loading jobs...")
             case .loaded:
                 jobListContent
-            case .error(let message):
+            case let .error(message):
                 ContentUnavailableView {
                     Label("Error", systemImage: "exclamationmark.triangle")
                 } description: {
