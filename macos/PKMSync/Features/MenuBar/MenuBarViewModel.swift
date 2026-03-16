@@ -79,7 +79,9 @@ final class MenuBarViewModel {
     private(set) var lastError: String?
     private(set) var selectedConflict: ConflictFile?
     private var diffWindow: NSWindow?
+    private var logWindow: NSWindow?
     private var windowDelegate: DiffWindowDelegate?
+    private var logWindowDelegate: DiffWindowDelegate?
 
     func showDiff(for conflict: ConflictFile) {
         // Close any existing diff window before opening a new one
@@ -135,6 +137,39 @@ final class MenuBarViewModel {
         diffWindow = nil
         windowDelegate = nil
         selectedConflict = nil
+    }
+
+    func showLog(for entry: SyncLogEntry) {
+        logWindow?.orderOut(nil)
+        logWindow?.close()
+
+        let output = entry.rawOutput ?? entry.errorMessage ?? "No output available"
+        let logView = SyncLogDetailView(
+            timestamp: entry.timestamp,
+            output: output
+        )
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Sync Log — \(entry.timestamp.formatted(date: .abbreviated, time: .standard))"
+        window.contentView = NSHostingView(rootView: logView)
+        window.center()
+
+        let delegate = DiffWindowDelegate { [weak self] in
+            self?.logWindow = nil
+            self?.logWindowDelegate = nil
+        }
+        window.delegate = delegate
+        logWindowDelegate = delegate
+
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        logWindow = window
     }
 
     func resolveConflict(_ conflict: ConflictFile, resolution: ConflictResolution) {

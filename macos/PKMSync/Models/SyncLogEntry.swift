@@ -7,6 +7,7 @@ struct SyncLogEntry: Identifiable, Sendable, Equatable {
     let filesChecked: Int
     let success: Bool
     let errorMessage: String?
+    let rawOutput: String?
     let duration: TimeInterval
 
     init(
@@ -16,6 +17,7 @@ struct SyncLogEntry: Identifiable, Sendable, Equatable {
         filesChecked: Int = 0,
         success: Bool = true,
         errorMessage: String? = nil,
+        rawOutput: String? = nil,
         duration: TimeInterval = 0
     ) {
         self.id = id
@@ -24,6 +26,7 @@ struct SyncLogEntry: Identifiable, Sendable, Equatable {
         self.filesChecked = filesChecked
         self.success = success
         self.errorMessage = errorMessage
+        self.rawOutput = rawOutput
         self.duration = duration
     }
 }
