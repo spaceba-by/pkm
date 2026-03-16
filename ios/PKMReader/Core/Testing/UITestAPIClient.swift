@@ -4,7 +4,7 @@
 
     /// Mock API client that returns fixture data for UI testing
     /// Activated via the `--mock-api` launch argument
-    final class UITestAPIClient: APIClientProtocol, @unchecked Sendable {
+    final class UITestAPIClient: APIClientProtocol, @unchecked Sendable { // swiftlint:disable:this type_body_length
         // MARK: - Fixture Data
 
         private let fixtureDocuments: [Document] = [
@@ -558,7 +558,11 @@
             return JobDetailResponse(job: job, result: "# Result\n\nTask completed successfully.")
         }
 
-        func createJob(taskDescription _: String, contextPaths _: [String]?, agentType: String) async throws -> CreateJobResponse {
+        func createJob(
+            taskDescription _: String,
+            contextPaths _: [String]?,
+            agentType: String
+        ) async throws -> CreateJobResponse {
             CreateJobResponse(jobId: "test-job-id", agentType: agentType, status: "accepted")
         }
 

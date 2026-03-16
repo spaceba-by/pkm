@@ -59,7 +59,7 @@
         com.cognitect.aws/secretsmanager {:mvn/version "847.2.1387.0"}
         com.cognitect.aws/bedrock-runtime {:mvn/version "871.2.30.11"}
         com.cognitect.aws/sns {:mvn/version "871.2.32.15"}
-        com.cognitect.aws/ecs {:mvn/version "871.2.32.15"}}
+        com.cognitect.aws/ecs {:mvn/version "871.2.32.30"}}
 
  :tasks
  {clean {:doc "Clean build artifacts"

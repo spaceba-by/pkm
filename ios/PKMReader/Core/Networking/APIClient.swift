@@ -358,7 +358,11 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         return try await performRequestWithRetry(url: url)
     }
 
-    func createJob(taskDescription: String, contextPaths: [String]?, agentType: String) async throws -> CreateJobResponse {
+    func createJob(
+        taskDescription: String,
+        contextPaths: [String]?,
+        agentType: String
+    ) async throws -> CreateJobResponse {
         let url = baseURL.appendingPathComponent("dispatch/jobs")
         struct CreateJobRequest: Encodable {
             let taskDescription: String

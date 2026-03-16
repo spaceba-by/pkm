@@ -8,10 +8,10 @@ locals {
   dispatch_api     = var.enable_dispatch && var.enable_mobile_api ? { "enabled" = true } : {}
 
   dispatch_lambda_environment = merge(local.api_lambda_environment, {
-    ECS_CLUSTER_NAME    = var.enable_dispatch ? aws_ecs_cluster.dispatch["enabled"].name : ""
-    ECS_TASK_DEFINITION = var.enable_dispatch ? aws_ecs_task_definition.dispatch_sandbox["enabled"].arn : ""
-    ECS_SUBNET_ID       = var.enable_dispatch ? aws_subnet.dispatch_public["enabled"].id : ""
-    ECS_SECURITY_GROUP_ID = var.enable_dispatch ? aws_security_group.dispatch_sandbox["enabled"].id : ""
+    ECS_CLUSTER_NAME       = var.enable_dispatch ? aws_ecs_cluster.dispatch["enabled"].name : ""
+    ECS_TASK_DEFINITION    = var.enable_dispatch ? aws_ecs_task_definition.dispatch_sandbox["enabled"].arn : ""
+    ECS_SUBNET_ID          = var.enable_dispatch ? aws_subnet.dispatch_public["enabled"].id : ""
+    ECS_SECURITY_GROUP_ID  = var.enable_dispatch ? aws_security_group.dispatch_sandbox["enabled"].id : ""
     DISPATCH_FUNCTION_NAME = var.enable_dispatch ? aws_lambda_function.dispatch_job["enabled"].function_name : ""
   })
 

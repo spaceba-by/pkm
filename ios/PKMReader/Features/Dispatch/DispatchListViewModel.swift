@@ -81,7 +81,11 @@ final class DispatchListViewModel {
         await loadJobs()
     }
 
-    func createJob(taskDescription: String, agentType: String, contextPaths: [String]?) async throws -> CreateJobResponse {
+    func createJob(
+        taskDescription: String,
+        agentType: String,
+        contextPaths: [String]?
+    ) async throws -> CreateJobResponse {
         let response = try await apiClient.createJob(
             taskDescription: taskDescription,
             contextPaths: contextPaths,

@@ -55,8 +55,7 @@ struct DispatchListView: View {
         }
     }
 
-    @ViewBuilder
-    private var jobListContent: some View {
+    @ViewBuilder private var jobListContent: some View {
         if viewModel.jobs.isEmpty {
             ContentUnavailableView {
                 Label("No Jobs", systemImage: "tray")

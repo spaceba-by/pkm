@@ -161,7 +161,11 @@ protocol APIClientProtocol: Sendable {
     func getJob(jobId: String) async throws -> JobDetailResponse
 
     /// Create a new dispatch job
-    func createJob(taskDescription: String, contextPaths: [String]?, agentType: String) async throws -> CreateJobResponse
+    func createJob(
+        taskDescription: String,
+        contextPaths: [String]?,
+        agentType: String
+    ) async throws -> CreateJobResponse
 
     /// List available agent type configurations
     func listAgentTypes() async throws -> [AgentType]

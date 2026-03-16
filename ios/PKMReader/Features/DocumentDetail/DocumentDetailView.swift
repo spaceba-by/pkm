@@ -399,4 +399,28 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func getTaskStats() async throws -> TaskStatsResponse {
         TaskStatsResponse(open: 0, completed: 0, total: 0)
     }
+
+    func listJobs(
+        status _: String?,
+        limit _: Int,
+        cursor _: String?
+    ) async throws -> JobListResponse {
+        JobListResponse(jobs: [], count: 0, nextCursor: nil)
+    }
+
+    func getJob(jobId _: String) async throws -> JobDetailResponse {
+        throw APIError.invalidResponse
+    }
+
+    func createJob(
+        taskDescription _: String,
+        contextPaths _: [String]?,
+        agentType _: String
+    ) async throws -> CreateJobResponse {
+        throw APIError.invalidResponse
+    }
+
+    func listAgentTypes() async throws -> [AgentType] {
+        []
+    }
 }

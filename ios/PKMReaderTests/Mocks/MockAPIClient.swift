@@ -359,7 +359,11 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         throw APIError.invalidResponse
     }
 
-    func createJob(taskDescription: String, contextPaths _: [String]?, agentType: String) async throws -> CreateJobResponse {
+    func createJob(
+        taskDescription: String,
+        contextPaths _: [String]?,
+        agentType: String
+    ) async throws -> CreateJobResponse {
         createJobCallCount += 1
         lastCreateJobDescription = taskDescription
         lastCreateJobAgentType = agentType
