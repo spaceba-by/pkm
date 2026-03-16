@@ -207,3 +207,31 @@ variable "apns_use_sandbox" {
   type        = bool
   default     = false
 }
+
+# =============================================================================
+# Dispatch Variables (Task 0025)
+# =============================================================================
+
+variable "enable_dispatch" {
+  description = "Enable the self-improvement dispatch infrastructure (ECS Fargate, dispatch Lambdas)"
+  type        = bool
+  default     = false
+}
+
+variable "dispatch_container_image" {
+  description = "Container image for dispatch sandbox tasks (e.g., ECR URI or Docker Hub image)"
+  type        = string
+  default     = "ubuntu:22.04"
+}
+
+variable "dispatch_task_cpu" {
+  description = "CPU units for dispatch Fargate tasks (1024 = 1 vCPU)"
+  type        = number
+  default     = 1024
+}
+
+variable "dispatch_task_memory" {
+  description = "Memory (MiB) for dispatch Fargate tasks"
+  type        = number
+  default     = 2048
+}

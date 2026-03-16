@@ -37,7 +37,15 @@
          "functions/api_chat_messages"
          "functions/extract_tasks"
          "functions/api_tasks"
-         "functions/api_tasks_stats"]
+         "functions/api_tasks_stats"
+         "functions/dispatch_job"
+         "functions/collect_results"
+         "functions/api_list_jobs"
+         "functions/api_get_job"
+         "functions/api_create_job"
+         "functions/api_claim_job"
+         "functions/api_complete_job"
+         "functions/api_agent_types"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}
@@ -50,7 +58,8 @@
         com.cognitect.aws/lambda {:mvn/version "848.2.1413.0"}
         com.cognitect.aws/secretsmanager {:mvn/version "847.2.1387.0"}
         com.cognitect.aws/bedrock-runtime {:mvn/version "871.2.30.11"}
-        com.cognitect.aws/sns {:mvn/version "871.2.32.15"}}
+        com.cognitect.aws/sns {:mvn/version "871.2.32.15"}
+        com.cognitect.aws/ecs {:mvn/version "871.2.32.30"}}
 
  :tasks
  {clean {:doc "Clean build artifacts"

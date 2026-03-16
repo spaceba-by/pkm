@@ -120,4 +120,27 @@ enum APIEndpoints {
 
     /// Task statistics
     static let taskStats = "/tasks/stats"
+
+    // MARK: - Dispatch Jobs
+
+    /// List dispatch jobs with optional status filtering
+    static func dispatchJobs(status: String? = nil, limit: Int = 50, cursor: String? = nil) -> String {
+        var path = "/dispatch/jobs?limit=\(limit)"
+        if let status {
+            path += "&status=\(status)"
+        }
+        if let cursor {
+            let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cursor
+            path += "&cursor=\(encoded)"
+        }
+        return path
+    }
+
+    /// Single dispatch job
+    static func dispatchJob(jobId: String) -> String {
+        "/dispatch/jobs/\(jobId)"
+    }
+
+    /// Agent types endpoint
+    static let agentTypes = "/dispatch/agent-types"
 }

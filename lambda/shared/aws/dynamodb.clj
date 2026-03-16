@@ -278,14 +278,16 @@
 
 (defn update-item
   "Updates item in DynamoDB table.
-   Optional :expr-attr-names for ExpressionAttributeNames (avoids reserved word conflicts)."
-  [table-name key update-expr expr-attr-values & {:keys [expr-attr-names]}]
+   Optional :expr-attr-names for ExpressionAttributeNames (avoids reserved word conflicts).
+   Optional :condition-expr for ConditionExpression (conditional updates)."
+  [table-name key update-expr expr-attr-values & {:keys [expr-attr-names condition-expr]}]
   (let [request (cond-> {:TableName table-name
                          :Key (marshall-item key)
                          :UpdateExpression update-expr
                          :ExpressionAttributeValues (marshall-item expr-attr-values)
                          :ReturnValues "ALL_NEW"}
-                  expr-attr-names (assoc :ExpressionAttributeNames expr-attr-names))
+                  expr-attr-names (assoc :ExpressionAttributeNames expr-attr-names)
+                  condition-expr (assoc :ConditionExpression condition-expr))
         response (-> (aws/invoke @ddb-client
                                  {:op :UpdateItem
                                   :request request})
