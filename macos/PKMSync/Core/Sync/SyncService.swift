@@ -41,6 +41,12 @@ struct SyncService: SyncServiceProtocol {
 
         let elapsed = Date().timeIntervalSince(startTime)
         let parsed = RcloneOutputParser.parse(stdout: output.stdout, stderr: output.stderr)
+        let combinedOutput = [
+            output.stdout.isEmpty ? nil : "--- STDOUT ---\n\(output.stdout)",
+            output.stderr.isEmpty ? nil : "--- STDERR ---\n\(output.stderr)",
+        ]
+        .compactMap(\.self)
+        .joined(separator: "\n")
 
         if output.exitCode != 0 {
             let errorMessage = parsed.errorMessages.first ?? output.stderr.prefix(200).description
@@ -50,6 +56,7 @@ struct SyncService: SyncServiceProtocol {
                 filesChecked: parsed.filesChecked,
                 success: false,
                 errorMessage: errorMessage,
+                rawOutput: combinedOutput.isEmpty ? nil : combinedOutput,
                 duration: elapsed
             )
         }
@@ -59,6 +66,7 @@ struct SyncService: SyncServiceProtocol {
             filesTransferred: parsed.filesTransferred,
             filesChecked: parsed.filesChecked,
             success: true,
+            rawOutput: combinedOutput.isEmpty ? nil : combinedOutput,
             duration: elapsed
         )
     }

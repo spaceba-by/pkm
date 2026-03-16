@@ -78,7 +78,9 @@ struct MenuBarView: View {
                     .padding(.bottom, 8)
             } else {
                 ForEach(viewModel.recentLogs.prefix(5)) { entry in
-                    SyncLogRow(entry: entry)
+                    SyncLogRow(entry: entry) {
+                        viewModel.showLog(for: entry)
+                    }
                 }
                 .padding(.bottom, 4)
             }
@@ -153,7 +155,10 @@ struct MenuBarView: View {
 
     private var footerSection: some View {
         HStack {
-            SettingsLink {
+            Button {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                NSApp.activate(ignoringOtherApps: true)
+            } label: {
                 Label("Settings", systemImage: "gear")
             }
             Spacer()
@@ -167,6 +172,7 @@ struct MenuBarView: View {
 
 private struct SyncLogRow: View {
     let entry: SyncLogEntry
+    let onViewLog: () -> Void
     @State private var isExpanded = false
 
     var body: some View {
@@ -193,6 +199,16 @@ private struct SyncLogRow: View {
                 }
             }
             Spacer()
+            if !entry.success {
+                Button {
+                    onViewLog()
+                } label: {
+                    Image(systemName: "doc.text.magnifyingglass")
+                }
+                .buttonStyle(.borderless)
+                .font(.caption2)
+                .help("View full log")
+            }
             Text(formatDuration(entry.duration))
                 .font(.caption2)
                 .foregroundStyle(.secondary)

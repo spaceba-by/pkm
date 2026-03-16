@@ -93,6 +93,36 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertNotNil(entry.errorMessage)
     }
 
+    func testSyncStoresRawOutputOnFailure() async throws {
+        mockRunner.result = .success(ProcessOutput(
+            stdout: "Transferred: 0 / 0, -\nChecks: 5 / 5, 100%",
+            stderr: "ERROR : bisync aborted\nERROR : something else went wrong",
+            exitCode: 1
+        ))
+
+        let entry = try await sut.sync()
+
+        XCTAssertFalse(entry.success)
+        let rawOutput = try XCTUnwrap(entry.rawOutput)
+        XCTAssertTrue(rawOutput.contains("bisync aborted"))
+        XCTAssertTrue(rawOutput.contains("something else went wrong"))
+        XCTAssertTrue(rawOutput.contains("Transferred"))
+    }
+
+    func testSyncStoresRawOutputOnSuccess() async throws {
+        mockRunner.result = .success(ProcessOutput(
+            stdout: "Transferred:            3 / 3, 100%\nChecks:                10 / 10, 100%",
+            stderr: "",
+            exitCode: 0
+        ))
+
+        let entry = try await sut.sync()
+
+        XCTAssertTrue(entry.success)
+        let rawOutput = try XCTUnwrap(entry.rawOutput)
+        XCTAssertTrue(rawOutput.contains("Transferred"))
+    }
+
     func testThrowsWhenNotConfigured() async {
         configuration.vaultPath = ""
 

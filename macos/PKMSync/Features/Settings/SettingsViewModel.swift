@@ -14,7 +14,13 @@ final class SettingsViewModel {
 
     init(configuration: SyncConfiguration = SyncConfiguration()) {
         self.configuration = configuration
+        syncLaunchAtLoginState()
         checkRclone()
+    }
+
+    private func syncLaunchAtLoginState() {
+        let status = SMAppService.mainApp.status
+        configuration.launchAtLogin = (status == .enabled)
     }
 
     func checkRclone() {
