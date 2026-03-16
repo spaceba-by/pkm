@@ -1,6 +1,7 @@
 (ns aws.ecs
   "ECS operations using awyeah client"
-  (:require [com.grzm.awyeah.client.api :as aws]))
+  (:require [com.grzm.awyeah.client.api :as aws]
+            [clojure.string :as str]))
 
 (defonce ^:private ecs-client
   (delay (aws/client {:api :ecs})))
@@ -49,8 +50,19 @@
         response (-> (aws/invoke @ecs-client
                                  {:op :RunTask
                                   :request request})
-                     (check-error "RunTask"))]
-    (first (:tasks response))))
+                     (check-error "RunTask"))
+        failures (:failures response)
+        tasks (:tasks response)]
+    (when (seq failures)
+      (throw (ex-info (str "ECS RunTask failed: "
+                           (str/join ", " (map #(str (:reason %) " (" (:arn %) ")") failures)))
+                      {:operation "RunTask"
+                       :failures failures})))
+    (when (empty? tasks)
+      (throw (ex-info "ECS RunTask returned no tasks"
+                      {:operation "RunTask"
+                       :response response})))
+    (first tasks)))
 
 (defn describe-tasks
   "Describe ECS tasks by their ARNs.

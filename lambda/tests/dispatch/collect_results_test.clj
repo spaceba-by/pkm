@@ -62,22 +62,41 @@
 ;; Status determination tests
 ;; =============================================================================
 
+(defn determine-exit-status
+  "Determine job status from ECS exit code or explicit status (mirrors handler logic)"
+  [event explicit-status]
+  (if explicit-status
+    explicit-status
+    (let [containers (get-in event [:detail :containers])]
+      (cond
+        (nil? containers)   "failed"
+        (empty? containers) "failed"
+        (every? #(= 0 (:exitCode %)) containers) "completed"
+        :else "failed"))))
+
 (deftest determine-exit-status-test
   (testing "Explicit status takes precedence"
-    (is (= "completed" (or "completed" nil)))
-    (is (= "failed" (or "failed" nil))))
+    (is (= "completed" (determine-exit-status {} "completed")))
+    (is (= "failed" (determine-exit-status {} "failed"))))
 
   (testing "All containers exit 0 means completed"
-    (let [containers [{:exitCode 0} {:exitCode 0}]
-          all-zero? (every? #(= 0 (:exitCode %)) containers)]
-      (is all-zero?)
-      (is (= "completed" (if all-zero? "completed" "failed")))))
+    (let [event {:detail {:containers [{:exitCode 0} {:exitCode 0}]}}]
+      (is (= "completed" (determine-exit-status event nil)))))
 
   (testing "Any non-zero exit code means failed"
-    (let [containers [{:exitCode 0} {:exitCode 1}]
-          all-zero? (every? #(= 0 (:exitCode %)) containers)]
-      (is (not all-zero?))
-      (is (= "failed" (if all-zero? "completed" "failed"))))))
+    (let [event {:detail {:containers [{:exitCode 0} {:exitCode 1}]}}]
+      (is (= "failed" (determine-exit-status event nil)))))
+
+  (testing "Nil containers means failed (not completed)"
+    (let [event {:detail {}}]
+      (is (= "failed" (determine-exit-status event nil)))))
+
+  (testing "Empty containers means failed"
+    (let [event {:detail {:containers []}}]
+      (is (= "failed" (determine-exit-status event nil)))))
+
+  (testing "Missing detail entirely means failed"
+    (is (= "failed" (determine-exit-status {} nil)))))
 
 ;; =============================================================================
 ;; Job ID extraction tests

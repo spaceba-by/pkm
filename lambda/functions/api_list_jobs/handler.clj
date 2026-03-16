@@ -64,11 +64,16 @@
                          (filterv #(= status-filter (:status %)) items)
                          items)
               result-items (vec (take limit filtered))
-              formatted (mapv format-job result-items)]
+              formatted (mapv format-job result-items)
+              ;; Build cursor from last returned item's keys (not DynamoDB's LastEvaluatedKey)
+              ;; to avoid skipping items when filtering
+              next-cursor (when (and last-key (= (count result-items) limit))
+                            (let [last-item (peek result-items)]
+                              (encode-cursor {:PK (:PK last-item) :SK (:SK last-item)})))]
 
           (r/ok {:jobs formatted
                  :count (count formatted)
-                 :nextCursor (encode-cursor last-key)}))))
+                 :nextCursor next-cursor}))))
 
     (catch Exception e
       (println "Error listing jobs:" (ex-message e))

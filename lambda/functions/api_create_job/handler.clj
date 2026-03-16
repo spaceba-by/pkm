@@ -43,7 +43,7 @@
                 :agent_type agent-type
                 :context_paths context-paths
                 :created_by user-sub
-                :job_id_hint job-id})
+                :job_id job-id})
 
               (r/accepted {:jobId job-id
                            :agentType agent-type

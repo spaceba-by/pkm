@@ -91,7 +91,7 @@
           (throw (ex-info (str "Unknown agent type: " agent-type-name)
                           {:type :validation})))
 
-        (let [job-id (generate-job-id)
+        (let [job-id (or (:job_id payload) (:job_id_hint payload) (generate-job-id))
               target (or (:target agent-type-config) "ecs")]
 
           ;; Write input context to S3

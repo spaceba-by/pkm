@@ -39,19 +39,22 @@
    Returns the updated job if successful, nil if already claimed."
   [job claimed-by]
   (try
-    (let [now (now-iso)
-          result (ddb/update-item ddb-table
-                                  {:PK "dispatch#job" :SK (:SK job)}
-                                  "SET #s = :running, claimed_by = :cb, started_at = :sa, updated = :u"
-                                  {":running" "running"
-                                   ":cb" claimed-by
-                                   ":sa" now
-                                   ":u" now
-                                   ":pending" "pending"}
-                                  :expr-attr-names {"#s" "status"})]
-      result)
-    (catch Exception _
-      ;; Conditional check failed — job was already claimed
+    (let [now (now-iso)]
+      (ddb/update-item ddb-table
+                       {:PK "dispatch#job" :SK (:SK job)}
+                       "SET #s = :running, claimed_by = :cb, started_at = :sa, updated = :u"
+                       {":running" "running"
+                        ":cb" claimed-by
+                        ":sa" now
+                        ":u" now
+                        ":pending" "pending"}
+                       :expr-attr-names {"#s" "status"}
+                       :condition-expr "#s = :pending"))
+    (catch Exception e
+      ;; ConditionalCheckFailedException means job was already claimed
+      (when-not (= "ConditionalCheckFailedException"
+                    (:cognitect.aws.error/code (ex-data e)))
+        (throw e))
       nil)))
 
 (defn- read-job-input

@@ -1,7 +1,6 @@
 (ns handler
   "Processing Lambda: Collect results from completed dispatch jobs.
-   Triggered by ECS task state changes (STOPPED) via EventBridge,
-   or invoked directly by api_complete_job for local agent results."
+   Triggered by ECS task state changes (STOPPED) via EventBridge."
   (:require [aws.dynamodb :as ddb]
             [aws.s3 :as s3]
             [cheshire.core :as json]
@@ -63,9 +62,11 @@
     explicit-status
     ;; From ECS event: check container exit codes
     (let [containers (get-in event [:detail :containers])]
-      (if (every? #(= 0 (:exitCode %)) containers)
-        "completed"
-        "failed"))))
+      (cond
+        (nil? containers)   "failed"
+        (empty? containers) "failed"
+        (every? #(= 0 (:exitCode %)) containers) "completed"
+        :else "failed"))))
 
 (defn- determine-error
   "Extract error message from ECS event or explicit error"

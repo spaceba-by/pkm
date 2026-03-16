@@ -74,6 +74,27 @@
         (is (= [] (:context_paths parsed)))))))
 
 ;; =============================================================================
+;; Job ID resolution tests
+;; =============================================================================
+
+(deftest job-id-resolution-test
+  (testing "Uses provided job_id when present"
+    (let [payload {:job_id "provided-id" :job_id_hint "hint-id"}
+          resolved (or (:job_id payload) (:job_id_hint payload) (str (java.util.UUID/randomUUID)))]
+      (is (= "provided-id" resolved))))
+
+  (testing "Falls back to job_id_hint when job_id is nil"
+    (let [payload {:job_id_hint "hint-id"}
+          resolved (or (:job_id payload) (:job_id_hint payload) (str (java.util.UUID/randomUUID)))]
+      (is (= "hint-id" resolved))))
+
+  (testing "Generates UUID when no ID provided"
+    (let [payload {}
+          resolved (or (:job_id payload) (:job_id_hint payload) (str (java.util.UUID/randomUUID)))]
+      (is (some? resolved))
+      (is (uuid? (java.util.UUID/fromString resolved))))))
+
+;; =============================================================================
 ;; Agent type config validation tests
 ;; =============================================================================
 
