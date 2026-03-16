@@ -25,6 +25,9 @@
 (require '[command.context-test])
 (require '[tasks.extractor-test])
 (require '[tasks.api-test])
+(require '[dispatch.dispatch-job-test])
+(require '[dispatch.collect-results-test])
+(require '[dispatch.api-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -49,7 +52,10 @@
                  'command.parser-test
                  'command.context-test
                  'tasks.extractor-test
-                 'tasks.api-test)]
+                 'tasks.api-test
+                 'dispatch.dispatch-job-test
+                 'dispatch.collect-results-test
+                 'dispatch.api-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))

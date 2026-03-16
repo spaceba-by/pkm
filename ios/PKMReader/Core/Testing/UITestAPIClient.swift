@@ -531,6 +531,41 @@
             TaskStatsResponse(open: 5, completed: 12, total: 17)
         }
 
+        // MARK: - Dispatch Jobs
+
+        func listJobs(status _: String?, limit _: Int, cursor _: String?) async throws -> JobListResponse {
+            JobListResponse(jobs: [], count: 0, nextCursor: nil)
+        }
+
+        func getJob(jobId: String) async throws -> JobDetailResponse {
+            let job = DispatchJob(
+                jobId: jobId,
+                status: "completed",
+                agentType: "test-agent",
+                taskDescription: "Sample dispatch task",
+                contextPaths: nil,
+                created: Date(),
+                updated: Date(),
+                startedAt: Date(),
+                completedAt: Date(),
+                error: nil,
+                artifacts: ["output.md"],
+                resultPath: "_agent/dispatch/\(jobId)/result.md",
+                ecsTaskArn: nil,
+                claimedBy: nil,
+                createdBy: "test-user"
+            )
+            return JobDetailResponse(job: job, result: "# Result\n\nTask completed successfully.")
+        }
+
+        func createJob(taskDescription _: String, contextPaths _: [String]?, agentType: String) async throws -> CreateJobResponse {
+            CreateJobResponse(jobId: "test-job-id", agentType: agentType, status: "accepted")
+        }
+
+        func listAgentTypes() async throws -> [AgentType] {
+            []
+        }
+
         // MARK: - Insight Viewed Status
 
         func markSummaryViewed(date _: String) async throws {}

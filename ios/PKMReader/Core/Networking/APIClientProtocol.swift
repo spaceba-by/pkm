@@ -152,6 +152,20 @@ protocol APIClientProtocol: Sendable {
     /// Get task statistics (open/completed counts)
     func getTaskStats() async throws -> TaskStatsResponse
 
+    // MARK: - Dispatch Jobs
+
+    /// List dispatch jobs with optional status filtering
+    func listJobs(status: String?, limit: Int, cursor: String?) async throws -> JobListResponse
+
+    /// Get a single dispatch job with result content
+    func getJob(jobId: String) async throws -> JobDetailResponse
+
+    /// Create a new dispatch job
+    func createJob(taskDescription: String, contextPaths: [String]?, agentType: String) async throws -> CreateJobResponse
+
+    /// List available agent type configurations
+    func listAgentTypes() async throws -> [AgentType]
+
     // MARK: - Insight Viewed Status
 
     /// Mark a daily summary as viewed

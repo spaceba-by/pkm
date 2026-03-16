@@ -346,6 +346,39 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         return try await performRequestWithRetry(url: url)
     }
 
+    // MARK: - Dispatch Jobs
+
+    func listJobs(status: String?, limit: Int, cursor: String?) async throws -> JobListResponse {
+        let url = baseURL.appending(path: APIEndpoints.dispatchJobs(status: status, limit: limit, cursor: cursor))
+        return try await performRequestWithRetry(url: url)
+    }
+
+    func getJob(jobId: String) async throws -> JobDetailResponse {
+        let url = baseURL.appending(path: APIEndpoints.dispatchJob(jobId: jobId))
+        return try await performRequestWithRetry(url: url)
+    }
+
+    func createJob(taskDescription: String, contextPaths: [String]?, agentType: String) async throws -> CreateJobResponse {
+        let url = baseURL.appendingPathComponent("dispatch/jobs")
+        struct CreateJobRequest: Encodable {
+            let taskDescription: String
+            let contextPaths: [String]?
+            let agentType: String
+        }
+        let request = CreateJobRequest(
+            taskDescription: taskDescription,
+            contextPaths: contextPaths,
+            agentType: agentType
+        )
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "POST", body: request)
+    }
+
+    func listAgentTypes() async throws -> [AgentType] {
+        let url = baseURL.appending(path: APIEndpoints.agentTypes)
+        let response: AgentTypeListResponse = try await performRequestWithRetry(url: url)
+        return response.agentTypes
+    }
+
     // MARK: - Insight Viewed Status
 
     func markSummaryViewed(date: String) async throws {

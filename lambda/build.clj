@@ -46,6 +46,7 @@
                             'com.cognitect.aws/secretsmanager {:mvn/version "847.2.1387.0"}
                             'com.cognitect.aws/bedrock-runtime {:mvn/version "869.2.1687.0"}
                             'com.cognitect.aws/sns {:mvn/version "871.2.32.15"}
+                            'com.cognitect.aws/ecs {:mvn/version "871.2.32.15"}
                             'io.github.em-schmidt/bblf {:git/url "https://github.com/em-schmidt/bblf"
                                                         :git/sha "e08d9f7b40f8d4e65baa074c14743b6e62fc73b8"}}}))
       ;; Create uberjar
@@ -138,7 +139,16 @@
    "command_process"              "handler/handler"
    "api_chat_send"                "handler/handler"
    "api_chat_list"                "handler/handler"
-   "api_chat_messages"            "handler/handler"})
+   "api_chat_messages"            "handler/handler"
+   ;; Dispatch Lambda functions
+   "dispatch_job"                 "handler/handler"
+   "collect_results"              "handler/handler"
+   "api_list_jobs"                "handler/handler"
+   "api_get_job"                  "handler/handler"
+   "api_create_job"               "handler/handler"
+   "api_claim_job"                "handler/handler"
+   "api_complete_job"             "handler/handler"
+   "api_agent_types"              "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

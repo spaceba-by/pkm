@@ -322,6 +322,55 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         return try getTaskStatsResult.get()
     }
 
+    // MARK: - Dispatch Jobs
+
+    var listJobsResult: Result<JobListResponse, Error> = .success(
+        JobListResponse(jobs: [], count: 0, nextCursor: nil)
+    )
+    private(set) var listJobsCallCount = 0
+    private(set) var lastListJobsStatus: String?
+
+    var getJobResult: Result<JobDetailResponse, Error>?
+    private(set) var getJobCallCount = 0
+    private(set) var lastGetJobId: String?
+
+    var createJobResult: Result<CreateJobResponse, Error> = .success(
+        CreateJobResponse(jobId: "test-job-id", agentType: "test-type", status: "accepted")
+    )
+    private(set) var createJobCallCount = 0
+    private(set) var lastCreateJobDescription: String?
+    private(set) var lastCreateJobAgentType: String?
+
+    var listAgentTypesResult: Result<[AgentType], Error> = .success([])
+    private(set) var listAgentTypesCallCount = 0
+
+    func listJobs(status: String?, limit _: Int, cursor _: String?) async throws -> JobListResponse {
+        listJobsCallCount += 1
+        lastListJobsStatus = status
+        return try listJobsResult.get()
+    }
+
+    func getJob(jobId: String) async throws -> JobDetailResponse {
+        getJobCallCount += 1
+        lastGetJobId = jobId
+        if let result = getJobResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func createJob(taskDescription: String, contextPaths _: [String]?, agentType: String) async throws -> CreateJobResponse {
+        createJobCallCount += 1
+        lastCreateJobDescription = taskDescription
+        lastCreateJobAgentType = agentType
+        return try createJobResult.get()
+    }
+
+    func listAgentTypes() async throws -> [AgentType] {
+        listAgentTypesCallCount += 1
+        return try listAgentTypesResult.get()
+    }
+
     // MARK: - Insight Viewed Status
 
     var markSummaryViewedResult: Result<Void, Error> = .success(())
@@ -433,6 +482,14 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         lastMarkSearchSummaryViewedTimestamp = nil
         markAllInsightsViewedCallCount = 0
         getUnviewedCountCallCount = 0
+        listJobsCallCount = 0
+        lastListJobsStatus = nil
+        getJobCallCount = 0
+        lastGetJobId = nil
+        createJobCallCount = 0
+        lastCreateJobDescription = nil
+        lastCreateJobAgentType = nil
+        listAgentTypesCallCount = 0
     }
     // swiftlint:enable function_body_length
 }
