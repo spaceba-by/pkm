@@ -55,7 +55,7 @@ struct TaskListView: View {
                 }
 
                 ForEach(viewModel.tasks) { task in
-                    TaskRow(task: task)
+                    TaskRow(task: task, apiClient: apiClient)
                         .onAppear {
                             if task.id == viewModel.tasks.last?.id, viewModel.hasMorePages {
                                 Task { await viewModel.loadMoreTasks() }
@@ -85,9 +85,15 @@ struct TaskListView: View {
 /// A single task row
 struct TaskRow: View {
     let task: ExtractedTask
+    let apiClient: any APIClientProtocol
 
     var body: some View {
-        NavigationLink(value: task.documentPath) {
+        // Use destination-based NavigationLink instead of value-based to avoid
+        // SwiftUI scope resolution issues when this view is a pushed destination.
+        // See PR #127 for details on this pattern.
+        NavigationLink {
+            DocumentLoaderView(documentPath: task.documentPath, apiClient: apiClient)
+        } label: {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(task.isCompleted ? .green : .secondary)

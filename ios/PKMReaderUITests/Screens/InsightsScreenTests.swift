@@ -90,6 +90,26 @@ final class InsightsScreenTests: XCTestCase {
         XCTAssertTrue(backButton.waitForExistence(timeout: 5), "Summary detail view not displayed")
     }
 
+    // MARK: - Task Navigation Tests
+
+    func test_tapTask_showsDocumentDetail() {
+        insightsPage.assertIsDisplayed()
+
+        let tasksLink = app.descendants(matching: .any)["TasksNavigationLink"]
+        XCTAssertTrue(tasksLink.waitForExistence(timeout: 5), "Tasks navigation link not found")
+        tasksLink.tap()
+
+        let tasksList = app.descendants(matching: .any)["tasksList"]
+        XCTAssertTrue(tasksList.waitForExistence(timeout: 10), "Tasks list not loaded")
+
+        let taskRow = app.descendants(matching: .any)["taskRow-t-00000001"]
+        XCTAssertTrue(taskRow.waitForExistence(timeout: 5), "Task row not found")
+        taskRow.tap()
+
+        let detailView = app.descendants(matching: .any)["DocumentDetailView"]
+        XCTAssertTrue(detailView.waitForExistence(timeout: 5), "Document detail not shown after tapping task")
+    }
+
     // MARK: - Report Tap Tests
 
     func test_tapReportIndicator_showsDetail() throws {
