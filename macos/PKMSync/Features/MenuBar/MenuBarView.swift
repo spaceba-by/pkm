@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Bindable var viewModel: MenuBarViewModel
+    @Environment(\.openSettings)
+    private var openSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -156,8 +158,7 @@ struct MenuBarView: View {
     private var footerSection: some View {
         HStack {
             Button {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
             } label: {
                 Label("Settings", systemImage: "gear")
             }
