@@ -72,12 +72,21 @@ final class RcloneOutputParserTests: XCTestCase {
     }
 
     func testNeedsResyncDetected() {
+        // Real rclone output includes timestamp prefix
+        // swiftlint:disable:next line_length
+        let stderr = "2026/03/17 09:08:52 ERROR : Bisync critical error: cannot find prior Path1 or Path2 listings, likely due to critical error on prior run"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertTrue(result.needsResync)
+        XCTAssertEqual(result.errorMessages.count, 1)
+    }
+
+    func testNeedsResyncDetectedWithoutTimestamp() {
         // swiftlint:disable:next line_length
         let stderr = "ERROR : Bisync critical error: cannot find prior Path1 or Path2 listings, likely due to critical error on prior run"
         let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
 
         XCTAssertTrue(result.needsResync)
-        XCTAssertEqual(result.errorMessages.count, 1)
     }
 
     func testNeedsResyncFalseForOtherErrors() {

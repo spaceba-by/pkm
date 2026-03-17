@@ -51,11 +51,12 @@ enum RcloneOutputParser {
                 errors = value
             } else if let seconds = extractElapsed(from: trimmed) {
                 elapsedSeconds = seconds
-            } else if trimmed.hasPrefix("ERROR") || trimmed.hasPrefix("Failed to") {
+            } else if trimmed.contains("ERROR") || trimmed.hasPrefix("Failed to") {
                 errorMessages.append(trimmed)
-                if trimmed.contains("cannot find prior Path1 or Path2 listings") {
-                    needsResync = true
-                }
+            }
+
+            if trimmed.contains("cannot find prior Path1 or Path2 listings") {
+                needsResync = true
             }
         }
 
