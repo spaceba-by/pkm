@@ -123,6 +123,42 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertTrue(rawOutput.contains("Transferred"))
     }
 
+    func testSyncAutoRetriesWithResyncOnMissingListings() async throws {
+        mockRunner.results = [
+            .success(ProcessOutput(
+                stdout: "",
+                // swiftlint:disable:next line_length
+                stderr: "2026/03/17 09:08:52 ERROR : Bisync critical error: cannot find prior Path1 or Path2 listings, likely due to critical error on prior run",
+                exitCode: 1
+            )),
+            .success(ProcessOutput(
+                stdout: "Transferred:            0 / 0, -\nChecks:                 5 / 5, 100%",
+                stderr: "",
+                exitCode: 0
+            )),
+        ]
+
+        let entry = try await sut.sync()
+
+        XCTAssertTrue(entry.success)
+        XCTAssertEqual(mockRunner.runCallCount, 2)
+        XCTAssertFalse(mockRunner.allArguments[0].contains("--resync"))
+        XCTAssertTrue(mockRunner.allArguments[1].contains("--resync"))
+    }
+
+    func testSyncDoesNotRetryOnOtherErrors() async throws {
+        mockRunner.result = .success(ProcessOutput(
+            stdout: "",
+            stderr: "ERROR : bisync aborted",
+            exitCode: 1
+        ))
+
+        let entry = try await sut.sync()
+
+        XCTAssertFalse(entry.success)
+        XCTAssertEqual(mockRunner.runCallCount, 1)
+    }
+
     func testThrowsWhenNotConfigured() async {
         configuration.vaultPath = ""
 

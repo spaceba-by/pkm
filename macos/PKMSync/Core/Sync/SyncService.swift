@@ -49,6 +49,10 @@ struct SyncService: SyncServiceProtocol {
         .joined(separator: "\n")
 
         if output.exitCode != 0 {
+            if !resync, parsed.needsResync {
+                return try await runSync(resync: true)
+            }
+
             let errorMessage = parsed.errorMessages.first ?? output.stderr.prefix(200).description
             return SyncLogEntry(
                 timestamp: startTime,

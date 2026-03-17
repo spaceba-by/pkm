@@ -64,6 +64,29 @@ struct SettingsView: View {
                     viewModel.selectFilterFile()
                 }
             }
+
+            HStack {
+                Button("Force Resync") {
+                    Task {
+                        await viewModel.forceResync()
+                    }
+                }
+                .disabled(viewModel.isResyncing)
+
+                if viewModel.isResyncing {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
+                if let message = viewModel.resyncMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Text("Reinitializes bisync state. Use if sync fails due to missing listing files.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

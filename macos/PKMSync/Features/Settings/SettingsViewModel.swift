@@ -9,6 +9,8 @@ final class SettingsViewModel {
     var configuration: SyncConfiguration
 
     var rcloneStatus: String = ""
+    private(set) var isResyncing = false
+    private(set) var resyncMessage: String?
 
     static let intervalOptions = [1, 2, 5, 10, 15, 30]
 
@@ -55,6 +57,30 @@ final class SettingsViewModel {
         if panel.runModal() == .OK, let url = panel.url {
             configuration.vaultPath = url.path
         }
+    }
+
+    func forceResync() async {
+        guard configuration.isConfigured else {
+            resyncMessage = "Configure vault path and bucket name first."
+            return
+        }
+
+        isResyncing = true
+        resyncMessage = nil
+
+        let syncService = SyncService(configuration: configuration)
+        do {
+            let entry = try await syncService.resync()
+            if entry.success {
+                resyncMessage = "Resync completed successfully."
+            } else {
+                resyncMessage = entry.errorMessage ?? "Resync failed."
+            }
+        } catch {
+            resyncMessage = "Resync failed: \(error.localizedDescription)"
+        }
+
+        isResyncing = false
     }
 
     func selectFilterFile() {
