@@ -6,19 +6,22 @@ struct RcloneParseResult: Sendable, Equatable {
     let elapsedSeconds: TimeInterval
     let errors: Int
     let errorMessages: [String]
+    let needsResync: Bool
 
     init(
         filesTransferred: Int = 0,
         filesChecked: Int = 0,
         elapsedSeconds: TimeInterval = 0,
         errors: Int = 0,
-        errorMessages: [String] = []
+        errorMessages: [String] = [],
+        needsResync: Bool = false
     ) {
         self.filesTransferred = filesTransferred
         self.filesChecked = filesChecked
         self.elapsedSeconds = elapsedSeconds
         self.errors = errors
         self.errorMessages = errorMessages
+        self.needsResync = needsResync
     }
 }
 
@@ -32,6 +35,7 @@ enum RcloneOutputParser {
         var elapsedSeconds: TimeInterval = 0
         var errors = 0
         var errorMessages: [String] = []
+        var needsResync = false
 
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -49,6 +53,9 @@ enum RcloneOutputParser {
                 elapsedSeconds = seconds
             } else if trimmed.hasPrefix("ERROR") || trimmed.hasPrefix("Failed to") {
                 errorMessages.append(trimmed)
+                if trimmed.contains("cannot find prior Path1 or Path2 listings") {
+                    needsResync = true
+                }
             }
         }
 
@@ -57,7 +64,8 @@ enum RcloneOutputParser {
             filesChecked: filesChecked,
             elapsedSeconds: elapsedSeconds,
             errors: errors,
-            errorMessages: errorMessages
+            errorMessages: errorMessages,
+            needsResync: needsResync
         )
     }
 

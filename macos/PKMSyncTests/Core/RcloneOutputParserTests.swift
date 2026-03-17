@@ -71,6 +71,22 @@ final class RcloneOutputParserTests: XCTestCase {
         XCTAssertTrue(result.errorMessages.isEmpty)
     }
 
+    func testNeedsResyncDetected() {
+        // swiftlint:disable:next line_length
+        let stderr = "ERROR : Bisync critical error: cannot find prior Path1 or Path2 listings, likely due to critical error on prior run"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertTrue(result.needsResync)
+        XCTAssertEqual(result.errorMessages.count, 1)
+    }
+
+    func testNeedsResyncFalseForOtherErrors() {
+        let stderr = "ERROR : bisync aborted"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertFalse(result.needsResync)
+    }
+
     func testFullVerboseOutput() {
         let stdout = """
         2024/01/15 10:30:00 INFO  : Bisync is running
