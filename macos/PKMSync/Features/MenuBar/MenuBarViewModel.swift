@@ -120,10 +120,10 @@ final class MenuBarViewModel {
 
         let delegate = WindowCloseDelegate { [weak self] in
             guard let self else { return }
-            self.diffWindow?.contentView = nil
-            self.diffWindow = nil
-            self.windowDelegate = nil
-            self.selectedConflict = nil
+            diffWindow?.contentView = nil
+            diffWindow = nil
+            windowDelegate = nil
+            selectedConflict = nil
         }
         window.delegate = delegate
         windowDelegate = delegate
@@ -161,9 +161,9 @@ final class MenuBarViewModel {
 
         let delegate = WindowCloseDelegate { [weak self] in
             guard let self else { return }
-            self.logWindow?.contentView = nil
-            self.logWindow = nil
-            self.logWindowDelegate = nil
+            logWindow?.contentView = nil
+            logWindow = nil
+            logWindowDelegate = nil
         }
         window.delegate = delegate
         logWindowDelegate = delegate
