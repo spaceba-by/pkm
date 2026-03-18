@@ -84,9 +84,8 @@ final class MenuBarViewModel {
     private var logWindowDelegate: WindowCloseDelegate?
 
     func showDiff(for conflict: ConflictFile) {
-        // Close any existing diff window before opening a new one
-        diffWindow?.orderOut(nil)
-        diffWindow?.close()
+        // Dismiss any existing diff window before opening a new one
+        tearDownWindow(&diffWindow, delegate: &windowDelegate)
 
         selectedConflict = conflict
 
@@ -113,14 +112,17 @@ final class MenuBarViewModel {
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.title = "Conflict: \(conflict.relativePath(from: configuration.vaultPath))"
         window.contentView = NSHostingView(rootView: detailView)
         window.center()
 
         let delegate = WindowCloseDelegate { [weak self] in
-            self?.diffWindow = nil
-            self?.windowDelegate = nil
-            self?.selectedConflict = nil
+            guard let self else { return }
+            diffWindow?.contentView = nil
+            diffWindow = nil
+            windowDelegate = nil
+            selectedConflict = nil
         }
         window.delegate = delegate
         windowDelegate = delegate
@@ -132,16 +134,12 @@ final class MenuBarViewModel {
     }
 
     private func closeDiffWindow() {
-        diffWindow?.orderOut(nil)
-        diffWindow?.close()
-        diffWindow = nil
-        windowDelegate = nil
+        tearDownWindow(&diffWindow, delegate: &windowDelegate)
         selectedConflict = nil
     }
 
     func showLog(for entry: SyncLogEntry) {
-        logWindow?.orderOut(nil)
-        logWindow?.close()
+        tearDownWindow(&logWindow, delegate: &logWindowDelegate)
 
         let output = entry.rawOutput ?? entry.errorMessage ?? "No output available"
         let logView = SyncLogDetailView(
@@ -155,13 +153,16 @@ final class MenuBarViewModel {
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.title = "Sync Log — \(entry.timestamp.formatted(date: .abbreviated, time: .standard))"
         window.contentView = NSHostingView(rootView: logView)
         window.center()
 
         let delegate = WindowCloseDelegate { [weak self] in
-            self?.logWindow = nil
-            self?.logWindowDelegate = nil
+            guard let self else { return }
+            logWindow?.contentView = nil
+            logWindow = nil
+            logWindowDelegate = nil
         }
         window.delegate = delegate
         logWindowDelegate = delegate
@@ -208,6 +209,19 @@ final class MenuBarViewModel {
         }
     }
 
+    /// Safely tear down an NSWindow: detach delegate, clear hosted SwiftUI
+    /// content, close the window, then nil out the references.
+    private func tearDownWindow(
+        _ window: inout NSWindow?,
+        delegate: inout WindowCloseDelegate?
+    ) {
+        window?.delegate = nil
+        window?.contentView = nil
+        window?.close()
+        window = nil
+        delegate = nil
+    }
+
     nonisolated private static func loadRecentFiles(from vaultPath: String) async -> [RecentFile] {
         let vaultURL = URL(fileURLWithPath: vaultPath)
         let fileManager = FileManager.default
@@ -249,15 +263,18 @@ struct RecentFile: Identifiable, Sendable {
     let modified: Date
 }
 
-@MainActor
 private final class WindowCloseDelegate: NSObject, NSWindowDelegate {
-    private let onClose: () -> Void
+    private var onClose: (@MainActor () -> Void)?
 
-    init(onClose: @escaping () -> Void) {
+    init(onClose: @escaping @MainActor () -> Void) {
         self.onClose = onClose
     }
 
     func windowWillClose(_: Notification) {
-        onClose()
+        let closure = onClose
+        onClose = nil
+        if let closure {
+            MainActor.assumeIsolated { closure() }
+        }
     }
 }
