@@ -86,7 +86,6 @@ final class MenuBarViewModel {
     func showDiff(for conflict: ConflictFile) {
         // Dismiss any existing diff window before opening a new one
         tearDownWindow(&diffWindow, delegate: &windowDelegate)
-        windowDelegate = nil
 
         selectedConflict = conflict
 
@@ -275,7 +274,7 @@ private final class WindowCloseDelegate: NSObject, NSWindowDelegate {
         let closure = onClose
         onClose = nil
         if let closure {
-            Task { @MainActor in closure() }
+            MainActor.assumeIsolated { closure() }
         }
     }
 }
