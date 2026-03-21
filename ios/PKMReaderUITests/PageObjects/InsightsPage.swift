@@ -34,6 +34,10 @@ final class InsightsPage {
         app.staticTexts["EmptyMonthLabel"].firstMatch
     }
 
+    var dispatchLink: XCUIElement {
+        app.buttons["DispatchNavigationLink"].firstMatch
+    }
+
     // MARK: - Actions
 
     func tapPreviousMonth() {

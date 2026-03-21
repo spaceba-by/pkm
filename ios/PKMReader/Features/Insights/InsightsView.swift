@@ -53,6 +53,26 @@ struct InsightsView: View {
                             .padding(.horizontal)
                             .accessibilityIdentifier("TasksNavigationLink")
 
+                            // Dispatch section
+                            NavigationLink {
+                                DispatchListView(apiClient: apiClient)
+                            } label: {
+                                HStack {
+                                    Label("Dispatch Jobs", systemImage: "hammer.circle")
+                                        .font(.headline)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding()
+                                .background(.regularMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal)
+                            .accessibilityIdentifier("DispatchNavigationLink")
+
                             CalendarView(
                                 viewModel: viewModel,
                                 onSummaryTap: { summary in
