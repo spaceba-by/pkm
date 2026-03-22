@@ -4,10 +4,6 @@ import SwiftUI
 import XCTest
 
 final class InsightsViewSnapshotTests: SnapshotTestCase {
-    override var isRecordMode: Bool {
-        false
-    }
-
     /// Fixed date (2026-02-17 noon UTC) and UTC calendar so the "today"
     /// highlight is deterministic regardless of the machine's timezone.
     private let snapshotToday = Date(timeIntervalSince1970: 1_771_329_600)
