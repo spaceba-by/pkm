@@ -7,6 +7,7 @@ final class MenuBarViewModelTests: XCTestCase {
     private var configuration: SyncConfiguration!
     private var mockConflictService: MockConflictService!
     private var mockSyncService: MockSyncService!
+    private var mockUpdateService: MockUpdateService!
     private var sut: MenuBarViewModel!
 
     override func setUp() {
@@ -18,6 +19,7 @@ final class MenuBarViewModelTests: XCTestCase {
         configuration.bucketName = "test-bucket"
         mockConflictService = MockConflictService()
         mockSyncService = MockSyncService()
+        mockUpdateService = MockUpdateService()
 
         let scheduler = SyncScheduler(
             syncService: mockSyncService,
@@ -26,7 +28,8 @@ final class MenuBarViewModelTests: XCTestCase {
         sut = MenuBarViewModel(
             configuration: configuration,
             scheduler: scheduler,
-            conflictService: mockConflictService
+            conflictService: mockConflictService,
+            updateService: mockUpdateService
         )
     }
 
@@ -39,6 +42,11 @@ final class MenuBarViewModelTests: XCTestCase {
         XCTAssertEqual(sut.status, .idle)
         XCTAssertTrue(sut.recentLogs.isEmpty)
         XCTAssertFalse(sut.hasConflicts)
+    }
+
+    func testInitialUpdateState() {
+        XCTAssertEqual(sut.updateState, .idle)
+        XCTAssertNil(sut.availableUpdate)
     }
 
     func testSyncNowTriggersSync() async {
@@ -84,5 +92,56 @@ final class MenuBarViewModelTests: XCTestCase {
 
         XCTAssertNotNil(sut.selectedConflict)
         XCTAssertEqual(sut.selectedConflict?.originalPath, "/Users/test/vault/note.md")
+    }
+
+    // MARK: - Update Tests
+
+    func testCheckForUpdatesWhenUpdateAvailable() async {
+        let update = AppUpdate(
+            version: "1.1.0",
+            releaseNotes: "New feature",
+            downloadURL: URL(string: "https://example.com/update.zip")!,
+            publishedAt: Date(),
+            assetSize: 5_000_000
+        )
+        mockUpdateService.checkResult = .success(update)
+
+        await sut.checkForUpdates()
+
+        XCTAssertEqual(sut.updateState, .available(version: "1.1.0"))
+        XCTAssertNotNil(sut.availableUpdate)
+        XCTAssertEqual(mockUpdateService.checkCallCount, 1)
+    }
+
+    func testCheckForUpdatesWhenUpToDate() async {
+        mockUpdateService.checkResult = .success(nil)
+
+        await sut.checkForUpdates()
+
+        XCTAssertEqual(sut.updateState, .upToDate)
+        XCTAssertNil(sut.availableUpdate)
+    }
+
+    func testCheckForUpdatesOnError() async {
+        mockUpdateService.checkResult = .failure(UpdateError.networkError("timeout"))
+
+        await sut.checkForUpdates()
+
+        if case .error = sut.updateState {
+            // Expected
+        } else {
+            XCTFail("Expected error state, got \(sut.updateState)")
+        }
+    }
+
+    func testCheckForUpdatesRateLimits() async {
+        mockUpdateService.checkResult = .success(nil)
+
+        await sut.checkForUpdates()
+        XCTAssertEqual(mockUpdateService.checkCallCount, 1)
+
+        // Second call within 5 minutes should be skipped
+        await sut.checkForUpdates()
+        XCTAssertEqual(mockUpdateService.checkCallCount, 1)
     }
 }

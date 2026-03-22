@@ -8,10 +8,11 @@ struct SettingsView: View {
             vaultSection
             scheduleSection
             rcloneSection
+            updatesSection
             generalSection
         }
         .formStyle(.grouped)
-        .frame(width: 450, height: 400)
+        .frame(width: 450, height: 480)
     }
 
     private var vaultSection: some View {
@@ -85,6 +86,40 @@ struct SettingsView: View {
                 }
             }
             Text("Reinitializes bisync state. Use if sync fails due to missing listing files.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var updatesSection: some View {
+        Section("Updates") {
+            Toggle(
+                "Automatically check for updates",
+                isOn: $viewModel.configuration.autoCheckForUpdates
+            )
+            Picker("Check interval", selection: $viewModel.configuration.updateCheckIntervalHours) {
+                ForEach(SettingsViewModel.updateIntervalOptions, id: \.self) { hours in
+                    Text("\(hours) hour\(hours == 1 ? "" : "s")").tag(hours)
+                }
+            }
+            HStack {
+                Button("Check Now") {
+                    Task {
+                        await viewModel.checkForUpdates()
+                    }
+                }
+                .disabled(viewModel.isCheckingForUpdates)
+                if viewModel.isCheckingForUpdates {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                if let message = viewModel.updateCheckMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Text("Current version: \(viewModel.currentVersion)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
