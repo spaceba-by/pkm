@@ -191,6 +191,7 @@ enum TestFixtures {
             ),
         ]
     }
+
     // MARK: - Sample Tasks
 
     static var sampleTasks: [ExtractedTask] {
