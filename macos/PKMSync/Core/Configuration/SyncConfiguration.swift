@@ -47,6 +47,23 @@ final class SyncConfiguration: @unchecked Sendable {
         set { defaults.set(newValue, forKey: prefix + "maxLogEntries") }
     }
 
+    var autoCheckForUpdates: Bool {
+        get {
+            // Default to true if key has never been set
+            if defaults.object(forKey: prefix + "autoCheckForUpdates") == nil { return true }
+            return defaults.bool(forKey: prefix + "autoCheckForUpdates")
+        }
+        set { defaults.set(newValue, forKey: prefix + "autoCheckForUpdates") }
+    }
+
+    var updateCheckIntervalHours: Int {
+        get {
+            let value = defaults.integer(forKey: prefix + "updateCheckIntervalHours")
+            return value > 0 ? value : 4
+        }
+        set { defaults.set(newValue, forKey: prefix + "updateCheckIntervalHours") }
+    }
+
     var isConfigured: Bool {
         !vaultPath.isEmpty && !bucketName.isEmpty
     }

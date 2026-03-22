@@ -21,5 +21,6 @@ struct PKMSyncApp: App {
         let vm = MenuBarViewModel()
         _viewModel = State(initialValue: vm)
         vm.startScheduler()
+        UpdateInstaller.cleanupPendingBackup()
     }
 }

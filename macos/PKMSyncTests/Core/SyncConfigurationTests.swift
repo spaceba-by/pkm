@@ -48,6 +48,20 @@ final class SyncConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.isConfigured)
     }
 
+    func testUpdateDefaults() {
+        XCTAssertTrue(sut.autoCheckForUpdates)
+        XCTAssertEqual(sut.updateCheckIntervalHours, 4)
+    }
+
+    func testPersistsUpdateValues() {
+        sut.autoCheckForUpdates = false
+        sut.updateCheckIntervalHours = 12
+
+        let freshConfig = SyncConfiguration(defaults: defaults)
+        XCTAssertFalse(freshConfig.autoCheckForUpdates)
+        XCTAssertEqual(freshConfig.updateCheckIntervalHours, 12)
+    }
+
     func testSyncIntervalSeconds() {
         sut.syncIntervalMinutes = 5
         XCTAssertEqual(sut.syncIntervalSeconds, 300)

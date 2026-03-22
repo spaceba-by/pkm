@@ -11,11 +11,24 @@ final class SettingsViewModel {
     var rcloneStatus: String = ""
     private(set) var isResyncing = false
     private(set) var resyncMessage: String?
+    private(set) var isCheckingForUpdates = false
+    private(set) var updateCheckMessage: String?
+
+    private let updateService: UpdateServiceProtocol
 
     static let intervalOptions = [1, 2, 5, 10, 15, 30]
+    static let updateIntervalOptions = [1, 4, 12, 24]
 
-    init(configuration: SyncConfiguration = SyncConfiguration()) {
+    var currentVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+    }
+
+    init(
+        configuration: SyncConfiguration = SyncConfiguration(),
+        updateService: UpdateServiceProtocol = GitHubUpdateService()
+    ) {
         self.configuration = configuration
+        self.updateService = updateService
         syncLaunchAtLoginState()
         checkRclone()
     }
@@ -81,6 +94,28 @@ final class SettingsViewModel {
         }
 
         isResyncing = false
+    }
+
+    func checkForUpdates() async {
+        isCheckingForUpdates = true
+        updateCheckMessage = nil
+
+        let service = updateService
+        let version = currentVersion
+        do {
+            let update = try await Task.detached {
+                try await service.checkForUpdate(currentVersion: version)
+            }.value
+            if let update {
+                updateCheckMessage = "Update available: v\(update.version)"
+            } else {
+                updateCheckMessage = "You're up to date."
+            }
+        } catch {
+            updateCheckMessage = "Check failed: \(error.localizedDescription)"
+        }
+
+        isCheckingForUpdates = false
     }
 
     func selectFilterFile() {
