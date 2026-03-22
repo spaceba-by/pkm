@@ -233,7 +233,9 @@ enum TestFixtures {
 
     // MARK: - Sample Dispatch Jobs
 
-    static let fixtureDate = Date(timeIntervalSince1970: 1_704_067_200) // 2024-01-01
+    /// Use current date so `Text(date, style: .relative)` always renders
+    /// as "0 seconds ago", keeping snapshot comparisons stable over time.
+    static let fixtureDate = Date()
 
     static var sampleDispatchJobs: [DispatchJob] {
         [
