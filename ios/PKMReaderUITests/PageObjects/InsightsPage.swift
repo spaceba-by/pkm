@@ -35,7 +35,7 @@ final class InsightsPage {
     }
 
     var dispatchLink: XCUIElement {
-        app.buttons["DispatchNavigationLink"].firstMatch
+        app.descendants(matching: .any)["DispatchNavigationLink"].firstMatch
     }
 
     // MARK: - Actions
