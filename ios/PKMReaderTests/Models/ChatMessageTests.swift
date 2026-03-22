@@ -124,18 +124,24 @@ final class ChatMessageTests: XCTestCase {
     // MARK: - Response Types
 
     func test_chatConversationsResponse_decodable() throws {
-        let json = Data("""
-        {"conversations": [{"id": "c1", "title": "T", "created": "d", "modified": "d", "messageCount": 1, "status": "active"}]}
-        """.utf8)
+        let jsonString = """
+        {"conversations": [{"id": "c1", "title": "T", \
+        "created": "d", "modified": "d", "messageCount": 1, \
+        "status": "active"}]}
+        """
+        let json = Data(jsonString.utf8)
         let response = try JSONDecoder().decode(ChatConversationsResponse.self, from: json)
         XCTAssertEqual(response.conversations.count, 1)
         XCTAssertEqual(response.conversations[0].id, "c1")
     }
 
     func test_chatMessagesResponse_decodable() throws {
-        let json = Data("""
-        {"conversationId": "c1", "messages": [{"id": "m1", "role": "user", "content": "hi", "timestamp": "t", "status": "complete"}]}
-        """.utf8)
+        let jsonString = """
+        {"conversationId": "c1", "messages": [{"id": "m1", \
+        "role": "user", "content": "hi", "timestamp": "t", \
+        "status": "complete"}]}
+        """
+        let json = Data(jsonString.utf8)
         let response = try JSONDecoder().decode(ChatMessagesResponse.self, from: json)
         XCTAssertEqual(response.conversationId, "c1")
         XCTAssertEqual(response.messages.count, 1)
