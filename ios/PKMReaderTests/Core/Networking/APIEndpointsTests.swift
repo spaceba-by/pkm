@@ -136,4 +136,97 @@ final class APIEndpointsTests: XCTestCase {
         XCTAssertFalse(path.contains("10:00:00"))
         XCTAssertTrue(path.contains("10%3A00%3A00"))
     }
+
+    // MARK: - Insight Viewed Endpoints
+
+    func test_markSummaryViewed_path() {
+        let path = APIEndpoints.markSummaryViewed(date: "2026-03-22")
+        XCTAssertEqual(path, "/summaries/2026-03-22/viewed")
+    }
+
+    func test_markReportViewed_path() {
+        let path = APIEndpoints.markReportViewed(week: "2026-W12")
+        XCTAssertEqual(path, "/reports/2026-W12/viewed")
+    }
+
+    func test_markSearchSummaryViewed_path() {
+        let path = APIEndpoints.markSearchSummaryViewed(monitorId: "m1", timestamp: "2026-01-01")
+        XCTAssertEqual(path, "/searches/m1/summaries/2026-01-01/viewed")
+    }
+
+    func test_markSearchSummaryViewed_encodesSpecialCharacters() {
+        let path = APIEndpoints.markSearchSummaryViewed(
+            monitorId: "mon special",
+            timestamp: "2026-01-01T10:00:00+05:00"
+        )
+        XCTAssertTrue(path.contains("mon%20special"))
+        XCTAssertTrue(path.contains("10%3A00%3A00"))
+    }
+
+    func test_markAllViewed_path() {
+        XCTAssertEqual(APIEndpoints.markAllViewed, "/insights/mark-all-viewed")
+    }
+
+    func test_unviewedCount_path() {
+        XCTAssertEqual(APIEndpoints.unviewedCount, "/insights/unviewed-count")
+    }
+
+    // MARK: - Tasks Endpoints
+
+    func test_tasks_defaultParameters() {
+        let path = APIEndpoints.tasks()
+        XCTAssertEqual(path, "/tasks?status=open&limit=50")
+    }
+
+    func test_tasks_withStatus() {
+        let path = APIEndpoints.tasks(status: "completed")
+        XCTAssertTrue(path.contains("status=completed"))
+    }
+
+    func test_tasks_withCustomLimit() {
+        let path = APIEndpoints.tasks(limit: 10)
+        XCTAssertTrue(path.contains("limit=10"))
+    }
+
+    func test_tasks_withCursor() {
+        let path = APIEndpoints.tasks(cursor: "next-page")
+        XCTAssertTrue(path.contains("cursor=next-page"))
+    }
+
+    func test_taskStats_path() {
+        XCTAssertEqual(APIEndpoints.taskStats, "/tasks/stats")
+    }
+
+    // MARK: - Dispatch Job Endpoints
+
+    func test_dispatchJobs_defaultParameters() {
+        let path = APIEndpoints.dispatchJobs()
+        XCTAssertEqual(path, "/dispatch/jobs?limit=50")
+    }
+
+    func test_dispatchJobs_withStatus() {
+        let path = APIEndpoints.dispatchJobs(status: "running")
+        XCTAssertTrue(path.contains("status=running"))
+    }
+
+    func test_dispatchJobs_withCursor() {
+        let path = APIEndpoints.dispatchJobs(cursor: "abc")
+        XCTAssertTrue(path.contains("cursor=abc"))
+    }
+
+    func test_dispatchJobs_withAllParameters() {
+        let path = APIEndpoints.dispatchJobs(status: "pending", limit: 10, cursor: "next")
+        XCTAssertTrue(path.contains("limit=10"))
+        XCTAssertTrue(path.contains("status=pending"))
+        XCTAssertTrue(path.contains("cursor=next"))
+    }
+
+    func test_dispatchJob_path() {
+        let path = APIEndpoints.dispatchJob(jobId: "job-123")
+        XCTAssertEqual(path, "/dispatch/jobs/job-123")
+    }
+
+    func test_agentTypes_path() {
+        XCTAssertEqual(APIEndpoints.agentTypes, "/dispatch/agent-types")
+    }
 }
