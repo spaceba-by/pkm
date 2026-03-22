@@ -8,8 +8,7 @@ final class ConflictDetailViewModelTests: XCTestCase {
     private var conflict: ConflictFile!
     private var sut: ConflictDetailViewModel!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
         mockDiffService = MockDiffService()
         mockConflictService = MockConflictService()
         conflict = ConflictFile(

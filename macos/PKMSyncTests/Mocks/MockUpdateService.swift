@@ -14,7 +14,7 @@ final class MockUpdateService: UpdateServiceProtocol, @unchecked Sendable {
         return try checkResult.get()
     }
 
-    func downloadUpdate(_ update: AppUpdate, progress: @Sendable (Double) -> Void) async throws -> URL {
+    func downloadUpdate(_: AppUpdate, progress: @Sendable (Double) -> Void) async throws -> URL {
         downloadCallCount += 1
         progress(1.0)
         return try downloadResult.get()

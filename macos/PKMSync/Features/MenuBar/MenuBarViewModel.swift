@@ -184,17 +184,17 @@ final class MenuBarViewModel {
             // Periodic checks
             while !Task.isCancelled {
                 guard let self else { return }
-                let hours = self.configuration.updateCheckIntervalHours
+                let hours = configuration.updateCheckIntervalHours
                 try? await Task.sleep(for: .seconds(hours * 3600))
                 guard !Task.isCancelled else { return }
-                await self.checkForUpdates()
+                await checkForUpdates()
             }
         }
     }
 
-    func checkForUpdates() async {
-        // Rate limit: skip if checked within last 5 minutes
-        if let last = lastUpdateCheck, Date().timeIntervalSince(last) < 300 {
+    func checkForUpdates(force: Bool = false) async {
+        // Rate limit: skip if checked within last 5 minutes (unless forced)
+        if !force, let last = lastUpdateCheck, Date().timeIntervalSince(last) < 300 {
             return
         }
 
@@ -224,7 +224,9 @@ final class MenuBarViewModel {
         if let zipURL = downloadedZipURL {
             // Already downloaded, proceed to install
             do {
-                try await UpdateInstaller.install(zipAt: zipURL)
+                try await Task.detached {
+                    try await UpdateInstaller.install(zipAt: zipURL)
+                }.value
             } catch {
                 updateState = .error(message: error.localizedDescription)
             }

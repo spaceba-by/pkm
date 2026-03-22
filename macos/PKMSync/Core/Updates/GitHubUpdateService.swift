@@ -34,33 +34,34 @@ final class GitHubUpdateService: UpdateServiceProtocol, @unchecked Sendable {
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200
         else {
-            throw UpdateError.networkError("Unexpected status code")
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw UpdateError.networkError("Unexpected status code \(statusCode)")
         }
 
         let releases = try JSONDecoder.githubDecoder.decode([GitHubRelease].self, from: data)
 
-        // Find the latest release matching our tag prefix
-        guard let latest = releases
-            .first(where: { $0.tagName.hasPrefix(tagPrefix) && !$0.draft && !$0.prerelease })
-        else { return nil }
+        // Find the first suitable release matching our tag prefix that is newer and has a zip asset
+        for release in releases where release.tagName.hasPrefix(tagPrefix) && !release.draft && !release.prerelease {
+            let remoteVersion = release.tagName
 
-        let remoteVersion = latest.tagName
-        guard VersionComparator.isNewer(remoteVersion, than: currentVersion) else {
-            return nil
+            guard VersionComparator.isNewer(remoteVersion, than: currentVersion) else {
+                continue
+            }
+
+            guard let asset = release.assets.first(where: { $0.name.hasSuffix(".zip") }) else {
+                continue
+            }
+
+            return AppUpdate(
+                version: SemanticVersion(string: remoteVersion)?.description ?? remoteVersion,
+                releaseNotes: release.body ?? "",
+                downloadURL: asset.browserDownloadUrl,
+                publishedAt: release.publishedAt ?? Date(),
+                assetSize: asset.size
+            )
         }
 
-        // Find the .zip asset
-        guard let asset = latest.assets.first(where: { $0.name.hasSuffix(".zip") }) else {
-            return nil
-        }
-
-        return AppUpdate(
-            version: SemanticVersion(string: remoteVersion)?.description ?? remoteVersion,
-            releaseNotes: latest.body ?? "",
-            downloadURL: asset.browserDownloadURL,
-            publishedAt: latest.publishedAt ?? Date(),
-            assetSize: asset.size
-        )
+        return nil
     }
 
     func downloadUpdate(_ update: AppUpdate, progress: @Sendable (Double) -> Void) async throws -> URL {
@@ -99,7 +100,7 @@ private struct GitHubRelease: Decodable {
 private struct GitHubAsset: Decodable {
     let name: String
     let size: Int64
-    let browserDownloadURL: URL
+    let browserDownloadUrl: URL
 }
 
 private extension JSONDecoder {
@@ -131,9 +132,9 @@ enum UpdateError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .networkError(let message): "Network error: \(message)"
+        case let .networkError(message): "Network error: \(message)"
         case .appNotFoundInArchive: "Could not find .app bundle in downloaded archive"
-        case .installFailed(let message): "Install failed: \(message)"
+        case let .installFailed(message): "Install failed: \(message)"
         case .noWriteAccess: "No write access to application location. Try moving the app to a writable location."
         }
     }

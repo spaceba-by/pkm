@@ -10,8 +10,7 @@ final class MenuBarViewModelTests: XCTestCase {
     private var mockUpdateService: MockUpdateService!
     private var sut: MenuBarViewModel!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
         defaults = UserDefaults(suiteName: "MenuBarViewModelTests")!
         defaults.removePersistentDomain(forName: "MenuBarViewModelTests")
         configuration = SyncConfiguration(defaults: defaults)
@@ -33,9 +32,8 @@ final class MenuBarViewModelTests: XCTestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         defaults.removePersistentDomain(forName: "MenuBarViewModelTests")
-        super.tearDown()
     }
 
     func testInitialStatus() {
@@ -96,11 +94,11 @@ final class MenuBarViewModelTests: XCTestCase {
 
     // MARK: - Update Tests
 
-    func testCheckForUpdatesWhenUpdateAvailable() async {
-        let update = AppUpdate(
+    func testCheckForUpdatesWhenUpdateAvailable() async throws {
+        let update = try AppUpdate(
             version: "1.1.0",
             releaseNotes: "New feature",
-            downloadURL: URL(string: "https://example.com/update.zip")!,
+            downloadURL: XCTUnwrap(URL(string: "https://example.com/update.zip")),
             publishedAt: Date(),
             assetSize: 5_000_000
         )

@@ -10,10 +10,10 @@ final class WindowController {
         window != nil
     }
 
-    func show<Content: View>(
+    func show(
         title: String,
         size: NSSize = NSSize(width: 600, height: 500),
-        content: @escaping () -> Content
+        content: @escaping () -> some View
     ) {
         close()
 

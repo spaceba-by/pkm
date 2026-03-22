@@ -55,13 +55,12 @@ enum UpdateInstaller {
 
         // Clean up temp files
         try? FileManager.default.removeItem(at: tempDir)
-        try? FileManager.default.removeItem(at: zipURL.deletingLastPathComponent())
+        try? FileManager.default.removeItem(at: zipURL)
 
         // Relaunch
-        let appPath = currentAppURL.path
         let relaunch = Process()
-        relaunch.executableURL = URL(fileURLWithPath: "/bin/sh")
-        relaunch.arguments = ["-c", "sleep 1 && open '\(appPath)'"]
+        relaunch.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        relaunch.arguments = [currentAppURL.path]
         try relaunch.run()
 
         await MainActor.run {

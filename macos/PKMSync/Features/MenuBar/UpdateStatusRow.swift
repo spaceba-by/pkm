@@ -33,7 +33,7 @@ struct UpdateStatusRow: View {
                 Spacer()
             }
 
-        case .available(let version):
+        case let .available(version):
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Image(systemName: "arrow.down.circle.fill")
@@ -56,7 +56,7 @@ struct UpdateStatusRow: View {
                 }
             }
 
-        case .downloading(let progress):
+        case let .downloading(progress):
             HStack {
                 ProgressView(value: progress)
                     .frame(maxWidth: .infinity)
@@ -82,7 +82,7 @@ struct UpdateStatusRow: View {
             }
             .buttonStyle(.plain)
 
-        case .error(let message):
+        case let .error(message):
             HStack {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.red)
