@@ -2,8 +2,7 @@
 import XCTest
 
 final class AppConfigTests: XCTestCase {
-    func test_apiBaseURL_isValid() {
-        XCTAssertNotNil(AppConfig.apiBaseURL)
+    func test_apiBaseURL_usesHTTPS() {
         XCTAssertEqual(AppConfig.apiBaseURL.scheme, "https")
     }
 

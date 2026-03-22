@@ -119,6 +119,7 @@ final class ChatMessageTests: XCTestCase {
         let data = try JSONEncoder().encode(request)
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         XCTAssertEqual(json?["message"] as? String, "Hello")
+        XCTAssertNil(json?["conversationId"])
     }
 
     // MARK: - Response Types
