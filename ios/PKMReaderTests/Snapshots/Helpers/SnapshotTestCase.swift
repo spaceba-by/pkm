@@ -27,9 +27,17 @@ extension ViewImageConfig {
 /// Base class for snapshot tests with shared configuration
 @MainActor
 class SnapshotTestCase: XCTestCase {
-    /// Set to `true` to record new reference images, then flip back to `false`
+    /// Override in subclass to force record mode, or create a
+    /// `.snapshot-record` marker file in the project root
+    /// (e.g. `mise run snapshot:record`).
     var isRecordMode: Bool {
-        false
+        let markerPath = URL(filePath: #filePath)
+            .deletingLastPathComponent() // Helpers/
+            .deletingLastPathComponent() // Snapshots/
+            .deletingLastPathComponent() // PKMReaderTests/
+            .deletingLastPathComponent() // ios/
+            .appendingPathComponent(".snapshot-record")
+        return FileManager.default.fileExists(atPath: markerPath.path())
     }
 
     /// Precision tolerance for pixel matching (0.0–1.0)

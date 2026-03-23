@@ -130,9 +130,91 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState, .conversationList)
     }
 
+    // MARK: - Back to Conversations
+
+    func testBackToConversations_resetsState() async {
+        sut.inputText = "Hello"
+        await sut.openConversation("conv-1")
+        XCTAssertEqual(sut.viewState, .conversation("conv-1"))
+
+        await sut.backToConversations()
+
+        XCTAssertNil(sut.currentConversationId)
+        XCTAssertTrue(sut.messages.isEmpty)
+        XCTAssertEqual(sut.viewState, .conversationList)
+        // loadConversations is called inside backToConversations
+        XCTAssertEqual(mockAPIClient.listConversationsCallCount, 1)
+    }
+
+    // MARK: - Clear Error
+
+    func testClearError_setsErrorMessageToNil() async {
+        mockAPIClient.sendChatMessageResult = .failure(APIError.networkError)
+        sut.inputText = "Hello"
+        await sut.sendMessage()
+        XCTAssertNotNil(sut.errorMessage)
+
+        sut.clearError()
+
+        XCTAssertNil(sut.errorMessage)
+    }
+
     // MARK: - Pending Response
 
-    func testHasPendingResponse() {
+    func testHasPendingResponse_falseWhenEmpty() {
         XCTAssertFalse(sut.hasPendingResponse)
+    }
+
+    func testHasPendingResponse_trueWhenPendingAssistantMessage() async {
+        let messages = [
+            ChatMessage(
+                id: "msg-1",
+                role: .user,
+                content: "Hello",
+                timestamp: "2026-03-14T00:00:00Z",
+                status: .complete
+            ),
+            ChatMessage(
+                id: "msg-2",
+                role: .assistant,
+                content: "",
+                timestamp: "2026-03-14T00:00:00Z",
+                status: .pending
+            ),
+        ]
+        mockAPIClient.getConversationMessagesResult = .success(messages)
+
+        await sut.openConversation("conv-1")
+
+        XCTAssertTrue(sut.hasPendingResponse)
+    }
+
+    func testHasPendingResponse_falseWhenAssistantComplete() async {
+        let messages = [
+            ChatMessage(
+                id: "msg-1",
+                role: .assistant,
+                content: "Hi!",
+                timestamp: "2026-03-14T00:00:00Z",
+                status: .complete
+            ),
+        ]
+        mockAPIClient.getConversationMessagesResult = .success(messages)
+
+        await sut.openConversation("conv-1")
+
+        XCTAssertFalse(sut.hasPendingResponse)
+    }
+
+    // MARK: - Load Messages Error
+
+    func testLoadMessages_error_setsErrorMessage() async {
+        mockAPIClient.getConversationMessagesResult = .failure(APIError.networkError)
+
+        await sut.openConversation("conv-1")
+
+        XCTAssertNotNil(sut.errorMessage)
+        XCTAssertTrue(sut.messages.isEmpty)
+        XCTAssertFalse(sut.isLoading)
     }
 }

@@ -48,6 +48,14 @@ run = "bundle exec fastlane build_dev"
 description = "Run tests and generate coverage report"
 run = "bundle exec fastlane coverage_report"
 
+[tasks."snapshot:record"]
+description = "Re-record snapshot reference images"
+run = """
+trap 'rm -f .snapshot-record' EXIT
+touch .snapshot-record
+bundle exec fastlane unit_tests
+"""
+
 [tasks.generate]
 description = "Regenerate Xcode project from project.yml"
 run = "xcodegen generate"

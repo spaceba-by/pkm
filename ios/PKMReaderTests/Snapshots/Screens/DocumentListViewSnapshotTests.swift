@@ -4,13 +4,6 @@ import SwiftUI
 import XCTest
 
 final class DocumentListViewSnapshotTests: SnapshotTestCase {
-    /// Snapshots were recorded on Xcode 26 / macOS 26.
-    /// Record mode regenerates references in the CI environment. After regenerating,
-    /// commit the updated PNGs from __Snapshots__/ and revert this to `false`.
-    override var isRecordMode: Bool {
-        false
-    }
-
     /// Lower precision to accommodate `.searchable` rendering variance
     override var snapshotPrecision: Float {
         0.97

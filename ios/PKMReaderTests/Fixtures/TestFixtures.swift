@@ -191,6 +191,111 @@ enum TestFixtures {
             ),
         ]
     }
+
+    // MARK: - Sample Tasks
+
+    static var sampleTasks: [ExtractedTask] {
+        [
+            ExtractedTask(
+                taskId: "t-00000001",
+                description: "Review Q1 proposal",
+                status: "open",
+                marker: "checkbox",
+                documentPath: "meetings/2024-01-03.md",
+                priority: "high"
+            ),
+            ExtractedTask(
+                taskId: "t-00000002",
+                description: "Update project roadmap",
+                status: "open",
+                source: "ai",
+                marker: "implicit",
+                documentPath: "projects/roadmap.md",
+                priority: "medium"
+            ),
+            ExtractedTask(
+                taskId: "t-00000003",
+                description: "Fix broken link in docs",
+                status: "completed",
+                marker: "todo",
+                documentPath: "docs/README.md"
+            ),
+        ]
+    }
+
+    static var sampleTaskListResponse: TaskListResponse {
+        TaskListResponse(tasks: sampleTasks, count: 3, nextCursor: nil)
+    }
+
+    static var sampleTaskStats: TaskStatsResponse {
+        TaskStatsResponse(open: 2, completed: 1, total: 3)
+    }
+
+    // MARK: - Sample Dispatch Jobs
+
+    /// Use current date so `Text(date, style: .relative)` always renders
+    /// as "0 seconds ago", keeping snapshot comparisons stable over time.
+    static let fixtureDate = Date()
+
+    static var sampleDispatchJobs: [DispatchJob] {
+        [
+            DispatchJob(
+                jobId: "job-001",
+                status: "completed",
+                agentType: "claude-code",
+                taskDescription: "Refactor extract_metadata handler",
+                contextPaths: ["lambda/functions/extract_metadata/handler.clj"],
+                created: fixtureDate,
+                updated: fixtureDate,
+                startedAt: fixtureDate,
+                completedAt: fixtureDate,
+                error: nil,
+                artifacts: ["result.md"],
+                resultPath: "_agent/dispatch/job-001/result.md",
+                ecsTaskArn: nil,
+                claimedBy: nil,
+                createdBy: nil
+            ),
+            DispatchJob(
+                jobId: "job-002",
+                status: "running",
+                agentType: "claude-code",
+                taskDescription: "Add unit tests for notification service",
+                contextPaths: nil,
+                created: fixtureDate,
+                updated: fixtureDate,
+                startedAt: fixtureDate,
+                completedAt: nil,
+                error: nil,
+                artifacts: nil,
+                resultPath: nil,
+                ecsTaskArn: "arn:aws:ecs:us-east-1:123:task/abc",
+                claimedBy: nil,
+                createdBy: nil
+            ),
+            DispatchJob(
+                jobId: "job-003",
+                status: "failed",
+                agentType: "claude-code",
+                taskDescription: "Generate weekly summary report",
+                contextPaths: nil,
+                created: fixtureDate,
+                updated: fixtureDate,
+                startedAt: fixtureDate,
+                completedAt: fixtureDate,
+                error: "Container exited with code 1",
+                artifacts: nil,
+                resultPath: nil,
+                ecsTaskArn: nil,
+                claimedBy: nil,
+                createdBy: nil
+            ),
+        ]
+    }
+
+    static var sampleJobListResponse: JobListResponse {
+        JobListResponse(jobs: sampleDispatchJobs, count: 3, nextCursor: nil)
+    }
 }
 
 /// Helper class to find the test bundle
