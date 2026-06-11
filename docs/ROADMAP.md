@@ -232,16 +232,24 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - Task index in DynamoDB with open/completed partitions
   - API endpoints (GET /tasks, GET /tasks/stats) for browsing extracted tasks
 
+- **Task 0028: macOS Menu Bar App** ✅
+
+  - See: [0028-macos-menu-bar](tasks/0028-macos-menu-bar.md)
+  - Native SwiftUI menu bar app (PKMSync) wrapping rclone bisync for vault sync
+  - Sync status indicator, manual sync, configurable schedule, sync log viewer
+  - Conflict detection and resolution, launch-at-login, check-for-updates
+
+- **Task 0025: Self-Improvement Dispatch** ✅
+
+  - See: [0025-self-improvement-dispatch](tasks/0025-self-improvement-dispatch.md)
+  - Job dispatch infrastructure with dual execution targets: ECS Fargate sandbox and local agent polling API
+  - Agent types stored in DynamoDB define execution config per job type
+  - 8 new Lambdas (dispatch_job, collect_results, 6 job/agent-type API endpoints), Terraform gated by `enable_dispatch` flag
+  - iOS dispatch job views with navigation from Insights
+
 ### Planned
 
 #### Tier 4 — Advanced Agents
-
-- **Task 0025: Self-Improvement Dispatch**
-
-  - See: [0025-self-improvement-dispatch](tasks/0025-self-improvement-dispatch.md)
-  - Route TODOs and commands to sandboxed Claude Code instances
-  - Job queue, sandbox provisioning, result collection
-  - Depends on: Tasks 0023, 0024
 
 - **Task 0026: Custom Agent Workflows**
 
@@ -257,12 +265,6 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - See: [0027-ios-extensions](tasks/0027-ios-extensions.md)
   - Home screen widgets, Spotlight indexing, Share Extension for content clipping
   - Depends on: Task 0021
-
-- **Task 0028: macOS Menu Bar App**
-
-  - See: [0028-macos-menu-bar](tasks/0028-macos-menu-bar.md)
-  - Lightweight menu bar utility for rclone sync management
-  - Sync status, scheduling, conflict detection
 
 - **Task 0029: iPad & macOS App**
 
