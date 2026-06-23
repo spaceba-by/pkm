@@ -1,6 +1,6 @@
 # Task 0025: Self-Improvement Dispatch
 
-**Status**: In Progress
+**Status**: Done
 
 ## Specifications
 
@@ -40,36 +40,51 @@ collect_results Lambda
 ## Relevant Files
 
 ### New Lambda Functions
-- `lambda/functions/dispatch_job/handler.clj` — Create and submit dispatch jobs
-- `lambda/functions/collect_results/handler.clj` — Collect sandbox output and update records
+- `lambda/functions/dispatch_job/handler.clj` — Create and submit dispatch jobs (ECS Fargate or local agent target)
+- `lambda/functions/collect_results/handler.clj` — Collect sandbox output and update records (EventBridge ECS task-stopped trigger)
+- `lambda/functions/api_list_jobs/handler.clj` — GET /dispatch/jobs
+- `lambda/functions/api_get_job/handler.clj` — GET /dispatch/jobs/{jobId}
+- `lambda/functions/api_create_job/handler.clj` — POST /dispatch/jobs
+- `lambda/functions/api_claim_job/handler.clj` — POST /dispatch/jobs/claim (local agent polling)
+- `lambda/functions/api_complete_job/handler.clj` — POST /dispatch/jobs/{jobId}/complete (local agent result submission)
+- `lambda/functions/api_agent_types/handler.clj` — GET/POST/DELETE /dispatch/agent-types
 
 ### Terraform
-- `terraform/dispatch.tf` — ECS Fargate task definition, Lambda functions, S3 paths, IAM
+- `terraform/dispatch.tf` — ECS Fargate cluster and task definition, Lambda functions, API routes, IAM (gated by `enable_dispatch` flag)
 
 ### iOS (new)
 - `ios/PKMReader/Features/Dispatch/DispatchListView.swift` — Job history view
+- `ios/PKMReader/Features/Dispatch/DispatchDetailView.swift` — Job detail view
+- `ios/PKMReader/Features/Dispatch/DispatchListViewModel.swift` — Job list view model
 - `ios/PKMReader/Models/DispatchJob.swift` — Job model
+
+### Tests
+- `lambda/tests/dispatch/dispatch_job_test.clj`, `collect_results_test.clj`, `api_test.clj`
+
+## Implementation Notes
+
+The implementation extends the original spec with a second execution target: in addition to sandboxed ECS Fargate tasks, jobs can be claimed and executed by a local agent polling the API (POST /dispatch/jobs/claim and POST /dispatch/jobs/{jobId}/complete), for private-network or low-cost execution. Agent type records in DynamoDB define the execution configuration per job type. All dispatch infrastructure is gated by the `enable_dispatch` Terraform flag.
 
 ## Acceptance Criteria
 
-- [ ] Jobs can be created from extracted tasks or manual command input
-- [ ] Sandbox environment provisioned with appropriate isolation
-- [ ] Claude Code instance receives task context and executes autonomously
-- [ ] Results collected from sandbox and written to PKM vault
-- [ ] Job status tracked through lifecycle (pending → running → completed/failed)
-- [ ] API endpoint for listing jobs and viewing results
-- [ ] iOS view for browsing dispatch history
-- [ ] Unit tests cover dispatch and collection logic
-- [ ] All existing tests continue to pass
+- [x] Jobs can be created from extracted tasks or manual command input
+- [x] Sandbox environment provisioned with appropriate isolation
+- [x] Claude Code instance receives task context and executes autonomously
+- [x] Results collected from sandbox and written to PKM vault
+- [x] Job status tracked through lifecycle (pending → running → completed/failed)
+- [x] API endpoint for listing jobs and viewing results
+- [x] iOS view for browsing dispatch history
+- [x] Unit tests cover dispatch and collection logic
+- [x] All existing tests continue to pass
 
 ## Implementation Steps
 
-- [ ] Step 1: Design job record schema and DynamoDB key structure
-- [ ] Step 2: Create ECS Fargate task definition for sandbox environment
-- [ ] Step 3: Create dispatch_job Lambda with job creation and sandbox provisioning
-- [ ] Step 4: Create collect_results Lambda triggered on sandbox completion
-- [ ] Step 5: Add result writing to S3 `_agent/dispatch/` path
-- [ ] Step 6: Create API endpoints for job management
-- [ ] Step 7: Add Terraform infrastructure
-- [ ] Step 8: Create iOS dispatch history view
-- [ ] Step 9: Write unit tests
+- [x] Step 1: Design job record schema and DynamoDB key structure
+- [x] Step 2: Create ECS Fargate task definition for sandbox environment
+- [x] Step 3: Create dispatch_job Lambda with job creation and sandbox provisioning
+- [x] Step 4: Create collect_results Lambda triggered on sandbox completion
+- [x] Step 5: Add result writing to S3 `_agent/dispatch/` path
+- [x] Step 6: Create API endpoints for job management
+- [x] Step 7: Add Terraform infrastructure
+- [x] Step 8: Create iOS dispatch history view
+- [x] Step 9: Write unit tests
