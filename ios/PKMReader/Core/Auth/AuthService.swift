@@ -121,6 +121,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
 
             // Cast to AWSAuthCognitoSession to access Cognito-specific tokens
             guard let cognitoSession = session as? AWSAuthCognitoSession else {
+                await transitionToSignedOut()
                 throw AuthError.notAuthenticated
             }
 
@@ -129,12 +130,21 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
             case let .success(tokens):
                 return tokens.accessToken
             case .failure:
+                await transitionToSignedOut()
                 throw AuthError.notAuthenticated
             }
         } catch let authError as AuthError {
             throw authError
         } catch {
+            await transitionToSignedOut()
             throw AuthError.notAuthenticated
+        }
+    }
+
+    /// Transition auth state to signed out so the UI redirects to login
+    private func transitionToSignedOut() {
+        if authState != .signedOut {
+            authState = .signedOut
         }
     }
 
