@@ -133,7 +133,7 @@ graph TD
 | `api-create-job` | Babashka | 256 MB | 30s | POST /dispatch/jobs | Create dispatch job |
 | `api-claim-job` | Babashka | 256 MB | 30s | POST /dispatch/jobs/claim | Claim pending job (local agent polling) |
 | `api-complete-job` | Babashka | 256 MB | 30s | POST /dispatch/jobs/{jobId}/complete | Submit results for claimed job |
-| `api-agent-types` | Babashka | 256 MB | 30s | GET/POST/DELETE /dispatch/agent-types | Manage agent type definitions |
+| `api-agent-types` | Babashka | 256 MB | 30s | GET/POST /dispatch/agent-types; DELETE /dispatch/agent-types/{name} | Manage agent type definitions |
 
 **Shared Code:**
 - AWS wrappers in `lambda/shared/aws/`: `bedrock.clj`, `dynamodb.clj`, `s3.clj`, `sns.clj`, `lambda.clj`, `secrets_manager.clj`, `brave_search.clj`
