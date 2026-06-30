@@ -55,7 +55,7 @@ final class APIClientTests: XCTestCase {
         session = URLSession(configuration: config)
 
         sut = APIClient(
-            baseURL: URL(string: "https://api.test.com")!, // swiftlint:disable:this force_unwrapping
+            baseURL: URL(string: "https://api.test.com")!,
             authService: mockAuthService,
             networkMonitor: networkMonitor,
             session: session,
