@@ -86,6 +86,8 @@ xcodebuild build-for-testing \
   -destination "$DEST" \
   $DD_FLAG \
   -enableCodeCoverage YES \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
   CODE_SIGN_IDENTITY="" \
   CODE_SIGNING_REQUIRED=NO 2>&1 \
   | xcbeautify --renderer github-actions
