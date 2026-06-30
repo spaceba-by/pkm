@@ -59,7 +59,17 @@ jobs:
       # Without this, `xcodebuild archive -destination generic/platform=iOS`
       # fails with "iOS 26.0 is not installed".
       - name: Install iOS platform
-        run: xcodebuild -downloadPlatform iOS
+        run: |
+          for attempt in 1 2 3; do
+            if xcodebuild -downloadPlatform iOS; then
+              exit 0
+            fi
+            echo "::warning::downloadPlatform attempt $attempt failed (e.g. 'Unable to connect to simulator'); bouncing CoreSimulator and retrying"
+            sudo pkill -9 -f CoreSimulator 2>/dev/null || true
+            sleep 20
+          done
+          echo "::error::Failed to install iOS platform after 3 attempts"
+          exit 1
 
       - name: Install XcodeGen
         run: brew install xcodegen
