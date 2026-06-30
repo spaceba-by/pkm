@@ -149,7 +149,15 @@ platform :ios do
       export_method: "app-store",
       output_directory: "build",
       output_name: "PKMReader.ipa",
-      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true'
+      skip_codesigning: ENV['SKIP_CODESIGNING'] == 'true',
+      # Xcode 26 (macos-26 runner) enforces validation of SwiftPM build-tool
+      # plugins and macros. The aws-sdk-swift dependency pulls in
+      # SmithyCodeGeneratorPlugin (and swift-syntax macros), which can't be
+      # trusted interactively in CI — without these flags the archive fails
+      # with: Validate plug-in "SmithyCodeGeneratorPlugin" in package "smithy-swift".
+      # Only needed in CI: locally a developer can approve the trust prompt,
+      # and the flags would break builds on older Xcode that doesn't know them.
+      xcargs: is_ci ? "-skipPackagePluginValidation -skipMacroValidation" : nil
     )
   end
 
