@@ -54,6 +54,13 @@ jobs:
         with:
           xcode-version: '26.0'
 
+      # Recent macos-26 runner images ship Xcode without the iOS device
+      # platform preinstalled (platforms are now downloadable components).
+      # Without this, `xcodebuild archive -destination generic/platform=iOS`
+      # fails with "iOS 26.0 is not installed".
+      - name: Install iOS platform
+        run: xcodebuild -downloadPlatform iOS
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
