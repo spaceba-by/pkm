@@ -86,6 +86,15 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
     /// Sign in with email and password
     nonisolated func signIn(email: String, password: String) async throws {
         do {
+            // Amplify rejects signIn ("There is already a user in signedIn state")
+            // when it still holds a session. This happens when our authState was
+            // reset to .signedOut (e.g. after refresh-token expiry in
+            // getAccessToken) without signing out of Amplify, leaving the two in
+            // sync-drift. Clear any stale Amplify session before signing in.
+            if await isAuthenticated {
+                _ = await Amplify.Auth.signOut()
+            }
+
             let result = try await Amplify.Auth.signIn(username: email, password: password)
 
             if result.isSignedIn {
