@@ -18,9 +18,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - uses: jdx/mise-action@v3
+      - uses: jdx/mise-action@v4
         with:
           working_directory: ios
 
@@ -34,10 +34,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cache Homebrew tools
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/Library/Caches/Homebrew/downloads
@@ -63,7 +63,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Select Xcode 26
         uses: maxim-lobanov/setup-xcode@v1
@@ -88,7 +88,7 @@ jobs:
           echo "::error::Failed to install iOS platform after 3 attempts"
           exit 1
 
-      - uses: jdx/mise-action@v3
+      - uses: jdx/mise-action@v4
         with:
           working_directory: ios
 
@@ -100,7 +100,7 @@ jobs:
         run: mise run generate
 
       - name: Cache DerivedData
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: /tmp/DerivedData
           key: ${{ runner.os }}-dd-${{ hashFiles('ios/project.yml', 'ios/PKMReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ hashFiles('ios/PKMReader/**/*.swift', 'ios/PKMReaderTests/**/*.swift', 'ios/PKMReaderUITests/**/*.swift') }}
@@ -125,7 +125,7 @@ jobs:
         run: tar -cf /tmp/derived-data.tar -C /tmp DerivedData
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: derived-data
           path: /tmp/derived-data.tar
@@ -142,7 +142,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Select Xcode 26
         uses: maxim-lobanov/setup-xcode@v1
@@ -167,7 +167,7 @@ jobs:
           echo "::error::Failed to install iOS platform after 3 attempts"
           exit 1
 
-      - uses: jdx/mise-action@v3
+      - uses: jdx/mise-action@v4
         with:
           working_directory: ios
 
@@ -179,7 +179,7 @@ jobs:
         run: mise run generate
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: derived-data
           path: /tmp
@@ -201,7 +201,7 @@ jobs:
         run: mise run ci:test:unit
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: unit-test-results
@@ -224,7 +224,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Select Xcode 26
         uses: maxim-lobanov/setup-xcode@v1
@@ -249,7 +249,7 @@ jobs:
           echo "::error::Failed to install iOS platform after 3 attempts"
           exit 1
 
-      - uses: jdx/mise-action@v3
+      - uses: jdx/mise-action@v4
         with:
           working_directory: ios
 
@@ -261,7 +261,7 @@ jobs:
         run: mise run generate
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: derived-data
           path: /tmp
@@ -283,7 +283,7 @@ jobs:
         run: mise run ci:test:ui
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ui-test-results
