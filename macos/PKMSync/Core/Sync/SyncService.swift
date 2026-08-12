@@ -1,6 +1,10 @@
 import Foundation
 
 struct SyncService: SyncServiceProtocol {
+    /// How often rclone prints its stats block. Drives the progress bar and
+    /// throughput readout, so it wants to be frequent enough to look live.
+    private static let statsInterval = "1s"
+
     private let configuration: SyncConfiguration
     private let processRunner: ProcessRunnerProtocol
 
@@ -12,15 +16,18 @@ struct SyncService: SyncServiceProtocol {
         self.processRunner = processRunner
     }
 
-    func sync() async throws -> SyncLogEntry {
-        try await runSync(resync: false)
+    func sync(onProgress: (@Sendable (SyncProgress) -> Void)? = nil) async throws -> SyncLogEntry {
+        try await runSync(resync: false, onProgress: onProgress)
     }
 
-    func resync() async throws -> SyncLogEntry {
-        try await runSync(resync: true)
+    func resync(onProgress: (@Sendable (SyncProgress) -> Void)? = nil) async throws -> SyncLogEntry {
+        try await runSync(resync: true, onProgress: onProgress)
     }
 
-    private func runSync(resync: Bool) async throws -> SyncLogEntry {
+    private func runSync(
+        resync: Bool,
+        onProgress: (@Sendable (SyncProgress) -> Void)?
+    ) async throws -> SyncLogEntry {
         guard configuration.isConfigured else {
             throw SyncError.notConfigured
         }
@@ -36,31 +43,25 @@ struct SyncService: SyncServiceProtocol {
         let output = try await processRunner.run(
             executablePath: rclonePath,
             arguments: arguments,
-            environment: nil
+            environment: nil,
+            onOutputLine: Self.outputLineHandler(reporting: onProgress)
         )
 
         let elapsed = Date().timeIntervalSince(startTime)
         let parsed = RcloneOutputParser.parse(stdout: output.stdout, stderr: output.stderr)
-        let combinedOutput = [
-            output.stdout.isEmpty ? nil : "--- STDOUT ---\n\(output.stdout)",
-            output.stderr.isEmpty ? nil : "--- STDERR ---\n\(output.stderr)",
-        ]
-        .compactMap(\.self)
-        .joined(separator: "\n")
 
         if output.exitCode != 0 {
             if !resync, parsed.needsResync {
-                return try await runSync(resync: true)
+                return try await runSync(resync: true, onProgress: onProgress)
             }
 
-            let errorMessage = parsed.errorMessages.first ?? output.stderr.prefix(200).description
             return SyncLogEntry(
                 timestamp: startTime,
                 filesTransferred: parsed.filesTransferred,
                 filesChecked: parsed.filesChecked,
                 success: false,
-                errorMessage: errorMessage,
-                rawOutput: combinedOutput.isEmpty ? nil : combinedOutput,
+                errorMessage: parsed.errorMessages.first ?? output.stderr.prefix(200).description,
+                rawOutput: Self.combinedOutput(of: output),
                 duration: elapsed
             )
         }
@@ -70,9 +71,35 @@ struct SyncService: SyncServiceProtocol {
             filesTransferred: parsed.filesTransferred,
             filesChecked: parsed.filesChecked,
             success: true,
-            rawOutput: combinedOutput.isEmpty ? nil : combinedOutput,
+            rawOutput: Self.combinedOutput(of: output),
             duration: elapsed
         )
+    }
+
+    /// Wires a fresh parser to `onProgress`, or returns `nil` so the runner can
+    /// skip line-by-line delivery when nobody is listening.
+    private static func outputLineHandler(
+        reporting onProgress: (@Sendable (SyncProgress) -> Void)?
+    ) -> (@Sendable (String) -> Void)? {
+        onProgress.map { report in
+            let parser = RcloneProgressParser()
+            return { line in
+                if let progress = parser.consume(line: line) {
+                    report(progress)
+                }
+            }
+        }
+    }
+
+    private static func combinedOutput(of output: ProcessOutput) -> String? {
+        let combined = [
+            output.stdout.isEmpty ? nil : "--- STDOUT ---\n\(output.stdout)",
+            output.stderr.isEmpty ? nil : "--- STDERR ---\n\(output.stderr)",
+        ]
+        .compactMap(\.self)
+        .joined(separator: "\n")
+
+        return combined.isEmpty ? nil : combined
     }
 
     private func buildArguments(resync: Bool) -> [String] {
@@ -82,6 +109,11 @@ struct SyncService: SyncServiceProtocol {
             "pkm-s3:\(configuration.bucketName)",
             "--conflict-resolve", "newer",
             "--verbose",
+            // Periodic stats are what make a long transfer observable.
+            "--stats", Self.statsInterval,
+            // rclone colours its output even when writing to a pipe, which would
+            // otherwise land as escape codes in the log and in parsed messages.
+            "--color", "NEVER",
         ]
 
         if resync {
