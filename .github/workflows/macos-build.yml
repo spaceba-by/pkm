@@ -17,6 +17,9 @@ jobs:
   build:
     name: Build Release
     runs-on: macos-26
+    # Generous because notarization waits on Apple's service, which can be slow;
+    # still well under the 6h default this would otherwise inherit.
+    timeout-minutes: 45
 
     steps:
       - name: Check signing secrets
