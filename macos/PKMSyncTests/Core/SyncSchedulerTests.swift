@@ -8,8 +8,10 @@ final class SyncSchedulerTests: XCTestCase {
     private var defaults: UserDefaults!
     private var sut: SyncScheduler!
 
-    override func setUp() {
-        super.setUp()
+    /// Async variants inherit the class's `@MainActor`; the synchronous ones are
+    /// nonisolated overrides, so touching the isolated properties below warns.
+    override func setUp() async throws {
+        try await super.setUp()
         mockService = MockSyncService()
         defaults = UserDefaults(suiteName: "SyncSchedulerTests")!
         defaults.removePersistentDomain(forName: "SyncSchedulerTests")
@@ -18,10 +20,10 @@ final class SyncSchedulerTests: XCTestCase {
         sut = SyncScheduler(syncService: mockService, configuration: configuration)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         sut.stop()
         defaults.removePersistentDomain(forName: "SyncSchedulerTests")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testInitialState() {
