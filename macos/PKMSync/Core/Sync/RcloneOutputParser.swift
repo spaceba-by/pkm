@@ -70,7 +70,11 @@ enum RcloneOutputParser {
         )
     }
 
-    private static let sizeUnits = ["Bytes", "KiB", "MiB", "GiB", "TiB", "kB", "MB", "GB", "TB"]
+    /// "B" matters: a small sync reports "Transferred: 31 B / 31 B, 100%", which
+    /// without it is mistaken for the file-count line.
+    private static let sizeUnits = [
+        "Bytes", "KiB", "MiB", "GiB", "TiB", "kB", "MB", "GB", "TB", "B",
+    ]
 
     private static func containsSizeUnit(_ line: String) -> Bool {
         sizeUnits.contains { line.contains($0) }

@@ -9,6 +9,11 @@ struct PKMSyncApp: App {
             MenuBarView(viewModel: viewModel)
         } label: {
             Image(systemName: viewModel.status.iconName)
+                .symbolEffect(
+                    .rotate,
+                    options: .repeating,
+                    isActive: viewModel.status.isSyncing
+                )
         }
         .menuBarExtraStyle(.window)
 

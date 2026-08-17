@@ -49,16 +49,41 @@ final class SyncScheduler: SyncSchedulerProtocol {
     }
 
     private func performSync() async {
-        status = .syncing
+        status = .syncing(SyncProgress())
+
+        // rclone reports progress from a background thread. Funnelling snapshots
+        // through a stream keeps them ordered on the way to the main actor;
+        // buffering only the newest drops updates the UI would never have drawn.
+        let (updates, continuation) = AsyncStream<SyncProgress>.makeStream(
+            bufferingPolicy: .bufferingNewest(1)
+        )
+        let consumer = Task { @MainActor [weak self] in
+            for await progress in updates {
+                self?.status = .syncing(progress)
+            }
+        }
+
+        let result: Result<SyncLogEntry, Error>
         do {
-            let entry = try await syncService.sync()
+            let entry = try await syncService.sync { continuation.yield($0) }
+            result = .success(entry)
+        } catch {
+            result = .failure(error)
+        }
+
+        // Let the consumer finish before overwriting status with the outcome.
+        continuation.finish()
+        await consumer.value
+
+        switch result {
+        case let .success(entry):
             appendLog(entry)
             if entry.success {
                 status = .idle
             } else {
                 status = .error(entry.errorMessage ?? "Unknown error")
             }
-        } catch {
+        case let .failure(error):
             let entry = SyncLogEntry(
                 success: false,
                 errorMessage: error.localizedDescription
@@ -66,6 +91,7 @@ final class SyncScheduler: SyncSchedulerProtocol {
             appendLog(entry)
             status = .error(error.localizedDescription)
         }
+
         lastSyncDate = Date()
     }
 

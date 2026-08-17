@@ -8,8 +8,10 @@ final class SyncSchedulerTests: XCTestCase {
     private var defaults: UserDefaults!
     private var sut: SyncScheduler!
 
-    override func setUp() {
-        super.setUp()
+    /// Async variants inherit the class's `@MainActor`; the synchronous ones are
+    /// nonisolated overrides, so touching the isolated properties below warns.
+    override func setUp() async throws {
+        try await super.setUp()
         mockService = MockSyncService()
         defaults = UserDefaults(suiteName: "SyncSchedulerTests")!
         defaults.removePersistentDomain(forName: "SyncSchedulerTests")
@@ -18,10 +20,10 @@ final class SyncSchedulerTests: XCTestCase {
         sut = SyncScheduler(syncService: mockService, configuration: configuration)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         sut.stop()
         defaults.removePersistentDomain(forName: "SyncSchedulerTests")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testInitialState() {
@@ -81,6 +83,62 @@ final class SyncSchedulerTests: XCTestCase {
         } else {
             XCTFail("Expected error status")
         }
+    }
+
+    func testSyncNowPublishesProgressThenSettles() async {
+        var inFlight = SyncProgress()
+        inFlight.phase = .applyingChanges
+        inFlight.currentObject = "notes/file1.md"
+        mockService.progressUpdates = [inFlight]
+
+        await sut.syncNow()
+
+        XCTAssertEqual(
+            sut.status,
+            .idle,
+            "Progress must not leave the status stuck on syncing"
+        )
+    }
+
+    func testStatusCarriesProgressWhileSyncing() async {
+        var inFlight = SyncProgress()
+        inFlight.phase = .applyingChanges
+        inFlight.currentObject = "notes/file1.md"
+        inFlight.filesDone = 1
+        inFlight.filesTotal = 3
+        mockService.progressUpdates = [inFlight]
+
+        // Hold the sync open so the in-flight status is observable.
+        let gate = AsyncGate()
+        mockService.gate = gate
+
+        let syncTask = Task { await sut.syncNow() }
+
+        let observed = await waitForProgress { $0.phase == .applyingChanges }
+
+        XCTAssertEqual(observed?.currentObject, "notes/file1.md")
+        XCTAssertEqual(observed?.filesDone, 1)
+        XCTAssertEqual(observed?.filesTotal, 3)
+
+        await gate.open()
+        await syncTask.value
+        XCTAssertEqual(sut.status, .idle)
+    }
+
+    /// The scheduler funnels progress through an `AsyncStream`, so updates land a
+    /// hop later than the service reporting them.
+    private func waitForProgress(
+        timeout: TimeInterval = 2,
+        where predicate: (SyncProgress) -> Bool
+    ) async -> SyncProgress? {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let progress = sut.status.progress, predicate(progress) {
+                return progress
+            }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        return nil
     }
 
     func testLogsTrimmedToMax() async {

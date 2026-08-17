@@ -28,10 +28,24 @@ struct MenuBarView: View {
             HStack {
                 Image(systemName: viewModel.status.iconName)
                     .foregroundStyle(statusColor)
+                    .symbolEffect(
+                        .rotate,
+                        options: .repeating,
+                        isActive: viewModel.status.isSyncing
+                    )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(viewModel.status.label)
                         .font(.headline)
-                    if let lastSync = viewModel.lastSyncDate {
+                    // No object yet while listing, so keep the last-sync line
+                    // rather than leaving a gap.
+                    if let object = viewModel.status.progress?.currentObject {
+                        Text(object)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(object)
+                    } else if let lastSync = viewModel.lastSyncDate {
                         Text("Last sync: \(lastSync, style: .relative)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -44,7 +58,11 @@ struct MenuBarView: View {
                     }
                 }
                 .controlSize(.small)
-                .disabled(viewModel.status == .syncing)
+                .disabled(viewModel.status.isSyncing)
+            }
+
+            if let progress = viewModel.status.progress {
+                progressSection(progress)
             }
 
             HStack(spacing: 12) {
@@ -90,6 +108,28 @@ struct MenuBarView: View {
             .foregroundStyle(.tint)
         }
         .padding(12)
+    }
+
+    /// Live detail for a run in flight. rclone only reports a total once it has
+    /// finished listing, so the bar is indeterminate until then.
+    private func progressSection(_ progress: SyncProgress) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let fraction = progress.fractionCompleted {
+                ProgressView(value: fraction)
+            } else {
+                ProgressView()
+                    .progressViewStyle(.linear)
+            }
+
+            if let stats = progress.statsLine {
+                Text(stats)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .monospacedDigit()
+            }
+        }
+        .animation(.default, value: progress.fractionCompleted)
     }
 
     private var statusColor: Color {

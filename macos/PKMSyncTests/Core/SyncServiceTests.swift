@@ -169,4 +169,90 @@ final class SyncServiceTests: XCTestCase {
             XCTAssertTrue(error is SyncError)
         }
     }
+
+    // MARK: - Progress
+
+    func testSyncRequestsPeriodicStatsAndDisablesColour() async throws {
+        _ = try await sut.sync()
+
+        let args = mockRunner.lastArguments
+        let statsIndex = try XCTUnwrap(args.firstIndex(of: "--stats"))
+        XCTAssertEqual(args[statsIndex + 1], "1s")
+
+        let colorIndex = try XCTUnwrap(args.firstIndex(of: "--color"))
+        XCTAssertEqual(args[colorIndex + 1], "NEVER")
+    }
+
+    func testSyncWithoutProgressHandlerPassesNoneToRunner() async throws {
+        _ = try await sut.sync()
+
+        XCTAssertFalse(
+            mockRunner.receivedOutputHandler,
+            "Streaming should stay off when nobody is listening"
+        )
+    }
+
+    func testSyncReportsProgressFromStreamedOutput() async throws {
+        mockRunner.streamedLines = [
+            "2026/08/12 11:37:28 INFO  : Applying changes",
+            "2026/08/12 11:37:28 INFO  : notes/file1.md: Copied (new)",
+            "Transferred:   \t    4.215 MiB / 38.147 MiB, 11%, 2.014 MiB/s, ETA 16s",
+            "Transferred:            1 / 3, 33%",
+        ]
+        let collected = ProgressCollector()
+
+        _ = try await sut.sync { collected.append($0) }
+
+        let updates = collected.updates
+        XCTAssertFalse(updates.isEmpty)
+
+        let last = try XCTUnwrap(updates.last)
+        XCTAssertEqual(last.phase, .applyingChanges)
+        XCTAssertEqual(last.currentObject, "notes/file1.md")
+        XCTAssertEqual(last.filesDone, 1)
+        XCTAssertEqual(last.filesTotal, 3)
+        XCTAssertEqual(last.speed, "2.014 MiB/s")
+        XCTAssertEqual(last.eta, "16s")
+    }
+
+    func testResyncRetryStartsWithCleanProgress() async throws {
+        mockRunner.results = [
+            .success(ProcessOutput(
+                stdout: "",
+                // swiftlint:disable:next line_length
+                stderr: "2026/03/17 09:08:52 ERROR : Bisync critical error: cannot find prior Path1 or Path2 listings, likely due to critical error on prior run",
+                exitCode: 1
+            )),
+            .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0)),
+        ]
+        mockRunner.streamedLines = ["2026/08/12 11:37:28 INFO  : Building Path1 and Path2 listings"]
+        let collected = ProgressCollector()
+
+        _ = try await sut.sync { collected.append($0) }
+
+        XCTAssertEqual(mockRunner.runCallCount, 2)
+        XCTAssertEqual(
+            collected.updates.last?.phase,
+            .buildingListings,
+            "The retry should report its own progress"
+        )
+    }
+}
+
+/// `SyncService` reports progress from whichever thread drained the output.
+private final class ProgressCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [SyncProgress] = []
+
+    var updates: [SyncProgress] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func append(_ progress: SyncProgress) {
+        lock.lock()
+        storage.append(progress)
+        lock.unlock()
+    }
 }
