@@ -75,6 +75,54 @@ final class ProcessRunnerStreamingTests: XCTestCase {
         XCTAssertEqual(collected.lines, ["first", "second"])
     }
 
+    func testConcurrentRunsDoNotStarveTheThreadPool() async {
+        // Every `run` needs both of its pipes drained at once, and each drain
+        // blocks its thread until the child closes that pipe. While those reads
+        // lived on Swift's cooperative pool -- which is sized to the core count
+        // -- enough concurrent calls could park every thread, leaving nothing to
+        // start the remaining drains. Children then blocked writing to pipes
+        // nobody was reading and the run wedged. That is what hung CI.
+        let count = 32
+        let finished = expectation(description: "all concurrent runs completed")
+        finished.expectedFulfillmentCount = count
+
+        // Collected rather than asserted inside the tasks, so that a failing run
+        // still reaches `fulfill()` below instead of hanging the test on the
+        // other 31. Reuses LineCollector purely as a thread-safe string sink.
+        let failures = LineCollector()
+
+        let runner = sut
+        for index in 0 ..< count {
+            Task {
+                do {
+                    // Well past the 64KB pipe buffer on both streams, so each
+                    // child can only exit if both of its pipes are drained
+                    // concurrently -- and only if we read every byte.
+                    let output = try await runner.run(
+                        executablePath: "/bin/sh",
+                        arguments: ["-c", "seq 1 20000; seq 1 20000 1>&2"],
+                        environment: nil
+                    )
+                    if output.exitCode != 0 {
+                        failures.append("run \(index) exited \(output.exitCode)")
+                    }
+                    if !output.stdout.hasSuffix("20000\n") {
+                        failures.append("run \(index) truncated stdout")
+                    }
+                    if !output.stderr.hasSuffix("20000\n") {
+                        failures.append("run \(index) truncated stderr")
+                    }
+                } catch {
+                    failures.append("run \(index) threw \(error)")
+                }
+                finished.fulfill()
+            }
+        }
+
+        await fulfillment(of: [finished], timeout: 60)
+        XCTAssertEqual(failures.lines, [])
+    }
+
     func testStillCapturesLargeOutputWithoutAHandler() async throws {
         // Guards the original deadlock fix: output larger than the pipe buffer.
         let output = try await sut.run(
