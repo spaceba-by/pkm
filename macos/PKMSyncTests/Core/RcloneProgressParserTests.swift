@@ -244,6 +244,26 @@ final class RcloneProgressParserTests: XCTestCase {
         XCTAssertEqual(sut.consume(line: line)?.currentObject, "big/blob.bin")
     }
 
+    /// rclone puts the `INFO` prefix on its own line ahead of the stats block, so
+    /// prefixed stats lines are not seen in practice. Parse them anyway rather
+    /// than silently dropping throughput if a config emits them on one line.
+    func testParsesStatsLineEvenWhenLogPrefixed() {
+        let progress = sut.consume(
+            line: "2026/08/12 11:37:28 INFO  : Transferred:   \t1.402 MiB / 38.147 MiB, 4%, 2.027 MiB/s, ETA 17s"
+        )
+
+        XCTAssertEqual(progress?.bytesTransferred, Int64(1.402 * 1_048_576))
+        XCTAssertEqual(progress?.bytesTotal, Int64(38.147 * 1_048_576))
+        XCTAssertEqual(progress?.speed, "2.027 MiB/s")
+        XCTAssertEqual(progress?.eta, "17s")
+    }
+
+    /// The bare prefix line that precedes each stats block must not be mistaken
+    /// for content or end a `Transferring:` block early.
+    func testEmptyInfoLineBeforeStatsBlockIsIgnored() {
+        XCTAssertNil(sut.consume(line: "2026/08/12 11:37:28 INFO  : "))
+    }
+
     func testIgnoresUnrelatedLines() {
         XCTAssertNil(sut.consume(line: "2026/08/12 11:37:28 INFO  : Bisyncing with Comparison Settings: "))
         XCTAssertNil(sut.consume(line: "\t\"Modtime\": true,"))

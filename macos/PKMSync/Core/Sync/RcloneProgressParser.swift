@@ -9,9 +9,12 @@ import Foundation
 ///     2026/08/12 11:37:28 INFO  : Building Path1 and Path2 listings
 ///     2026/08/12 11:37:28 INFO  : sub/deep.md: Copied (server-side copy)
 ///
-/// and the periodic stats block — emitted as one multi-line `INFO` message, so
-/// only its first line carries a log prefix — carries counts and throughput:
+/// The periodic stats block carries counts and throughput. rclone logs it as a
+/// single multi-line `INFO` message whose body starts with a newline, so the log
+/// prefix sits alone on the preceding line and none of the stats lines below
+/// carry one:
 ///
+///     2026/08/12 11:37:28 INFO  :
 ///     Transferred:      1.402 MiB / 38.147 MiB, 4%, 2.027 MiB/s, ETA 17s
 ///     Checks:               0 / 0, -, Listed 1
 ///     Transferred:          0 / 1, 0%
@@ -37,15 +40,16 @@ final class RcloneProgressParser: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        let stripped = strippingANSI(line)
-        let trimmed = stripped.trimmingCharacters(in: .whitespaces)
+        // Strip the log prefix up front and feed the bare message to both paths.
+        // Stats lines are unprefixed in practice, but tolerating a prefix costs
+        // nothing and keeps parsing working if a user's own rclone config emits
+        // them differently (`--stats-one-line` puts them on the `INFO` line).
+        let message = messageBody(of: strippingANSI(line))
 
-        if let updated = consumeStatsBlockLine(trimmed) {
+        if let updated = consumeStatsBlockLine(message) {
             return updated
         }
 
-        // Everything else is a prefixed log line.
-        let message = messageBody(of: stripped)
         if let phase = Self.phase(from: message) {
             progress.phase = phase
             // Phase boundaries make the previous object stale.
@@ -61,7 +65,8 @@ final class RcloneProgressParser: @unchecked Sendable {
         return nil
     }
 
-    /// Handles the periodic stats block, whose lines carry no log prefix.
+    /// Handles the periodic stats block. Takes the message body with any log
+    /// prefix already stripped, so a prefixed stats line parses the same way.
     /// - Returns: An updated snapshot, or `nil` if the line is not a stats line.
     private func consumeStatsBlockLine(_ trimmed: String) -> SyncProgress? {
         if trimmed == "Transferring:" {
