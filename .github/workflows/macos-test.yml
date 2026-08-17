@@ -15,6 +15,9 @@ jobs:
   format:
     name: Format
     runs-on: macos-26
+    # Runs in seconds; the cap only exists to stop a wedged runner burning the
+    # 6h default at the macOS 10x billing multiplier.
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -31,6 +34,7 @@ jobs:
   lint:
     name: Lint
     runs-on: macos-26
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -47,6 +51,9 @@ jobs:
   test:
     name: Build & Test
     runs-on: macos-26
+    # ~2 min with a warm DerivedData cache, ~8 min cold, so 20 leaves headroom
+    # for a full rebuild while still failing fast if a test deadlocks.
+    timeout-minutes: 20
 
     env:
       DERIVED_DATA_PATH: /tmp/DerivedData
