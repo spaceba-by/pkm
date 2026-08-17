@@ -79,6 +79,13 @@ schemes:
     test:
       config: Debug
       gatherCoverageData: true
+      environmentVariables:
+        # Stops the Swift cooperative pool from growing past the core count.
+        # A dev machine has enough cores to paper over code that blocks a
+        # cooperative thread; the 3-core CI runner does not, which is how a
+        # ProcessRunner hang got all the way to CI. This makes the local suite
+        # fail the same way instead.
+        LIBDISPATCH_COOPERATIVE_POOL_STRICT: "1"
       coverageTargets:
         - PKMSync
       targets:

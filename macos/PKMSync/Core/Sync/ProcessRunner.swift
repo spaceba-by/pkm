@@ -40,25 +40,51 @@ struct ProcessRunner: ProcessRunnerProtocol {
             sink = nil
         }
 
-        // Read pipes on background threads to avoid deadlock when the OS
-        // pipe buffer fills before the process terminates.
-        async let stdoutText = Task.detached {
-            Self.drain(stdoutPipe.fileHandleForReading, onLine: sink)
-        }.value
-        async let stderrText = Task.detached {
-            Self.drain(stderrPipe.fileHandleForReading, onLine: sink)
-        }.value
+        // Both pipes must drain concurrently: if we read stdout to EOF first, a
+        // child that fills the stderr pipe buffer blocks forever on write and
+        // never closes stdout.
+        async let stdoutText = Self.drainInBackground(stdoutPipe.fileHandleForReading, onLine: sink)
+        async let stderrText = Self.drainInBackground(stderrPipe.fileHandleForReading, onLine: sink)
 
         let stdout = await stdoutText
         let stderr = await stderrText
 
-        process.waitUntilExit()
+        await Self.onBackgroundThread { process.waitUntilExit() }
 
         return ProcessOutput(
             stdout: stdout,
             stderr: stderr,
             exitCode: process.terminationStatus
         )
+    }
+
+    /// Runs blocking `work` on libdispatch's global pool instead of Swift's
+    /// cooperative pool.
+    ///
+    /// Blocking a cooperative thread is never safe: that pool is sized to the
+    /// core count. `drain` blocks for as long as the child holds its pipe open
+    /// and every `run` needs two drains at once, so on a small machine (a CI
+    /// runner, notably) concurrent calls can consume every thread. Nothing is
+    /// left to resume the continuations and the call hangs forever. libdispatch
+    /// grows its pool when work blocks, so it absorbs this safely.
+    private static func onBackgroundThread(_ work: @escaping @Sendable () -> Void) async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                work()
+                continuation.resume()
+            }
+        }
+    }
+
+    private static func drainInBackground(
+        _ handle: FileHandle,
+        onLine: (@Sendable (String) -> Void)?
+    ) async -> String {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: drain(handle, onLine: onLine))
+            }
+        }
     }
 
     /// Reads `handle` to EOF, emitting each complete line to `onLine` as it
