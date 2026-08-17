@@ -3,11 +3,12 @@ name: macOS Build
 on:
   push:
     branches: [main]
-    paths:
-      - 'macos/**'
-      - '.github/workflows/macos-*.yml'
     tags:
       - 'macos/v*'
+    # No `paths:` filter here on purpose. A paths filter applies to tag pushes
+    # too, so tagging a commit that did not itself touch macos/** would silently
+    # skip the whole workflow and never cut the release. Builds are ~1m and this
+    # repo is public (free runner minutes), so we always build instead.
 
 concurrency:
   group: macos-build-${{ github.ref }}
@@ -110,10 +111,23 @@ jobs:
             -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
           security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+          # Fail here with a clear message rather than deep inside codesign:
+          # the archive step signs against this exact identity name.
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | grep -q "Developer ID Application"; then
+            echo "::error::MACOS_CERTIFICATE imported but no 'Developer ID Application' identity found. Export the .p12 from Keychain Access with its private key."
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
 
+      # Manual signing, not Automatic: the runner has no Apple ID signed into
+      # Xcode, so automatic signing cannot resolve a profile. The app is
+      # unsandboxed with no entitlements, so Developer ID needs no profile --
+      # just the imported certificate.
       - name: Build signed archive
         if: steps.check-secrets.outputs.has_signing == 'true'
         working-directory: macos
@@ -126,7 +140,10 @@ jobs:
             -archivePath build/PKMSync.xcarchive \
             -configuration Release \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic 2>&1 \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            OTHER_CODE_SIGN_FLAGS="--timestamp" 2>&1 \
             | xcbeautify --renderer github-actions
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -145,6 +162,10 @@ jobs:
             <string>developer-id</string>
             <key>teamID</key>
             <string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Developer ID Application</string>
           </dict>
           </plist>
           PLIST
