@@ -51,8 +51,8 @@ enum RcloneOutputParser {
                 errors = value
             } else if let seconds = extractElapsed(from: trimmed) {
                 elapsedSeconds = seconds
-            } else if trimmed.contains("ERROR") || trimmed.hasPrefix("Failed to") {
-                errorMessages.append(trimmed)
+            } else if let failure = failureMessage(in: trimmed) {
+                errorMessages.append(failure)
             }
 
             if trimmed.contains("cannot find prior Path1 or Path2 listings") {
@@ -69,6 +69,75 @@ enum RcloneOutputParser {
             needsResync: needsResync
         )
     }
+
+    // MARK: - Failures
+
+    /// Log levels that always mean the run went wrong. `NOTICE` is deliberately
+    /// absent: rclone uses it for routine remarks as well as for the lines below.
+    private static let failureLevels: Set<String> = ["ERROR", "CRITICAL", "FATAL"]
+
+    /// bisync reports its *fatal* errors at `NOTICE`, so the level alone cannot
+    /// classify them. A failed run ends with lines like:
+    ///
+    ///     2026/08/17 17:52:53 NOTICE: Failed to bisync: prior lock file found: ...
+    ///     2026/08/17 17:52:53 NOTICE: Bisync aborted. Must run --resync to recover.
+    private static let failurePrefixes = [
+        "Failed to",
+        "Bisync critical error",
+        "Bisync aborted",
+    ]
+
+    /// The human-readable failure in `line`, or `nil` if it does not report one.
+    ///
+    /// Returns the message with rclone's `2026/08/17 17:52:53 NOTICE: ` prefix
+    /// stripped: the log row already shows the time, and the level adds nothing
+    /// once the entry is marked failed.
+    private static func failureMessage(in line: String) -> String? {
+        let (level, message) = splitLogPrefix(line)
+        guard !message.isEmpty else { return nil }
+
+        if let level, failureLevels.contains(level) {
+            return message
+        }
+        if failurePrefixes.contains(where: message.hasPrefix) {
+            return message
+        }
+        return nil
+    }
+
+    /// rclone's fixed-width `2026/08/17 17:57:53 ` timestamp.
+    private static let timestampPattern = "dddd/dd/dd dd:dd:dd "
+
+    /// Splits an rclone log line into its level and message. Both halves of the
+    /// prefix are optional — stats lines carry neither.
+    private static func splitLogPrefix(_ line: String) -> (level: String?, message: String) {
+        let body = droppingTimestamp(Substring(line))
+
+        guard let colon = body.firstIndex(of: ":") else {
+            return (nil, String(body))
+        }
+        let level = body[..<colon].trimmingCharacters(in: .whitespaces)
+        // Levels are all-caps, which is what tells `ERROR : ...` apart from a
+        // message that merely happens to contain a colon.
+        guard !level.isEmpty, level.allSatisfy({ $0.isLetter && $0.isUppercase }) else {
+            return (nil, String(body))
+        }
+
+        let message = body[body.index(after: colon)...]
+            .trimmingCharacters(in: .whitespaces)
+        return (level, message)
+    }
+
+    private static func droppingTimestamp(_ line: Substring) -> Substring {
+        guard line.count >= timestampPattern.count else { return line }
+
+        let matches = zip(line, timestampPattern).allSatisfy { character, token in
+            token == "d" ? character.isNumber : character == token
+        }
+        return matches ? line.dropFirst(timestampPattern.count) : line
+    }
+
+    // MARK: - Stats
 
     /// "B" matters: a small sync reports "Transferred: 31 B / 31 B, 100%", which
     /// without it is mistaken for the file-count line.

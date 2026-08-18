@@ -52,6 +52,12 @@ final class MenuBarViewModel {
         scheduler.status
     }
 
+    /// Whether rclone is still working. `status` alone cannot answer this: a run
+    /// that fails leaves `.error` behind while an earlier, longer run carries on.
+    var isSyncInFlight: Bool {
+        scheduler.isSyncInFlight
+    }
+
     var recentLogs: [SyncLogEntry] {
         scheduler.recentLogs
     }

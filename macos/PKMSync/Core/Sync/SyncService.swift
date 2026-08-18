@@ -60,7 +60,7 @@ struct SyncService: SyncServiceProtocol {
                 filesTransferred: parsed.filesTransferred,
                 filesChecked: parsed.filesChecked,
                 success: false,
-                errorMessage: parsed.errorMessages.first ?? output.stderr.prefix(200).description,
+                errorMessage: parsed.errorMessages.first ?? Self.exitCodeMessage(for: output),
                 rawOutput: Self.combinedOutput(of: output),
                 duration: elapsed
             )
@@ -89,6 +89,15 @@ struct SyncService: SyncServiceProtocol {
                 }
             }
         }
+    }
+
+    /// Used when rclone fails without a line the parser recognises as the cause.
+    ///
+    /// Quoting the head of stderr instead — as this once did — surfaced rclone's
+    /// opening "Setting --ignore-listing-checksum ..." INFO line as the error for
+    /// every single failure. The full output stays one click away in `rawOutput`.
+    private static func exitCodeMessage(for output: ProcessOutput) -> String {
+        "rclone exited with code \(output.exitCode)"
     }
 
     private static func combinedOutput(of output: ProcessOutput) -> String? {

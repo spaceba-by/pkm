@@ -61,6 +61,52 @@ final class RcloneOutputParserTests: XCTestCase {
         XCTAssertTrue(result.errorMessages[0].contains("Failed to copy"))
     }
 
+    /// The failure that started this: bisync reports fatal errors at NOTICE, so
+    /// matching only on "ERROR" missed every one of them.
+    func testParsesNoticeLevelBisyncFailure() {
+        // swiftlint:disable:next line_length
+        let stderr = "2026/08/17 17:52:53 NOTICE: Failed to bisync: prior lock file found: /Users/eric/Library/Caches/rclone/bisync/notes.lck"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertEqual(result.errorMessages.count, 1)
+        XCTAssertTrue(result.errorMessages[0].hasPrefix("Failed to bisync: prior lock file found"))
+    }
+
+    func testParsesNoticeLevelBisyncAbort() {
+        let stderr = "2026/08/17 17:52:53 NOTICE: Bisync aborted. Must run --resync to recover."
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertEqual(result.errorMessages, ["Bisync aborted. Must run --resync to recover."])
+    }
+
+    func testParsesCriticalLevel() {
+        let stderr = "2026/08/17 17:52:53 CRITICAL: could not create directory"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertEqual(result.errorMessages, ["could not create directory"])
+    }
+
+    /// rclone opens every run with this line, and it used to be what the popover
+    /// showed in red as the reason a sync failed.
+    func testIgnoresRoutineInfoLines() {
+        let stderr = """
+        2026/08/17 17:57:53 INFO  : Setting --ignore-listing-checksum as neither \
+        --checksum nor --compare checksum are set.
+        2026/08/17 17:57:53 INFO  : Bisyncing with Comparison Settings:
+        2026/08/17 17:57:53 NOTICE: Local file system at /vault: Waiting for checks to finish
+        """
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertTrue(result.errorMessages.isEmpty)
+    }
+
+    func testErrorMessageDropsTimestampAndLevel() {
+        let stderr = "2026/08/17 17:52:53 ERROR : notes/file.md: Failed to copy: permission denied"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertEqual(result.errorMessages, ["notes/file.md: Failed to copy: permission denied"])
+    }
+
     func testEmptyOutput() {
         let result = RcloneOutputParser.parse(stdout: "", stderr: "")
 

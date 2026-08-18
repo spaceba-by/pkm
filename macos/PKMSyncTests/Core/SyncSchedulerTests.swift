@@ -125,6 +125,81 @@ final class SyncSchedulerTests: XCTestCase {
         XCTAssertEqual(sut.status, .idle)
     }
 
+    // MARK: - Serialization
+
+    /// rclone bisync locks per path pair, so a second run started mid-sync dies
+    /// on that lock — and used to reset the live progress on its way out.
+    func testOverlappingSyncIsSkipped() async {
+        var inFlight = SyncProgress()
+        inFlight.phase = .applyingChanges
+        inFlight.currentObject = "notes/file1.md"
+        mockService.progressUpdates = [inFlight]
+
+        let gate = AsyncGate()
+        mockService.gate = gate
+
+        let running = Task { await sut.syncNow() }
+        _ = await waitForProgress { $0.phase == .applyingChanges }
+
+        await sut.syncNow()
+
+        XCTAssertEqual(mockService.syncCallCount, 1, "A second rclone must not be launched")
+        XCTAssertEqual(
+            sut.status.progress?.currentObject,
+            "notes/file1.md",
+            "The skipped request must not reset the live progress"
+        )
+        XCTAssertTrue(sut.recentLogs.isEmpty, "A skipped request is not a sync outcome")
+
+        await gate.open()
+        await running.value
+
+        XCTAssertEqual(mockService.syncCallCount, 1)
+        XCTAssertEqual(sut.recentLogs.count, 1)
+        XCTAssertEqual(sut.status, .idle)
+    }
+
+    func testIsSyncInFlightSpansTheRun() async {
+        XCTAssertFalse(sut.isSyncInFlight)
+
+        let gate = AsyncGate()
+        mockService.gate = gate
+        mockService.progressUpdates = [SyncProgress()]
+
+        let running = Task { await sut.syncNow() }
+        _ = await waitForProgress { _ in true }
+
+        XCTAssertTrue(sut.isSyncInFlight)
+
+        await gate.open()
+        await running.value
+
+        XCTAssertFalse(sut.isSyncInFlight)
+    }
+
+    /// A run that fails leaves `status == .error`, so the flag is what the
+    /// "Sync Now" button has to key off to stay disabled.
+    func testIsSyncInFlightClearsAfterFailure() async {
+        mockService.syncResult = .failure(SyncError.rcloneNotFound)
+
+        await sut.syncNow()
+
+        XCTAssertFalse(sut.isSyncInFlight)
+    }
+
+    func testLogsOrderedByStartTimeNewestFirst() async {
+        let early = Date(timeIntervalSince1970: 1000)
+        let late = Date(timeIntervalSince1970: 2000)
+
+        // A long run started first but finishing last must not jump to the top.
+        mockService.syncResult = .success(SyncLogEntry(timestamp: late, success: true))
+        await sut.syncNow()
+        mockService.syncResult = .success(SyncLogEntry(timestamp: early, success: true))
+        await sut.syncNow()
+
+        XCTAssertEqual(sut.recentLogs.map(\.timestamp), [late, early])
+    }
+
     /// The scheduler funnels progress through an `AsyncStream`, so updates land a
     /// hop later than the service reporting them.
     private func waitForProgress(
