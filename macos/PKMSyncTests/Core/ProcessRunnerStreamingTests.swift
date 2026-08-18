@@ -21,6 +21,23 @@ final class ProcessRunnerStreamingTests: XCTestCase {
         XCTAssertEqual(output.stdout, "one\ntwo\nthree\n")
     }
 
+    /// Regression: `waitUntilExit()` spun a `CFRunLoop` on a libdispatch worker
+    /// thread and could block forever. A single run reproduced it only ~5% of
+    /// the time, which is what made it read as a flaky test rather than a real
+    /// hang; repeating tightens that to near-certain.
+    func testRepeatedRunsDoNotHang() async throws {
+        for iteration in 1 ... 60 {
+            let output = try await sut.run(
+                executablePath: "/bin/sh",
+                arguments: ["-c", "printf 'tick'"],
+                environment: nil,
+                onOutputLine: { _ in }
+            )
+            XCTAssertEqual(output.exitCode, 0, "iteration \(iteration)")
+            XCTAssertEqual(output.stdout, "tick", "iteration \(iteration)")
+        }
+    }
+
     func testStreamsStderrAsWell() async throws {
         let collected = LineCollector()
 
