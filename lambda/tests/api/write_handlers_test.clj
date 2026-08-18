@@ -226,9 +226,12 @@
   (testing "Rejects path traversal"
     (is (some? (validate-update-key "notes/../_agent/summaries/x.md"))))
 
-  (testing "Rejects blank key"
+  ;; The handler relies on this instead of a separate nil check, so a missing
+  ;; path param must not slip through as valid.
+  (testing "Rejects blank or missing key"
     (is (some? (validate-update-key "")))
-    (is (some? (validate-update-key "   ")))))
+    (is (some? (validate-update-key "   ")))
+    (is (some? (validate-update-key nil)))))
 
 ;; =============================================================================
 ;; api_delete_document validation tests

@@ -52,16 +52,16 @@
                                (json/parse-string body true)
                                body))
               content (:content request-body)
-              if-unmodified-since (:ifUnmodifiedSince request-body)]
+              if-unmodified-since (:ifUnmodifiedSince request-body)
+              ;; validate-key treats nil/blank as invalid, so it covers the
+              ;; missing-key case too.
+              key-error (validate-key document-key)]
 
           (println "User" user-sub "updating document:" document-key)
 
           (cond
-            (nil? document-key)
-            (r/bad-request "Missing document key")
-
-            (some? (validate-key document-key))
-            (r/bad-request (validate-key document-key))
+            key-error
+            (r/bad-request key-error)
 
             (nil? content)
             (r/bad-request "Missing content in request body")
