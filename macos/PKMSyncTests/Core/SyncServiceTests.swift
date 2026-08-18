@@ -9,7 +9,9 @@ final class SyncServiceTests: XCTestCase {
     private var sut: SyncService!
 
     /// Arguments for the bisync phase (always the first rclone invocation).
-    private var bisyncArguments: [String] { mockRunner.allArguments[0] }
+    private var bisyncArguments: [String] {
+        mockRunner.allArguments[0]
+    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -57,9 +59,9 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertTrue(bisyncArguments.contains("--verbose"))
     }
 
-    // bisync only enforces its filter-change guard (MD5 of the filters file,
-    // abort demanding --resync) for --filters-file. With --filter-from, newly
-    // excluded files look deleted and get deleted for real on both sides.
+    /// bisync only enforces its filter-change guard (MD5 of the filters file,
+    /// abort demanding --resync) for --filters-file. With --filter-from, newly
+    /// excluded files look deleted and get deleted for real on both sides.
     func testSyncUsesFiltersFileNotFilterFrom() async throws {
         mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
 

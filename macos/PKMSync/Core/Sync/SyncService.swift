@@ -236,6 +236,8 @@ struct SyncService: SyncServiceProtocol {
         let output: ProcessOutput
         let parsed: RcloneParseResult
 
-        var exitCode: Int32 { output.exitCode }
+        var exitCode: Int32 {
+            output.exitCode
+        }
     }
 }

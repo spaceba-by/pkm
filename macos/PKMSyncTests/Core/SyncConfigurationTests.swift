@@ -41,8 +41,8 @@ final class SyncConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.resolvedFilterFilePath(), "/Users/test/custom-filter.txt")
     }
 
-    // The _agent/ exclusion is what keeps agent output out of the bidirectional
-    // phase; without it the one-way pull would fight bisync.
+    /// The _agent/ exclusion is what keeps agent output out of the bidirectional
+    /// phase; without it the one-way pull would fight bisync.
     func testDefaultFilterContentsExcludeAgentPrefix() {
         XCTAssertTrue(BisyncFilterFile.defaultContents.contains("- /_agent/**"))
         XCTAssertTrue(BisyncFilterFile.defaultContents.contains("- /_agent/"))
