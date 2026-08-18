@@ -185,6 +185,52 @@
     (is (false? (conflict? "2025-01-15T08:00:00Z" "2025-01-15T10:00:00Z")))))
 
 ;; =============================================================================
+;; api_update_document key validation tests
+;; =============================================================================
+
+(defn validate-update-key
+  "Validate the document key for api_update_document."
+  [key]
+  (cond
+    (str/blank? key)
+    "Document key is required"
+
+    (str/starts-with? key "_agent/")
+    "Cannot update agent-generated documents"
+
+    (str/starts-with? key "_")
+    "Document key must not start with _"
+
+    (str/starts-with? key ".")
+    "Document key must not start with ."
+
+    (re-find #"\.\." key)
+    "Document key must not contain .."
+
+    :else nil))
+
+(deftest validate-update-key-test
+  (testing "Allows normal document updates"
+    (is (nil? (validate-update-key "notes/test.md")))
+    (is (nil? (validate-update-key "daily/2025-01-15.md"))))
+
+  (testing "Rejects agent-generated documents"
+    (is (= "Cannot update agent-generated documents"
+           (validate-update-key "_agent/summaries/2025-01-01.md")))
+    (is (some? (validate-update-key "_agent/entities/person/alice.md"))))
+
+  (testing "Rejects other underscore and dot prefixes"
+    (is (some? (validate-update-key "_private/test.md")))
+    (is (some? (validate-update-key ".obsidian/workspace.json"))))
+
+  (testing "Rejects path traversal"
+    (is (some? (validate-update-key "notes/../_agent/summaries/x.md"))))
+
+  (testing "Rejects blank key"
+    (is (some? (validate-update-key "")))
+    (is (some? (validate-update-key "   ")))))
+
+;; =============================================================================
 ;; api_delete_document validation tests
 ;; =============================================================================
 

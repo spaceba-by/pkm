@@ -42,14 +42,29 @@ nano ~/.config/rclone/rclone.conf
 rclone lsd pkm-s3:YOUR-BUCKET-NAME
 ```
 
-### 3. Initialize bisync (FIRST TIME ONLY)
+### 3. Install the filters file and sync script
+
+```bash
+mkdir -p ~/.config/rclone ~/.local/bin
+cp pkm-bisync-filter.txt ~/.config/rclone/
+cp pkm-sync.sh ~/.local/bin/ && chmod +x ~/.local/bin/pkm-sync.sh
+```
+
+`pkm-sync.sh` runs sync in two phases:
+
+1. `rclone bisync` for your notes, with `_agent/` excluded by the filters file
+2. `rclone copy` pulling `_agent/` one-way from S3, so agent output stays
+   authoritative on the remote and a local edit can never clobber it
+
+### 4. Initialize bisync (FIRST TIME ONLY)
 
 ```bash
 # Replace paths with your actual values
-rclone bisync /path/to/local/vault pkm-s3:YOUR-BUCKET-NAME --resync
+rclone bisync /path/to/local/vault pkm-s3:YOUR-BUCKET-NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt --resync
 ```
 
-### 4. Set up automatic sync
+### 5. Set up automatic sync
 
 #### macOS (using launchd)
 
@@ -81,7 +96,10 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/rclone bisync /path/to/local/vault pkm-s3:BUCKET_NAME --conflict-resolve newer --conflict-loser rename
+Environment=PKM_VAULT_PATH=/path/to/local/vault
+Environment=PKM_BUCKET_NAME=BUCKET_NAME
+Environment=PKM_FILTER_FILE=%h/.config/rclone/pkm-bisync-filter.txt
+ExecStart=%h/.local/bin/pkm-sync.sh
 
 [Install]
 WantedBy=default.target
@@ -115,7 +133,11 @@ Create a batch script `pkm-sync.bat`:
 
 ```batch
 @echo off
-rclone bisync C:\path\to\vault pkm-s3:BUCKET_NAME --conflict-resolve newer --conflict-loser rename
+rclone bisync C:\path\to\vault pkm-s3:BUCKET_NAME ^
+  --filters-file %USERPROFILE%\.config\rclone\pkm-bisync-filter.txt ^
+  --conflict-resolve newer --conflict-loser rename
+rclone copy pkm-s3:BUCKET_NAME/_agent C:\path\to\vault\_agent ^
+  --use-server-modtime --exclude "search/vector-index.json" --exclude "dispatch/**"
 ```
 
 Then create a scheduled task:
@@ -124,22 +146,28 @@ Then create a scheduled task:
 3. Trigger: Daily, repeat every 5 minutes
 4. Action: Start a program → Select your pkm-sync.bat
 
-### 5. Manual sync command
-
-For manual syncing:
+### 6. Manual sync command
 
 ```bash
-rclone bisync /path/to/local/vault pkm-s3:YOUR-BUCKET-NAME \
-  --conflict-resolve newer \
-  --conflict-loser rename \
-  --verbose
+PKM_VAULT_PATH=/path/to/local/vault PKM_BUCKET_NAME=YOUR-BUCKET-NAME \
+  ~/.local/bin/pkm-sync.sh
 ```
 
 ## Conflict Resolution
 
-The sync is configured with:
+Phase 1 (notes) is configured with:
 - `--conflict-resolve newer`: Newer file wins in conflicts
 - `--conflict-loser rename`: Older file is renamed with `.conflict` suffix
+
+Phase 2 (`_agent/`) cannot conflict — it is a one-way pull.
+
+## Filters
+
+`pkm-bisync-filter.txt` must be passed with `--filters-file`, never
+`--filter-from` or `--exclude`. Only `--filters-file` makes bisync MD5-hash the
+rules and abort demanding a `--resync` when they change; without that guard,
+files you newly exclude look deleted to bisync and get deleted for real on both
+sides. After editing the file, run a `--resync`.
 
 ## iOS Sync
 
@@ -185,7 +213,8 @@ journalctl --user -u pkm-sync.service -f
 
 Initialize bisync:
 ```bash
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --resync
+rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt --resync
 ```
 
 ### Permission denied

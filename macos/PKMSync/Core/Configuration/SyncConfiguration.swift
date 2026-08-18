@@ -39,6 +39,16 @@ final class SyncConfiguration: @unchecked Sendable {
         set { defaults.set(newValue, forKey: prefix + "filterFilePath") }
     }
 
+    /// Pull `_agent/` one-way from S3 after each bisync, so agent output is
+    /// unconditionally authoritative on the remote. Defaults to on.
+    var agentPullEnabled: Bool {
+        get {
+            if defaults.object(forKey: prefix + "agentPullEnabled") == nil { return true }
+            return defaults.bool(forKey: prefix + "agentPullEnabled")
+        }
+        set { defaults.set(newValue, forKey: prefix + "agentPullEnabled") }
+    }
+
     var maxLogEntries: Int {
         get {
             let value = defaults.integer(forKey: prefix + "maxLogEntries")
@@ -74,6 +84,12 @@ final class SyncConfiguration: @unchecked Sendable {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    /// The filters file to hand to `bisync --filters-file`, falling back to the
+    /// app-managed file when the user has not chosen one.
+    func resolvedFilterFilePath() -> String {
+        filterFilePath.isEmpty ? BisyncFilterFile.defaultPath() : filterFilePath
     }
 
     func resolvedRclonePath() -> String {

@@ -261,14 +261,37 @@ graph TD
 
 ### 6. Sync Layer
 
-#### rclone Bidirectional Sync
-- **Mode:** `bisync` (two-way sync)
+Sync runs in two phases, because the vault has two kinds of content with
+different ownership.
+
+#### Phase 1 — notes (`bisync`, bidirectional)
+- **Mode:** `bisync` with `--filters-file` (see `sync/pkm-bisync-filter.txt`)
 - **Frequency:** Every 5 minutes
 - **Conflict Resolution:** Newer file wins
 - **Conflict Handling:** Older file renamed to `.conflict`
+- **Excludes:** `_agent/`, `.obsidian/workspace*.json`, local scratch files
+
+`--filters-file` rather than `--filter-from`: only the former makes bisync
+MD5-hash the filter rules and abort demanding a `--resync` when they change.
+Without that guard, newly excluded files look deleted to bisync and get
+deleted for real on both sides.
+
+#### Phase 2 — `_agent/` (`copy`, one-way pull)
+- **Mode:** `rclone copy` from S3 to local, never the reverse
+- **Effect:** S3 is unconditionally authoritative for agent output — a local
+  edit under `_agent/` is overwritten on the next pull and never pushed
+- **Excludes:** `search/vector-index.json` (monolithic embeddings blob,
+  rewritten in full each index run) and `dispatch/**` (unbounded ECS artifacts)
+- **`--use-server-modtime`:** agent objects are written by Lambda and carry no
+  rclone mtime metadata, so reading their modtime would cost a HEAD per object
+
+Keeping `_agent/` out of bisync also removes it from bisync's listing
+comparison, so Lambda writing to `_agent/` mid-run cannot destabilise bisync
+state, and agent output can never produce a `.conflict` file.
+
 - **Platforms:**
-  - macOS: launchd service
-  - Linux: systemd timer
+  - macOS: PKMSync menu bar app, or launchd running `sync/pkm-sync.sh`
+  - Linux: systemd timer running `sync/pkm-sync.sh`
   - iOS: Obsidian + "Remotely Save" plugin
 
 ### 7. Observability

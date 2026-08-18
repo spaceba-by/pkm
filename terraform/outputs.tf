@@ -53,8 +53,16 @@ output "rclone_remote_config" {
 }
 
 output "sync_command" {
-  description = "Example rclone sync command"
-  value       = "rclone bisync /path/to/local/vault pkm-s3:${aws_s3_bucket.vault.id} --conflict-resolve newer --conflict-loser rename"
+  description = "Example two-phase sync: bisync notes, then pull _agent/ one-way"
+  value       = <<-EOT
+    rclone bisync /path/to/local/vault pkm-s3:${aws_s3_bucket.vault.id} \
+      --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
+      --conflict-resolve newer --conflict-loser rename
+
+    rclone copy pkm-s3:${aws_s3_bucket.vault.id}/_agent /path/to/local/vault/_agent \
+      --use-server-modtime \
+      --exclude "search/vector-index.json" --exclude "dispatch/**"
+  EOT
 }
 
 output "setup_instructions" {

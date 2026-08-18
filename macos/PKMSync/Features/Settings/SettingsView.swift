@@ -57,7 +57,7 @@ struct SettingsView: View {
 
             HStack {
                 TextField(
-                    "Filter File Path",
+                    "Filters File (leave empty for the managed default)",
                     text: $viewModel.configuration.filterFilePath
                 )
                 .textFieldStyle(.roundedBorder)
@@ -65,6 +65,17 @@ struct SettingsView: View {
                     viewModel.selectFilterFile()
                 }
             }
+            Text("Passed to bisync as --filters-file. Created on first sync if missing.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Toggle(
+                "Pull _agent/ from S3 after each sync",
+                isOn: $viewModel.configuration.agentPullEnabled
+            )
+            Text("Agent output is one-way: S3 always wins, local edits are never pushed.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             HStack {
                 Button("Force Resync") {

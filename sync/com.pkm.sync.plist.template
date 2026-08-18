@@ -7,15 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/rclone</string>
-        <string>bisync</string>
-        <string>/Users/USERNAME/vault</string>
-        <string>pkm-s3:BUCKET_NAME</string>
-        <string>--conflict-resolve</string>
-        <string>newer</string>
-        <string>--conflict-loser</string>
-        <string>rename</string>
-        <string>--verbose</string>
+        <string>/Users/USERNAME/.local/bin/pkm-sync.sh</string>
     </array>
 
     <key>StartInterval</key>
@@ -33,7 +25,13 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PKM_VAULT_PATH</key>
+        <string>/Users/USERNAME/vault</string>
+        <key>PKM_BUCKET_NAME</key>
+        <string>BUCKET_NAME</string>
+        <key>PKM_FILTER_FILE</key>
+        <string>/Users/USERNAME/.config/rclone/pkm-bisync-filter.txt</string>
     </dict>
 </dict>
 </plist>
@@ -42,15 +40,22 @@
 To use this launchd plist:
 1. Replace USERNAME with your macOS username
 2. Replace BUCKET_NAME with your S3 bucket name
-3. Ensure rclone is installed at /usr/local/bin/rclone (or update path)
-4. Copy to ~/Library/LaunchAgents/com.pkm.sync.plist
-5. Load with: launchctl load ~/Library/LaunchAgents/com.pkm.sync.plist
-6. Start with: launchctl start com.pkm.sync
+3. Install the sync script:
+     mkdir -p ~/.local/bin && cp sync/pkm-sync.sh ~/.local/bin/ && chmod +x ~/.local/bin/pkm-sync.sh
+4. Install the filters file:
+     mkdir -p ~/.config/rclone && cp sync/pkm-bisync-filter.txt ~/.config/rclone/
+5. Copy to ~/Library/LaunchAgents/com.pkm.sync.plist
+6. Load with: launchctl load ~/Library/LaunchAgents/com.pkm.sync.plist
+7. Start with: launchctl start com.pkm.sync
 
 To stop/unload:
 - launchctl stop com.pkm.sync
 - launchctl unload ~/Library/LaunchAgents/com.pkm.sync.plist
 
+pkm-sync.sh runs two phases: a bisync of your notes with _agent/ filtered out,
+then a one-way pull of _agent/ from S3. See the script header for why.
+
 Note: First-time bisync requires initialization:
-rclone bisync /Users/USERNAME/vault pkm-s3:BUCKET_NAME --resync
+rclone bisync /Users/USERNAME/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt --resync
 -->
