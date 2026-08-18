@@ -59,17 +59,23 @@ fi
 
 status=0
 
+# Capture each exit code with `|| var=$?` rather than testing `if ! cmd`.
+# Inside an `if ! cmd; then` branch, `$?` is the status of the *negation* --
+# always 0 -- so a failing rclone would be reported as a success.
 echo "==> Phase 1: bisync notes (excluding _agent/)"
-if ! "$RCLONE" bisync "$VAULT_PATH" "$REMOTE:$BUCKET_NAME" \
+bisync_status=0
+"$RCLONE" bisync "$VAULT_PATH" "$REMOTE:$BUCKET_NAME" \
     --filters-file "$FILTER_FILE" \
     --conflict-resolve newer \
     --conflict-loser rename \
     --recover \
     --resilient \
     --max-lock 2m \
-    --verbose; then
-    status=$?
-    echo "bisync failed with exit code $status" >&2
+    --verbose || bisync_status=$?
+
+if [ "$bisync_status" -ne 0 ]; then
+    echo "bisync failed with exit code $bisync_status" >&2
+    status=$bisync_status
 fi
 
 # The _agent/ pull is independent of bisync, so run it even when bisync failed.
@@ -77,14 +83,19 @@ fi
 # index run, and dispatch/ holds unbounded ECS job artifacts (including code
 # trees) -- neither belongs in an Obsidian vault.
 echo "==> Phase 2: pull _agent/ from S3 (remote authoritative)"
-if ! "$RCLONE" copy "$REMOTE:$BUCKET_NAME/_agent" "$VAULT_PATH/_agent" \
+pull_status=0
+"$RCLONE" copy "$REMOTE:$BUCKET_NAME/_agent" "$VAULT_PATH/_agent" \
     --use-server-modtime \
     --exclude "search/vector-index.json" \
     --exclude "dispatch/**" \
-    --verbose; then
-    pull_status=$?
+    --verbose || pull_status=$?
+
+if [ "$pull_status" -ne 0 ]; then
     echo "_agent pull failed with exit code $pull_status" >&2
-    [ "$status" -eq 0 ] && status=$pull_status
+    # Report bisync's failure first if both broke; either way exit non-zero.
+    if [ "$status" -eq 0 ]; then
+        status=$pull_status
+    fi
 fi
 
 exit "$status"
