@@ -8,6 +8,10 @@ final class SyncScheduler: SyncSchedulerProtocol {
     private let configuration: SyncConfiguration
 
     private(set) var isRunning = false
+    /// True from the moment a run starts until it records its outcome. Distinct
+    /// from `status`, which settles to `.idle`/`.error` per run and so cannot say
+    /// whether rclone is still working.
+    private(set) var isSyncInFlight = false
     private(set) var status: SyncStatus = .idle
     private(set) var recentLogs: [SyncLogEntry] = []
     private(set) var lastSyncDate: Date?
@@ -48,7 +52,19 @@ final class SyncScheduler: SyncSchedulerProtocol {
         await performSync()
     }
 
+    /// Runs one sync, unless one is already in flight.
+    ///
+    /// rclone bisync holds a lock per path pair, so a second run started while
+    /// one is working dies on that lock within a second — and on the way out it
+    /// resets `status`, wiping the live progress of the run that is doing the
+    /// real work and painting the popover red. `@MainActor` does not prevent the
+    /// overlap on its own: a scheduled tick and a manual "Sync Now" both suspend
+    /// at the `await` below, so they interleave freely.
     private func performSync() async {
+        guard !isSyncInFlight else { return }
+        isSyncInFlight = true
+        defer { isSyncInFlight = false }
+
         status = .syncing(SyncProgress())
 
         // rclone reports progress from a background thread. Funnelling snapshots
@@ -96,7 +112,11 @@ final class SyncScheduler: SyncSchedulerProtocol {
     }
 
     private func appendLog(_ entry: SyncLogEntry) {
-        recentLogs.insert(entry, at: 0)
+        // Newest first by *start* time, which is what the rows display. Ordering
+        // by completion instead would float a long run above the shorter ones
+        // that started after it.
+        recentLogs.append(entry)
+        recentLogs.sort { $0.timestamp > $1.timestamp }
         if recentLogs.count > configuration.maxLogEntries {
             recentLogs = Array(recentLogs.prefix(configuration.maxLogEntries))
         }

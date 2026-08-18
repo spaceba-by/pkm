@@ -93,6 +93,41 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertNotNil(entry.errorMessage)
     }
 
+    func testSyncReportsBisyncFailureReason() async throws {
+        mockRunner.result = .success(ProcessOutput(
+            stdout: "",
+            stderr: """
+            2026/08/17 17:52:53 INFO  : Setting --ignore-listing-checksum as neither \
+            --checksum nor --compare checksum are set.
+            2026/08/17 17:52:53 NOTICE: Failed to bisync: prior lock file found
+            """,
+            exitCode: 1
+        ))
+
+        let entry = try await sut.sync()
+
+        XCTAssertFalse(entry.success)
+        XCTAssertEqual(entry.errorMessage, "Failed to bisync: prior lock file found")
+    }
+
+    /// Falling back to the head of stderr showed rclone's opening INFO line as
+    /// the cause of every unrecognised failure.
+    func testSyncFallsBackToExitCodeRatherThanStderrHead() async throws {
+        mockRunner.result = .success(ProcessOutput(
+            stdout: "",
+            stderr: """
+            2026/08/17 17:52:53 INFO  : Setting --ignore-listing-checksum as neither \
+            --checksum nor --compare checksum are set.
+            """,
+            exitCode: 2
+        ))
+
+        let entry = try await sut.sync()
+
+        XCTAssertFalse(entry.success)
+        XCTAssertEqual(entry.errorMessage, "rclone exited with code 2")
+    }
+
     func testSyncStoresRawOutputOnFailure() async throws {
         mockRunner.result = .success(ProcessOutput(
             stdout: "Transferred: 0 / 0, -\nChecks: 5 / 5, 100%",

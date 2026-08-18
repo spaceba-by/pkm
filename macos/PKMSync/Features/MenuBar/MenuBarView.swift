@@ -58,7 +58,9 @@ struct MenuBarView: View {
                     }
                 }
                 .controlSize(.small)
-                .disabled(viewModel.status.isSyncing)
+                // Not `status.isSyncing`: a run that failed while another was
+                // still going would re-enable the button mid-sync.
+                .disabled(viewModel.isSyncInFlight)
             }
 
             if let progress = viewModel.status.progress {
