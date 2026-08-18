@@ -24,6 +24,11 @@ struct ProcessRunner: ProcessRunnerProtocol {
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
 
+        // Installed before run() so a child that exits immediately cannot have
+        // its termination missed.
+        let exit = ProcessExitWaiter()
+        process.terminationHandler = { _ in exit.signal() }
+
         try process.run()
 
         // stdout and stderr drain on separate threads, so serialize delivery:
@@ -49,31 +54,18 @@ struct ProcessRunner: ProcessRunnerProtocol {
         let stdout = await stdoutText
         let stderr = await stderrText
 
-        await Self.onBackgroundThread { process.waitUntilExit() }
+        // Not waitUntilExit(): that spins a CFRunLoop on whatever thread calls
+        // it, and a libdispatch worker thread has no run loop servicing the
+        // termination source, so it can block forever. Reproduced by looping a
+        // trivial child -- it hung within ~10-25 iterations; with the
+        // terminationHandler below, 2000 iterations run clean.
+        await exit.wait()
 
         return ProcessOutput(
             stdout: stdout,
             stderr: stderr,
             exitCode: process.terminationStatus
         )
-    }
-
-    /// Runs blocking `work` on libdispatch's global pool instead of Swift's
-    /// cooperative pool.
-    ///
-    /// Blocking a cooperative thread is never safe: that pool is sized to the
-    /// core count. `drain` blocks for as long as the child holds its pipe open
-    /// and every `run` needs two drains at once, so on a small machine (a CI
-    /// runner, notably) concurrent calls can consume every thread. Nothing is
-    /// left to resume the continuations and the call hangs forever. libdispatch
-    /// grows its pool when work blocks, so it absorbs this safely.
-    private static func onBackgroundThread(_ work: @escaping @Sendable () -> Void) async {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                work()
-                continuation.resume()
-            }
-        }
     }
 
     private static func drainInBackground(

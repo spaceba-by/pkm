@@ -27,6 +27,27 @@ final class SyncConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.maxLogEntries, 50)
     }
 
+    func testAgentPullEnabledDefaultsToTrue() {
+        XCTAssertTrue(sut.agentPullEnabled)
+
+        sut.agentPullEnabled = false
+        XCTAssertFalse(SyncConfiguration(defaults: defaults).agentPullEnabled)
+    }
+
+    func testResolvedFilterFilePathFallsBackToManagedDefault() {
+        XCTAssertEqual(sut.resolvedFilterFilePath(), BisyncFilterFile.defaultPath())
+
+        sut.filterFilePath = "/Users/test/custom-filter.txt"
+        XCTAssertEqual(sut.resolvedFilterFilePath(), "/Users/test/custom-filter.txt")
+    }
+
+    /// The _agent/ exclusion is what keeps agent output out of the bidirectional
+    /// phase; without it the one-way pull would fight bisync.
+    func testDefaultFilterContentsExcludeAgentPrefix() {
+        XCTAssertTrue(BisyncFilterFile.defaultContents.contains("- /_agent/**"))
+        XCTAssertTrue(BisyncFilterFile.defaultContents.contains("- /_agent/"))
+    }
+
     func testPersistsValues() {
         sut.vaultPath = "/Users/test/vault"
         sut.bucketName = "my-bucket"

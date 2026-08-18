@@ -3,10 +3,34 @@
   (:require [aws.dynamodb :as ddb]
             [aws.s3 :as s3]
             [api.response :as r]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.string :as str]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
+
+(defn validate-key
+  "Validate the document key for update. Mirrors the guards in
+   api_create_document and api_delete_document: _agent/ is written exclusively
+   by the processing pipeline and must not be writable through the API."
+  [key]
+  (cond
+    (str/blank? key)
+    "Document key is required"
+
+    (str/starts-with? key "_agent/")
+    "Cannot update agent-generated documents"
+
+    (str/starts-with? key "_")
+    "Document key must not start with _"
+
+    (str/starts-with? key ".")
+    "Document key must not start with ."
+
+    (re-find #"\.\." key)
+    "Document key must not contain .."
+
+    :else nil))
 
 (defn handler
   "Lambda handler for PUT /documents/{key+}"
@@ -28,13 +52,16 @@
                                (json/parse-string body true)
                                body))
               content (:content request-body)
-              if-unmodified-since (:ifUnmodifiedSince request-body)]
+              if-unmodified-since (:ifUnmodifiedSince request-body)
+              ;; validate-key treats nil/blank as invalid, so it covers the
+              ;; missing-key case too.
+              key-error (validate-key document-key)]
 
           (println "User" user-sub "updating document:" document-key)
 
           (cond
-            (nil? document-key)
-            (r/bad-request "Missing document key")
+            key-error
+            (r/bad-request key-error)
 
             (nil? content)
             (r/bad-request "Missing content in request body")

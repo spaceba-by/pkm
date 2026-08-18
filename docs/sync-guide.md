@@ -14,15 +14,44 @@ cd scripts
 
 ## How Sync Works
 
-The PKM Agent System uses **rclone bisync** for bidirectional synchronization:
+Sync runs in **two phases**, because the vault holds two kinds of content with
+different ownership:
 
 ```mermaid
-graph TD
-    Vault[Local Vault] <-->|rclone bisync| S3[S3 Bucket]
-    S3 --> EventBridge
-    EventBridge --> Lambda[Lambda Processing]
-    Lambda -->|_agent/ outputs| S3
+graph LR
+    subgraph Local["Local vault"]
+        N["notes/ daily/ projects/"]
+        A["_agent/ (read-only)"]
+    end
+    subgraph S3["S3 bucket"]
+        SN["notes"]
+        SA["_agent/"]
+    end
+    N <-->|"1. bisync (--filters-file<br/>excludes _agent/)"| SN
+    SA -->|"2. copy, one-way pull"| A
+    SN --> EB[EventBridge] --> L[Lambda] --> SA
 ```
+
+**Phase 1 — notes.** `rclone bisync`, bidirectional, with `_agent/` and
+Obsidian working state filtered out via `sync/pkm-bisync-filter.txt`.
+
+**Phase 2 — `_agent/`.** `rclone copy` from S3 to local only. S3 is
+unconditionally authoritative: a local edit under `_agent/` is overwritten on
+the next pull and is never pushed back.
+
+Both phases run from `sync/pkm-sync.sh` (or from the PKMSync menu bar app).
+
+### Why split them
+
+- Agent output can never be clobbered by a local edit, and can never produce a
+  `.conflict` file.
+- Lambda writes to `_agent/` constantly (every document PUT triggers entity
+  extraction). Keeping that prefix out of bisync means those writes cannot
+  land mid-run and destabilise bisync's listing state.
+- The one-way pull is cheaper than bisync: no listing snapshots, no lock, no
+  `check-sync`, and `--use-server-modtime` avoids a HEAD request per object.
+- `_agent/entities/` grows one file per unique entity, so this is the part of
+  the vault that scales badly under bisync.
 
 ### Sync Frequency
 - **macOS/Linux:** Every 5 minutes (automatic)
@@ -33,6 +62,19 @@ graph TD
 - **Strategy:** Newer file wins
 - **Conflict handling:** Older file renamed to `filename.conflict`
 - **Location:** Conflicts appear in both local and S3
+- **Scope:** Notes only — `_agent/` cannot conflict
+
+### Filters
+
+The filters file lives at `~/.config/rclone/pkm-bisync-filter.txt` (installed
+by `setup-sync.sh` from `sync/pkm-bisync-filter.txt`).
+
+> **Always pass it with `--filters-file`, never `--filter-from`.** Only
+> `--filters-file` makes bisync MD5-hash the rules and abort demanding a
+> `--resync` when they change. Without that guard, files you newly exclude look
+> *deleted* to bisync — and bisync deletes them for real, on both sides.
+
+After editing the filters file, run a `--resync` before the next scheduled sync.
 
 ## Platform-Specific Setup
 
@@ -136,7 +178,11 @@ Uses **Task Scheduler**:
 1. Create batch file `pkm-sync.bat`:
    ```batch
    @echo off
-   rclone bisync C:\path\to\vault pkm-s3:BUCKET_NAME --conflict-resolve newer --conflict-loser rename
+   rclone bisync C:\path\to\vault pkm-s3:BUCKET_NAME ^
+     --filters-file %USERPROFILE%\.config\rclone\pkm-bisync-filter.txt ^
+     --conflict-resolve newer --conflict-loser rename
+   rclone copy pkm-s3:BUCKET_NAME/_agent C:\path\to\vault\_agent ^
+     --use-server-modtime --exclude "search/vector-index.json" --exclude "dispatch/**"
    ```
 
 2. Create scheduled task:
@@ -151,34 +197,45 @@ Uses **Task Scheduler**:
 
 ```bash
 # Initialize bisync (required before first sync)
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --resync
+rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
+  --resync
 ```
 
 ### Regular Sync
 
+The wrapper runs both phases and reports a non-zero exit if either fails:
+
 ```bash
-# Bidirectional sync
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
-  --conflict-resolve newer \
-  --conflict-loser rename \
-  --verbose
+PKM_VAULT_PATH=/path/to/vault PKM_BUCKET_NAME=BUCKET_NAME ~/.local/bin/pkm-sync.sh
 ```
 
-### One-Way Sync
+Or run the phases directly:
 
 ```bash
-# Local → S3 only
-rclone sync /path/to/vault pkm-s3:BUCKET_NAME --verbose
+# Phase 1: notes, bidirectional
+rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
+  --conflict-resolve newer \
+  --conflict-loser rename \
+  --recover --resilient --max-lock 2m \
+  --verbose
 
-# S3 → Local only (be careful!)
-rclone sync pkm-s3:BUCKET_NAME /path/to/vault --verbose
+# Phase 2: _agent/, one-way pull (remote authoritative)
+rclone copy pkm-s3:BUCKET_NAME/_agent /path/to/vault/_agent \
+  --use-server-modtime \
+  --exclude "search/vector-index.json" \
+  --exclude "dispatch/**" \
+  --verbose
 ```
 
 ### Dry Run (Test)
 
 ```bash
 # See what would change without making changes
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --dry-run --verbose
+rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
+  --dry-run --verbose
 ```
 
 ## Troubleshooting
@@ -190,7 +247,8 @@ rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --dry-run --verbose
 **Solution:**
 ```bash
 # Resync (this will resolve conflicts by using newer files)
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --resync
+rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt --resync
 ```
 
 ### Error: "Access Denied" when syncing
@@ -227,14 +285,15 @@ rclone version
 **Cause:** Large number of files or slow network
 
 **Solutions:**
-1. Use `--fast-list` flag (caches directory listings)
-2. Exclude unnecessary files:
-   ```bash
-   rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
-     --exclude ".obsidian/**" \
-     --exclude "*.tmp"
-   ```
-3. Reduce sync frequency (edit launchd/systemd interval)
+1. Add exclusions to `~/.config/rclone/pkm-bisync-filter.txt`, then run a
+   `--resync` (bisync will otherwise abort — that is the filter-change guard).
+2. Reduce sync frequency (edit launchd/systemd interval, or PKMSync settings).
+3. Once `_agent/` dominates the object count, consider adding `--disable ListR`
+   to the bisync phase. bisync uses `--fast-list` by default on S3, and rclone
+   only prunes excluded *directories* when **not** using fast-list — so today
+   `_agent/` keys are still enumerated by `ListObjectsV2` even though they are
+   filtered out of the comparison. Measure before changing this: with a small
+   note tree, fast-list is one LIST call and wins.
 
 ### Conflicts Keep Appearing
 
@@ -266,19 +325,30 @@ rclone version
 
 ### Agent Outputs Not Syncing Back
 
-**Cause:** `_agent/` directory excluded or permission issues
+`_agent/` is pulled by phase 2, not by bisync, so a bisync `--resync` will not
+fix this. Check the pull directly:
 
-**Check:**
 ```bash
-# Ensure _agent directory exists locally
-ls /path/to/vault/_agent
-
 # Verify S3 contents
 aws s3 ls s3://BUCKET_NAME/_agent/ --recursive
 
-# Force sync
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --resync
+# Run the pull on its own
+rclone copy pkm-s3:BUCKET_NAME/_agent /path/to/vault/_agent \
+  --use-server-modtime --verbose
+
+# Confirm it landed
+ls /path/to/vault/_agent
 ```
+
+Note that `_agent/search/vector-index.json` and `_agent/dispatch/**` are
+excluded on purpose — they are machine artifacts, not notes.
+
+### Local Edits Under `_agent/` Disappear
+
+Working as designed. S3 is authoritative for `_agent/`; the pull overwrites
+local changes and never pushes them. Agent output is also ignored by
+EventBridge and the processing Lambdas, so editing it has no effect anyway.
+Copy the content into a real note instead.
 
 ## Monitoring Sync
 
@@ -305,7 +375,8 @@ tail -f ~/.pkm-sync.log
 journalctl --user -u pkm-sync.service -f
 
 # rclone verbose output
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME --verbose --dry-run
+rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt --verbose --dry-run
 ```
 
 ### Sync Statistics
@@ -336,19 +407,19 @@ aws s3 ls s3://BUCKET_NAME --recursive --human-readable --summarize
 
 ### Custom Filters
 
-Exclude specific directories:
-```bash
-rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
-  --exclude ".obsidian/**" \
-  --exclude ".trash/**" \
-  --exclude "*.tmp"
-```
+Edit `~/.config/rclone/pkm-bisync-filter.txt` and add rules, then run a
+`--resync`. Do not replace `--filters-file` with `--exclude`/`--filter-from`:
+those bypass bisync's filter-change guard and can delete newly excluded files
+on both sides.
+
+Keep the `_agent/` rules — phase 2 owns that prefix.
 
 ### Bandwidth Limiting
 
 Useful on metered connections:
 ```bash
 rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
   --bwlimit 1M  # Limit to 1 MB/s
 ```
 
@@ -357,6 +428,7 @@ rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
 Enable compression for faster transfers:
 ```bash
 rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
+  --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
   --s3-upload-cutoff 0 \
   --s3-chunk-size 5M
 ```

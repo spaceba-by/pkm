@@ -5,23 +5,38 @@ final class SyncServiceTests: XCTestCase {
     private var mockRunner: MockProcessRunner!
     private var configuration: SyncConfiguration!
     private var defaults: UserDefaults!
+    private var tempDirectory: URL!
     private var sut: SyncService!
 
-    override func setUp() {
-        super.setUp()
+    /// Arguments for the bisync phase (always the first rclone invocation).
+    private var bisyncArguments: [String] {
+        mockRunner.allArguments[0]
+    }
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         mockRunner = MockProcessRunner()
         defaults = UserDefaults(suiteName: "SyncServiceTests")!
         defaults.removePersistentDomain(forName: "SyncServiceTests")
+
+        // Point the managed filters file at a temp dir so the service does not
+        // create one in the real Application Support directory.
+        tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SyncServiceTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+
         configuration = SyncConfiguration(defaults: defaults)
         configuration.vaultPath = "/Users/test/vault"
         configuration.bucketName = "test-bucket"
         configuration.rclonePath = "/usr/bin/true"
+        configuration.filterFilePath = tempDirectory.appendingPathComponent("filter.txt").path
         sut = SyncService(configuration: configuration, processRunner: mockRunner)
     }
 
-    override func tearDown() {
+    override func tearDownWithError() throws {
         defaults.removePersistentDomain(forName: "SyncServiceTests")
-        super.tearDown()
+        try? FileManager.default.removeItem(at: tempDirectory)
+        try super.tearDownWithError()
     }
 
     func testSyncBuildsCorrectArguments() async throws {
@@ -33,26 +48,91 @@ final class SyncServiceTests: XCTestCase {
 
         _ = try await sut.sync()
 
-        XCTAssertEqual(mockRunner.lastArguments[0], "bisync")
-        XCTAssertEqual(mockRunner.lastArguments[1], "/Users/test/vault")
-        XCTAssertEqual(mockRunner.lastArguments[2], "pkm-s3:test-bucket")
-        XCTAssertTrue(mockRunner.lastArguments.contains("--conflict-resolve"))
-        XCTAssertTrue(mockRunner.lastArguments.contains("--recover"))
-        XCTAssertTrue(mockRunner.lastArguments.contains("--resilient"))
-        XCTAssertTrue(mockRunner.lastArguments.contains("--max-lock"))
-        XCTAssertTrue(mockRunner.lastArguments.contains("--verbose"))
+        XCTAssertEqual(bisyncArguments[0], "bisync")
+        XCTAssertEqual(bisyncArguments[1], "/Users/test/vault")
+        XCTAssertEqual(bisyncArguments[2], "pkm-s3:test-bucket")
+        XCTAssertTrue(bisyncArguments.contains("--conflict-resolve"))
+        XCTAssertTrue(bisyncArguments.contains("--conflict-loser"))
+        XCTAssertTrue(bisyncArguments.contains("--recover"))
+        XCTAssertTrue(bisyncArguments.contains("--resilient"))
+        XCTAssertTrue(bisyncArguments.contains("--max-lock"))
+        XCTAssertTrue(bisyncArguments.contains("--verbose"))
     }
 
-    func testSyncWithFilterFile() async throws {
-        configuration.filterFilePath = "/Users/test/.config/rclone/filterlist.txt"
-        sut = SyncService(configuration: configuration, processRunner: mockRunner)
-
+    /// bisync only enforces its filter-change guard (MD5 of the filters file,
+    /// abort demanding --resync) for --filters-file. With --filter-from, newly
+    /// excluded files look deleted and get deleted for real on both sides.
+    func testSyncUsesFiltersFileNotFilterFrom() async throws {
         mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
 
         _ = try await sut.sync()
 
-        XCTAssertTrue(mockRunner.lastArguments.contains("--filter-from"))
-        XCTAssertTrue(mockRunner.lastArguments.contains("/Users/test/.config/rclone/filterlist.txt"))
+        XCTAssertTrue(bisyncArguments.contains("--filters-file"))
+        XCTAssertFalse(bisyncArguments.contains("--filter-from"))
+        XCTAssertTrue(bisyncArguments.contains(configuration.filterFilePath))
+    }
+
+    func testSyncCreatesManagedFilterFileExcludingAgent() async throws {
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        let contents = try String(contentsOfFile: configuration.filterFilePath, encoding: .utf8)
+        XCTAssertTrue(contents.contains("- /_agent/**"))
+    }
+
+    func testSyncDoesNotOverwriteExistingFilterFile() async throws {
+        let custom = "- /custom/**\n"
+        try custom.write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        let contents = try String(contentsOfFile: configuration.filterFilePath, encoding: .utf8)
+        XCTAssertEqual(contents, custom)
+    }
+
+    func testSyncPullsAgentPrefixOneWay() async throws {
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        XCTAssertEqual(mockRunner.runCallCount, 2)
+        let pull = mockRunner.allArguments[1]
+        XCTAssertEqual(pull[0], "copy")
+        XCTAssertEqual(pull[1], "pkm-s3:test-bucket/_agent")
+        XCTAssertEqual(pull[2], "/Users/test/vault/_agent")
+        XCTAssertTrue(pull.contains("--use-server-modtime"))
+        XCTAssertTrue(pull.contains("search/vector-index.json"))
+        XCTAssertTrue(pull.contains("dispatch/**"))
+        // The pull must never push: bisync is the only bidirectional phase.
+        XCTAssertFalse(pull.contains("bisync"))
+        XCTAssertFalse(pull.contains("sync"))
+    }
+
+    func testAgentPullCanBeDisabled() async throws {
+        configuration.agentPullEnabled = false
+        sut = SyncService(configuration: configuration, processRunner: mockRunner)
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        XCTAssertEqual(mockRunner.runCallCount, 1)
+    }
+
+    func testFailedAgentPullFailsTheSync() async throws {
+        mockRunner.results = [
+            .success(ProcessOutput(stdout: "Transferred:  2 / 2, 100%", stderr: "", exitCode: 0)),
+            .success(ProcessOutput(stdout: "", stderr: "ERROR : directory not found", exitCode: 3)),
+        ]
+
+        let entry = try await sut.sync()
+
+        XCTAssertFalse(entry.success)
+        let message = try XCTUnwrap(entry.errorMessage)
+        XCTAssertTrue(message.contains("_agent pull"))
+        // bisync's work is still reported even though the pull failed.
+        XCTAssertEqual(entry.filesTransferred, 2)
     }
 
     func testResyncUsesResyncFlag() async throws {
@@ -60,23 +140,30 @@ final class SyncServiceTests: XCTestCase {
 
         _ = try await sut.resync()
 
-        XCTAssertTrue(mockRunner.lastArguments.contains("--resync"))
-        XCTAssertFalse(mockRunner.lastArguments.contains("--recover"))
-        XCTAssertFalse(mockRunner.lastArguments.contains("--resilient"))
+        XCTAssertTrue(bisyncArguments.contains("--resync"))
+        XCTAssertFalse(bisyncArguments.contains("--recover"))
+        XCTAssertFalse(bisyncArguments.contains("--resilient"))
     }
 
-    func testSyncReturnsSuccessEntry() async throws {
-        mockRunner.result = .success(ProcessOutput(
-            stdout: "Transferred:            3 / 3, 100%\nChecks:                10 / 10, 100%",
-            stderr: "",
-            exitCode: 0
-        ))
+    func testSyncSumsCountsAcrossPhases() async throws {
+        mockRunner.results = [
+            .success(ProcessOutput(
+                stdout: "Transferred:            3 / 3, 100%\nChecks:                10 / 10, 100%",
+                stderr: "",
+                exitCode: 0
+            )),
+            .success(ProcessOutput(
+                stdout: "Transferred:            2 / 2, 100%\nChecks:                 4 / 4, 100%",
+                stderr: "",
+                exitCode: 0
+            )),
+        ]
 
         let entry = try await sut.sync()
 
         XCTAssertTrue(entry.success)
-        XCTAssertEqual(entry.filesTransferred, 3)
-        XCTAssertEqual(entry.filesChecked, 10)
+        XCTAssertEqual(entry.filesTransferred, 5)
+        XCTAssertEqual(entry.filesChecked, 14)
         XCTAssertNil(entry.errorMessage)
     }
 
@@ -107,7 +194,7 @@ final class SyncServiceTests: XCTestCase {
         let entry = try await sut.sync()
 
         XCTAssertFalse(entry.success)
-        XCTAssertEqual(entry.errorMessage, "Failed to bisync: prior lock file found")
+        XCTAssertEqual(entry.errorMessage, "bisync: Failed to bisync: prior lock file found")
     }
 
     /// Falling back to the head of stderr showed rclone's opening INFO line as
@@ -125,7 +212,7 @@ final class SyncServiceTests: XCTestCase {
         let entry = try await sut.sync()
 
         XCTAssertFalse(entry.success)
-        XCTAssertEqual(entry.errorMessage, "rclone exited with code 2")
+        XCTAssertEqual(entry.errorMessage, "bisync: rclone exited with code 2")
     }
 
     func testSyncStoresRawOutputOnFailure() async throws {
@@ -176,22 +263,25 @@ final class SyncServiceTests: XCTestCase {
         let entry = try await sut.sync()
 
         XCTAssertTrue(entry.success)
-        XCTAssertEqual(mockRunner.runCallCount, 2)
+        // bisync, retried bisync, then the _agent pull.
+        XCTAssertEqual(mockRunner.runCallCount, 3)
         XCTAssertFalse(mockRunner.allArguments[0].contains("--resync"))
         XCTAssertTrue(mockRunner.allArguments[1].contains("--resync"))
+        XCTAssertEqual(mockRunner.allArguments[2][0], "copy")
     }
 
     func testSyncDoesNotRetryOnOtherErrors() async throws {
-        mockRunner.result = .success(ProcessOutput(
-            stdout: "",
-            stderr: "ERROR : bisync aborted",
-            exitCode: 1
-        ))
+        mockRunner.results = [
+            .success(ProcessOutput(stdout: "", stderr: "ERROR : bisync aborted", exitCode: 1)),
+            .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0)),
+        ]
 
         let entry = try await sut.sync()
 
         XCTAssertFalse(entry.success)
-        XCTAssertEqual(mockRunner.runCallCount, 1)
+        // One bisync attempt (no retry) plus the _agent pull.
+        XCTAssertEqual(mockRunner.runCallCount, 2)
+        XCTAssertFalse(mockRunner.allArguments[0].contains("--resync"))
     }
 
     func testThrowsWhenNotConfigured() async {
@@ -210,7 +300,7 @@ final class SyncServiceTests: XCTestCase {
     func testSyncRequestsPeriodicStatsAndDisablesColour() async throws {
         _ = try await sut.sync()
 
-        let args = mockRunner.lastArguments
+        let args = bisyncArguments
         let statsIndex = try XCTUnwrap(args.firstIndex(of: "--stats"))
         XCTAssertEqual(args[statsIndex + 1], "1s")
 
@@ -265,7 +355,8 @@ final class SyncServiceTests: XCTestCase {
 
         _ = try await sut.sync { collected.append($0) }
 
-        XCTAssertEqual(mockRunner.runCallCount, 2)
+        // bisync, retried bisync, then the _agent pull.
+        XCTAssertEqual(mockRunner.runCallCount, 3)
         XCTAssertEqual(
             collected.updates.last?.phase,
             .buildingListings,

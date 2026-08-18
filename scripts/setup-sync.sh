@@ -131,7 +131,31 @@ fi
 
 echo ""
 echo "======================================"
-echo "Step 3: Initialize bisync"
+echo "Step 3: Install filters file and sync script"
+echo "======================================"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FILTER_FILE="$RCLONE_CONFIG_DIR/pkm-bisync-filter.txt"
+SYNC_SCRIPT="$HOME/.local/bin/pkm-sync.sh"
+
+# The filters file keeps _agent/ out of bisync so agent output stays
+# authoritative on the remote. It must be passed with --filters-file (not
+# --filter-from) so bisync's filter-change guard applies.
+if [ -f "$FILTER_FILE" ]; then
+    echo "Filters file already exists at $FILTER_FILE (leaving it alone)"
+else
+    cp "$SCRIPT_DIR/../sync/pkm-bisync-filter.txt" "$FILTER_FILE"
+    echo "✓ Installed filters file at $FILTER_FILE"
+fi
+
+mkdir -p "$HOME/.local/bin"
+cp "$SCRIPT_DIR/../sync/pkm-sync.sh" "$SYNC_SCRIPT"
+chmod +x "$SYNC_SCRIPT"
+echo "✓ Installed sync script at $SYNC_SCRIPT"
+
+echo ""
+echo "======================================"
+echo "Step 4: Initialize bisync"
 echo "======================================"
 echo "This will perform the first sync between local and S3."
 echo "Continue? (yes/no)"
@@ -139,16 +163,23 @@ read -r INIT_SYNC
 
 if [ "$INIT_SYNC" = "yes" ]; then
     echo "Running initial bisync..."
-    rclone bisync "$VAULT_PATH" "pkm-s3:$S3_BUCKET_NAME" --resync --verbose
+    rclone bisync "$VAULT_PATH" "pkm-s3:$S3_BUCKET_NAME" \
+        --filters-file "$FILTER_FILE" --resync --verbose
+    echo "Pulling _agent/ from S3..."
+    rclone copy "pkm-s3:$S3_BUCKET_NAME/_agent" "$VAULT_PATH/_agent" \
+        --use-server-modtime \
+        --exclude "search/vector-index.json" \
+        --exclude "dispatch/**" \
+        --verbose
     echo "✓ Initial sync complete"
 else
     echo "Skipped initial sync. You'll need to run this manually:"
-    echo "  rclone bisync $VAULT_PATH pkm-s3:$S3_BUCKET_NAME --resync"
+    echo "  rclone bisync $VAULT_PATH pkm-s3:$S3_BUCKET_NAME --filters-file $FILTER_FILE --resync"
 fi
 
 echo ""
 echo "======================================"
-echo "Step 4: Set up automatic sync"
+echo "Step 5: Set up automatic sync"
 echo "======================================"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -166,14 +197,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     <string>com.pkm.sync</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/rclone</string>
-        <string>bisync</string>
-        <string>$VAULT_PATH</string>
-        <string>pkm-s3:$S3_BUCKET_NAME</string>
-        <string>--conflict-resolve</string>
-        <string>newer</string>
-        <string>--conflict-loser</string>
-        <string>rename</string>
+        <string>$SYNC_SCRIPT</string>
     </array>
     <key>StartInterval</key>
     <integer>300</integer>
@@ -183,6 +207,17 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     <string>$HOME/.pkm-sync.log</string>
     <key>StandardErrorPath</key>
     <string>$HOME/.pkm-sync-error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PKM_VAULT_PATH</key>
+        <string>$VAULT_PATH</string>
+        <key>PKM_BUCKET_NAME</key>
+        <string>$S3_BUCKET_NAME</string>
+        <key>PKM_FILTER_FILE</key>
+        <string>$FILTER_FILE</string>
+    </dict>
 </dict>
 </plist>
 EOF
@@ -214,7 +249,10 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/rclone bisync $VAULT_PATH pkm-s3:$S3_BUCKET_NAME --conflict-resolve newer --conflict-loser rename
+Environment=PKM_VAULT_PATH=$VAULT_PATH
+Environment=PKM_BUCKET_NAME=$S3_BUCKET_NAME
+Environment=PKM_FILTER_FILE=$FILTER_FILE
+ExecStart=$SYNC_SCRIPT
 
 [Install]
 WantedBy=default.target
@@ -244,7 +282,7 @@ EOF
 else
     echo "Automatic sync setup not available for this OS."
     echo "Manual sync command:"
-    echo "  rclone bisync $VAULT_PATH pkm-s3:$S3_BUCKET_NAME --conflict-resolve newer --conflict-loser rename"
+    echo "  PKM_VAULT_PATH=$VAULT_PATH PKM_BUCKET_NAME=$S3_BUCKET_NAME $SYNC_SCRIPT"
 fi
 
 echo ""

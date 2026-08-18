@@ -1,0 +1,30 @@
+# rclone bisync filters for the PKM vault.
+#
+# Pass with --filters-file (NOT --filter-from). bisync MD5-hashes this file and
+# aborts demanding a --resync when it changes, which is what stops newly
+# excluded files from looking "deleted" and getting deleted for real.
+#
+# Rules are evaluated top to bottom; the first match wins. A leading "/"
+# anchors the pattern to the vault root.
+
+# --- Agent output: pulled one-way from S3, never pushed back ---------------
+# _agent/ is written exclusively by Lambda and the ECS dispatch sandbox.
+# Keeping it out of bisync makes the remote unconditionally authoritative and
+# removes any chance of a local edit clobbering agent output.
+- /_agent/
+- /_agent/**
+
+# --- Obsidian working state ------------------------------------------------
+# workspace.json is rewritten on nearly every UI interaction and is per-device
+# by nature, so syncing it produces constant conflicts and no benefit.
+# Plugins and appearance settings are still synced.
+- /.obsidian/workspace*.json
+- /.obsidian/**/cache*
+- /.obsidian/**/*.log
+
+# --- Local scratch ---------------------------------------------------------
+- /.trash/**
+- .DS_Store
+- *.tmp
+- *.swp
+- .sync_conflict*
