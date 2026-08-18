@@ -182,15 +182,27 @@ jobs:
         if: steps.check-secrets.outputs.has_signing == 'true' && steps.check-notary.outputs.has_notary == 'true'
         working-directory: macos
         run: |
-          # Create API key file for notarytool
+          # Create API key file for notarytool. ASC_KEY holds the base64 of the
+          # .p8 (that is what fastlane's is_key_content_base64 expects in
+          # ios-build.yml), so it has to be decoded before notarytool sees it --
+          # handing it the raw base64 fails with "Error: invalidPEMDocument".
+          KEY_PATH=~/.private_keys/AuthKey_${ASC_KEY_ID}.p8
           mkdir -p ~/.private_keys
-          echo "$ASC_KEY" > ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8
+          echo "$ASC_KEY" | base64 --decode > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+
+          # Fail here with an actionable message rather than inside notarytool,
+          # which only reports that the document was not PEM.
+          if ! grep -q "BEGIN PRIVATE KEY" "$KEY_PATH"; then
+            echo "::error::ASC_KEY did not decode to a PEM private key. Store it as the base64 of the .p8 file: base64 -i AuthKey_XXXXXXXXXX.p8"
+            exit 1
+          fi
 
           # Create zip for notarization
           ditto -c -k --keepParent build/export/PKMSync.app build/PKMSync-notarize.zip
 
           xcrun notarytool submit build/PKMSync-notarize.zip \
-            --key ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8 \
+            --key "$KEY_PATH" \
             --key-id "$ASC_KEY_ID" \
             --issuer "$ASC_ISSUER_ID" \
             --wait
