@@ -6,6 +6,7 @@ on:
     paths:
       - 'ios/**'
       - '.github/workflows/ios-*.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ios-build-${{ github.ref }}
