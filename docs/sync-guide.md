@@ -60,7 +60,7 @@ Both phases run from `sync/pkm-sync.sh` (or from the PKMSync menu bar app).
 
 ### Conflict Resolution
 - **Strategy:** Newer file wins
-- **Conflict handling:** Older file renamed to `filename.conflict`
+- **Conflict handling:** Older file renamed to `filename.conflict1` (`--conflict-loser num`)
 - **Location:** Conflicts appear in both local and S3
 - **Scope:** Notes only — `_agent/` cannot conflict
 
@@ -180,7 +180,7 @@ Uses **Task Scheduler**:
    @echo off
    rclone bisync C:\path\to\vault pkm-s3:BUCKET_NAME ^
      --filters-file %USERPROFILE%\.config\rclone\pkm-bisync-filter.txt ^
-     --conflict-resolve newer --conflict-loser rename
+     --conflict-resolve newer --conflict-loser num
    rclone copy pkm-s3:BUCKET_NAME/_agent C:\path\to\vault\_agent ^
      --use-server-modtime --exclude "search/vector-index.json" --exclude "dispatch/**"
    ```
@@ -217,7 +217,7 @@ Or run the phases directly:
 rclone bisync /path/to/vault pkm-s3:BUCKET_NAME \
   --filters-file ~/.config/rclone/pkm-bisync-filter.txt \
   --conflict-resolve newer \
-  --conflict-loser rename \
+  --conflict-loser num \
   --recover --resilient --max-lock 2m \
   --verbose
 

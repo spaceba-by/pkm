@@ -52,11 +52,21 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertEqual(bisyncArguments[1], "/Users/test/vault")
         XCTAssertEqual(bisyncArguments[2], "pkm-s3:test-bucket")
         XCTAssertTrue(bisyncArguments.contains("--conflict-resolve"))
-        XCTAssertTrue(bisyncArguments.contains("--conflict-loser"))
         XCTAssertTrue(bisyncArguments.contains("--recover"))
         XCTAssertTrue(bisyncArguments.contains("--resilient"))
         XCTAssertTrue(bisyncArguments.contains("--max-lock"))
         XCTAssertTrue(bisyncArguments.contains("--verbose"))
+    }
+
+    /// rclone rejects unknown --conflict-loser values and aborts the whole
+    /// bisync, so pin the value to one it accepts (num, pathname, delete).
+    func testSyncUsesValidConflictLoserAction() async throws {
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        let index = try XCTUnwrap(bisyncArguments.firstIndex(of: "--conflict-loser"))
+        XCTAssertEqual(bisyncArguments[index + 1], "num")
     }
 
     /// bisync only enforces its filter-change guard (MD5 of the filters file,

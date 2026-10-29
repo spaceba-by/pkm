@@ -144,7 +144,7 @@ tags: [index, agent-generated]
 **FR5.1: rclone Setup**
 - Provide rclone config template for S3 remote
 - Provide launchd plist for macOS scheduled sync (every 5 minutes)
-- Conflict resolution: `--conflict-resolve newer --conflict-loser rename`
+- Conflict resolution: `--conflict-resolve newer --conflict-loser num`
 - Support for manual sync command: `pkm-sync` alias
 
 **FR5.2: iOS Sync Guidance**
@@ -651,7 +651,7 @@ acl = private
         <string>--conflict-resolve</string>
         <string>newer</string>
         <string>--conflict-loser</string>
-        <string>rename</string>
+        <string>num</string>
     </array>
     <key>StartInterval</key>
     <integer>300</integer>
