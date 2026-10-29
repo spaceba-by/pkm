@@ -186,7 +186,7 @@ struct SyncService: SyncServiceProtocol {
             configuration.vaultPath,
             "pkm-s3:\(configuration.bucketName)",
             "--conflict-resolve", "newer",
-            "--conflict-loser", "rename",
+            "--conflict-loser", "num",
             // --filters-file, not --filter-from: only the former MD5-hashes the
             // file and aborts demanding a --resync when it changes. Without that
             // guard, newly excluded files look deleted to bisync and get deleted
