@@ -76,6 +76,11 @@ by `setup-sync.sh` from `sync/pkm-bisync-filter.txt`).
 
 After editing the filters file, run a `--resync` before the next scheduled sync.
 
+PKMSync (the macOS app) enforces the `_agent/` exclusion on whatever filters
+file it is pointed at: if `- /_agent/**` is missing, or comes after a `+` rule,
+it prepends the exclusion and runs that sync as a `--resync`. It also retries
+with `--resync` when bisync reports `filters file has changed`.
+
 ## Platform-Specific Setup
 
 ### macOS

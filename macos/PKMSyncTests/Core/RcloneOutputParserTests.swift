@@ -135,6 +135,15 @@ final class RcloneOutputParserTests: XCTestCase {
         XCTAssertTrue(result.needsResync)
     }
 
+    func testNeedsResyncDetectedOnFiltersFileChange() {
+        // Verbatim from rclone v1.75 after the filters file is edited.
+        // swiftlint:disable:next line_length
+        let stderr = "2026/11/03 11:29:11 ERROR : Bisync critical error: filters file has changed (must run --resync): /Users/test/filter.txt"
+        let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)
+
+        XCTAssertTrue(result.needsResync)
+    }
+
     func testNeedsResyncFalseForOtherErrors() {
         let stderr = "ERROR : bisync aborted"
         let result = RcloneOutputParser.parse(stdout: "", stderr: stderr)

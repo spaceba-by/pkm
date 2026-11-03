@@ -91,8 +91,8 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertTrue(contents.contains("- /_agent/**"))
     }
 
-    func testSyncDoesNotOverwriteExistingFilterFile() async throws {
-        let custom = "- /custom/**\n"
+    func testSyncDoesNotOverwriteExistingFilterFileThatExcludesAgent() async throws {
+        let custom = "- /custom/**\n- /_agent/**\n+ **\n"
         try custom.write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
         mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
 
@@ -100,6 +100,55 @@ final class SyncServiceTests: XCTestCase {
 
         let contents = try String(contentsOfFile: configuration.filterFilePath, encoding: .utf8)
         XCTAssertEqual(contents, custom)
+        XCTAssertFalse(bisyncArguments.contains("--resync"))
+    }
+
+    /// A user-supplied filters file without the `_agent/` exclusion let bisync
+    /// manage agent output, producing `.conflict` files under `_agent/`.
+    func testSyncAddsAgentExclusionToCustomFilterFileAndResyncs() async throws {
+        let custom = "- .DS_Store\n+ **\n"
+        try custom.write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        let contents = try String(contentsOfFile: configuration.filterFilePath, encoding: .utf8)
+        XCTAssertTrue(contents.hasPrefix(BisyncFilterFile.agentExclusionBlock))
+        XCTAssertTrue(contents.hasSuffix(custom))
+        XCTAssertTrue(bisyncArguments.contains("--resync"))
+    }
+
+    func testSyncDoesNotResyncTwiceAfterAddingAgentExclusion() async throws {
+        try "+ **\n".write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+        _ = try await sut.sync()
+
+        // bisync + pull, then bisync + pull.
+        XCTAssertEqual(mockRunner.runCallCount, 4)
+        XCTAssertTrue(mockRunner.allArguments[0].contains("--resync"))
+        XCTAssertFalse(mockRunner.allArguments[2].contains("--resync"))
+    }
+
+    func testSyncAutoRetriesWithResyncOnFiltersFileChange() async throws {
+        mockRunner.results = [
+            .success(ProcessOutput(
+                stdout: "",
+                // swiftlint:disable:next line_length
+                stderr: "2026/11/03 11:29:11 ERROR : Bisync critical error: filters file has changed (must run --resync): /Users/test/filter.txt",
+                exitCode: 7
+            )),
+            .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0)),
+            .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0)),
+        ]
+
+        let entry = try await sut.sync()
+
+        XCTAssertTrue(entry.success)
+        XCTAssertEqual(mockRunner.runCallCount, 3)
+        XCTAssertFalse(mockRunner.allArguments[0].contains("--resync"))
+        XCTAssertTrue(mockRunner.allArguments[1].contains("--resync"))
     }
 
     func testSyncPullsAgentPrefixOneWay() async throws {
