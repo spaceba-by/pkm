@@ -55,7 +55,7 @@ enum RcloneOutputParser {
                 errorMessages.append(failure)
             }
 
-            if trimmed.contains("cannot find prior Path1 or Path2 listings") {
+            if resyncTriggers.contains(where: trimmed.contains) {
                 needsResync = true
             }
         }
@@ -69,6 +69,13 @@ enum RcloneOutputParser {
             needsResync: needsResync
         )
     }
+
+    /// bisync failures that only a `--resync` can clear: lost listings after an
+    /// interrupted run, and a filters file whose MD5 no longer matches.
+    private static let resyncTriggers = [
+        "cannot find prior Path1 or Path2 listings",
+        "filters file has changed (must run --resync)",
+    ]
 
     // MARK: - Failures
 

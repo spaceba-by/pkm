@@ -46,6 +46,15 @@ final class SyncConfigurationTests: XCTestCase {
     func testDefaultFilterContentsExcludeAgentPrefix() {
         XCTAssertTrue(BisyncFilterFile.defaultContents.contains("- /_agent/**"))
         XCTAssertTrue(BisyncFilterFile.defaultContents.contains("- /_agent/"))
+        XCTAssertTrue(BisyncFilterFile.excludesAgent(BisyncFilterFile.defaultContents))
+    }
+
+    func testExcludesAgentRequiresRuleBeforeAnyInclude() {
+        // rclone applies the first matching rule, so `+ **` first wins.
+        XCTAssertFalse(BisyncFilterFile.excludesAgent("+ **\n- /_agent/**\n"))
+        XCTAssertFalse(BisyncFilterFile.excludesAgent("- .DS_Store\n+ **\n"))
+        XCTAssertFalse(BisyncFilterFile.excludesAgent("# - /_agent/**\n"))
+        XCTAssertTrue(BisyncFilterFile.excludesAgent("- .DS_Store\n  - /_agent/**\n+ **\n"))
     }
 
     func testPersistsValues() {

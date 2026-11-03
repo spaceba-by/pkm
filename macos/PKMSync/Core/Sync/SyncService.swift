@@ -57,18 +57,21 @@ struct SyncService: SyncServiceProtocol {
         }
 
         let filterFilePath = configuration.resolvedFilterFilePath()
-        try BisyncFilterFile.ensureExists(at: filterFilePath)
+        // Adding the _agent/ exclusion to an existing filters file trips
+        // bisync's filter-change guard, so that run has to be a --resync.
+        let filtersChanged = try BisyncFilterFile.prepare(at: filterFilePath)
+        let mustResync = resync || filtersChanged
 
         let startTime = Date()
         var bisyncResult = try await runPhase(
             rclonePath: rclonePath,
-            arguments: buildBisyncArguments(resync: resync, filterFilePath: filterFilePath),
+            arguments: buildBisyncArguments(resync: mustResync, filterFilePath: filterFilePath),
             onProgress: onProgress
         )
 
         // bisync loses its listing files after an interrupted run; a --resync
         // rebuilds them. Only retry once, and only when that is the failure.
-        if bisyncResult.exitCode != 0, !resync, bisyncResult.parsed.needsResync {
+        if bisyncResult.exitCode != 0, !mustResync, bisyncResult.parsed.needsResync {
             bisyncResult = try await runPhase(
                 rclonePath: rclonePath,
                 arguments: buildBisyncArguments(resync: true, filterFilePath: filterFilePath),
