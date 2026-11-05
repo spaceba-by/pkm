@@ -55,6 +55,39 @@ final class UpdateServiceTests: XCTestCase {
         XCTAssertEqual(update?.releaseNotes, "Bug fixes")
     }
 
+    /// Real releases carry both a DMG (manual installs) and a zip (self-update).
+    func testCheckForUpdatePicksZipFromReleaseWithDmgAndZip() async throws {
+        let json = """
+        [
+            {
+                "tag_name": "macos-v1.1.0",
+                "name": "PKMSync v1.1.0",
+                "body": "Bug fixes",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-03-20T12:00:00Z",
+                "assets": [
+                    {"name": "PKMSync.dmg", "size": 100, "browser_download_url": "https://example.com/PKMSync.dmg"},
+                    {"name": "PKMSync.zip", "size": 200, "browser_download_url": "https://example.com/PKMSync.zip"}
+                ]
+            }
+        ]
+        """
+        MockURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "https://api.github.com")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, json.data(using: .utf8)!)
+        }
+
+        let update = try await sut.checkForUpdate(currentVersion: "1.0.0")
+
+        XCTAssertEqual(update?.downloadURL.lastPathComponent, "PKMSync.zip")
+    }
+
     func testCheckForUpdateReturnsNilWhenUpToDate() async throws {
         let json = """
         [

@@ -90,6 +90,14 @@ with `--resync` when bisync reports `filters file has changed`.
 
 The **PKMSync** (Sal Sync) menu bar app provides a native GUI for managing rclone sync. It shows sync status, supports configurable intervals, conflict detection/resolution, and recently modified file links. See `macos/` for the source and `macos/.mise.toml` for build/test commands.
 
+The app updates itself from GitHub Releases tagged `macos-v<major>.<minor>.<patch>`. To cut a release, run the **macOS Build** workflow from `main`:
+
+```bash
+gh workflow run "macOS Build" --ref main -f bump=patch   # or minor, major
+```
+
+The workflow works out the next version, builds and notarizes the app, then publishes the release and creates its tag. Published releases are offered to installed apps straight away. Pushing a `macos-v1.2.3` tag by hand also cuts a release.
+
 #### Option 2: launchd (CLI-only)
 
 Uses **launchd** for automatic sync:
