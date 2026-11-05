@@ -4,19 +4,98 @@ on:
   push:
     branches: [main]
     tags:
-      - 'macos/v*'
+      - 'macos-v*'
     # No `paths:` filter here on purpose. A paths filter applies to tag pushes
     # too, so tagging a commit that did not itself touch macos/** would silently
     # skip the whole workflow and never cut the release. Builds are ~1m and this
     # repo is public (free runner minutes), so we always build instead.
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to bump for this release
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
+# The event name keeps a queued release from being replaced by a later push to
+# main: a concurrency group only holds one pending run.
 concurrency:
-  group: macos-build-${{ github.ref }}
+  group: macos-build-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  version:
+    name: Resolve Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      is_release: ${{ steps.resolve.outputs.is_release }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Resolve release version
+        id: resolve
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+
+          case "$GITHUB_REF" in
+            refs/tags/macos-v*)
+              version="${GITHUB_REF_NAME#macos-v}"
+              ;;
+            refs/heads/main)
+              if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+                echo "Not a release; keeping the version from project.yml."
+                echo "is_release=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+
+              latest=$(git tag -l 'macos-v*' \
+                | grep -E '^macos-v[0-9]+\.[0-9]+\.[0-9]+$' \
+                | sed 's/^macos-v//' | sort -V | tail -n 1 || true)
+              if [ -z "$latest" ]; then
+                # First release: bump from the version installed copies report.
+                latest=$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"$/\1/p' macos/project.yml)
+              fi
+
+              IFS=. read -r major minor patch <<< "$latest"
+              case "$BUMP" in
+                major) version="$((major + 1)).0.0" ;;
+                minor) version="$major.$((minor + 1)).0" ;;
+                patch) version="$major.$minor.$((patch + 1))" ;;
+                *) echo "::error::Unknown bump '$BUMP'"; exit 1 ;;
+              esac
+              ;;
+            *)
+              echo "::error::Releases must run from main or a macos-v* tag, not $GITHUB_REF"
+              exit 1
+              ;;
+          esac
+
+          # The app's version parser only understands major.minor.patch.
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not a major.minor.patch version"
+            exit 1
+          fi
+
+          echo "Releasing macos-v$version"
+          {
+            echo "version=$version"
+            echo "is_release=true"
+          } >> "$GITHUB_OUTPUT"
+
   build:
     name: Build Release
+    needs: version
     runs-on: macos-26
     # Generous because notarization waits on Apple's service, which can be slow;
     # still well under the 6h default this would otherwise inherit.
@@ -67,6 +146,17 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY: ${{ secrets.ASC_KEY }}
+
+      # Installed apps replace themselves with whatever a release publishes, so a
+      # release must never fall back to the unsigned or un-notarized path.
+      - name: Require signing and notarization for releases
+        if: >-
+          needs.version.outputs.is_release == 'true' && (
+          steps.check-secrets.outputs.has_signing != 'true' ||
+          steps.check-notary.outputs.has_notary != 'true')
+        run: |
+          echo "::error::Releases must be signed and notarized. Check the MACOS_CERTIFICATE*, APPLE_TEAM_ID and ASC_* secrets."
+          exit 1
 
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -143,10 +233,13 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            OTHER_CODE_SIGN_FLAGS="--timestamp" 2>&1 \
+            OTHER_CODE_SIGN_FLAGS="--timestamp" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            ${RELEASE_VERSION:+"MARKETING_VERSION=$RELEASE_VERSION"} 2>&1 \
             | xcbeautify --renderer github-actions
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
 
       - name: Export signed app
         if: steps.check-secrets.outputs.has_signing == 'true'
@@ -238,13 +331,27 @@ jobs:
 
       # --- Package and upload ---
 
-      - name: Create DMG
+      - name: Create DMG and update zip
         if: steps.check-secrets.outputs.has_signing == 'true'
         working-directory: macos
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
         run: |
           APP_PATH="build/export/PKMSync.app"
           DMG_PATH="build/PKMSync.dmg"
           VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist")
+
+          # An app that reports an older version than its tag would be offered
+          # the same update forever.
+          if [ -n "$RELEASE_VERSION" ] && [ "$VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::error::Built app reports version $VERSION but this release is $RELEASE_VERSION"
+            exit 1
+          fi
+
+          # Zipped here, after stapling, so the notarization ticket ships with the
+          # app. The zip made for notarytool predates the ticket. Self-update reads
+          # this one: it unpacks with ditto and expects PKMSync.app at the top level.
+          ditto -c -k --keepParent "$APP_PATH" build/PKMSync.zip
 
           hdiutil create -volname "PKMSync $VERSION" \
             -srcfolder "$APP_PATH" \
@@ -265,6 +372,7 @@ jobs:
           name: PKMSync-${{ github.sha }}
           path: |
             macos/build/PKMSync.dmg
+            macos/build/PKMSync.zip
             macos/build/build-info.json
           retention-days: 30
 
@@ -274,9 +382,10 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: build
+    needs: [version, build]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/macos/v')
+    timeout-minutes: 10
+    if: needs.version.outputs.is_release == 'true'
 
     permissions:
       contents: write
@@ -288,16 +397,18 @@ jobs:
           name: PKMSync-${{ github.sha }}
           path: artifacts/
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#macos/}" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub Release
+      # Creates the tag on a manual run, so a failed build leaves no tag behind
+      # to be skipped over. A tag made with GITHUB_TOKEN does not retrigger this
+      # workflow, so this cannot build twice.
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          name: "PKMSync ${{ steps.version.outputs.version }}"
-          tag_name: ${{ github.ref_name }}
-          draft: true
+          name: "PKMSync v${{ needs.version.outputs.version }}"
+          tag_name: macos-v${{ needs.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          draft: false
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             artifacts/PKMSync.dmg
+            artifacts/PKMSync.zip

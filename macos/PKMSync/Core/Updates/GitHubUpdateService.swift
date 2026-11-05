@@ -129,6 +129,8 @@ enum UpdateError: LocalizedError {
     case appNotFoundInArchive
     case installFailed(String)
     case noWriteAccess
+    case signatureInvalid(String)
+    case rollbackFailed(installError: String, rollbackError: String, backupPath: String)
 
     var errorDescription: String? {
         switch self {
@@ -136,6 +138,10 @@ enum UpdateError: LocalizedError {
         case .appNotFoundInArchive: "Could not find .app bundle in downloaded archive"
         case let .installFailed(message): "Install failed: \(message)"
         case .noWriteAccess: "No write access to application location. Try moving the app to a writable location."
+        case let .signatureInvalid(message): "Update rejected: signature check failed (\(message))"
+        case let .rollbackFailed(installError, rollbackError, backupPath):
+            "Install failed (\(installError)) and the previous version could not be restored (\(rollbackError)). "
+                + "Your previous version is at \(backupPath)."
         }
     }
 }

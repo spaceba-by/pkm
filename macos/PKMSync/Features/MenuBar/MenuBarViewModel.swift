@@ -234,6 +234,8 @@ final class MenuBarViewModel {
                     try await UpdateInstaller.install(zipAt: zipURL)
                 }.value
             } catch {
+                // Retrying must download again, not reinstall a zip that just failed
+                downloadedZipURL = nil
                 updateState = .error(message: error.localizedDescription)
             }
             return

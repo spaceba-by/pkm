@@ -17,6 +17,8 @@ settings:
   base:
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
     SWIFT_VERSION: "6.0"
+    # Version for local and non-release builds. Releases take their version from
+    # the macos-v* tag and their build number from the CI run (see macos-build.yml).
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     GENERATE_INFOPLIST_FILE: YES

@@ -15,6 +15,7 @@ enum UpdateInstaller {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("pkmsync-install-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
 
         let unzip = Process()
         unzip.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
@@ -34,27 +35,20 @@ enum UpdateInstaller {
             throw UpdateError.appNotFoundInArchive
         }
 
+        // Nothing on disk changes until the download has proven it is ours
+        try UpdateSignatureVerifier.verify(appAt: newApp)
+
         // Create backup of current app
         let backupURL = appDirectory.appendingPathComponent(
             currentAppURL.deletingPathExtension().lastPathComponent + ".backup.app"
         )
         try? FileManager.default.removeItem(at: backupURL)
-        try FileManager.default.moveItem(at: currentAppURL, to: backupURL)
-
-        // Move new app to current location
-        do {
-            try FileManager.default.moveItem(at: newApp, to: currentAppURL)
-        } catch {
-            // Rollback: restore backup
-            try? FileManager.default.moveItem(at: backupURL, to: currentAppURL)
-            throw UpdateError.installFailed("Failed to replace app: \(error.localizedDescription)")
-        }
+        try replaceApp(at: currentAppURL, with: newApp, backupURL: backupURL)
 
         // Store backup path for cleanup on next launch
         UserDefaults.standard.set(backupURL.path, forKey: "pkmsync.pendingBackupCleanup")
 
-        // Clean up temp files
-        try? FileManager.default.removeItem(at: tempDir)
+        // Clean up the download
         try? FileManager.default.removeItem(at: zipURL)
 
         // Relaunch
@@ -65,6 +59,33 @@ enum UpdateInstaller {
 
         await MainActor.run {
             NSApplication.shared.terminate(nil)
+        }
+    }
+
+    /// Moves the current app to `backupURL` and the new app into its place, restoring the backup on failure.
+    static func replaceApp(
+        at currentAppURL: URL,
+        with newAppURL: URL,
+        backupURL: URL,
+        move: (URL, URL) throws -> Void = { try FileManager.default.moveItem(at: $0, to: $1) }
+    ) throws {
+        try move(currentAppURL, backupURL)
+
+        do {
+            try move(newAppURL, currentAppURL)
+        } catch {
+            let installError = error.localizedDescription
+            do {
+                try move(backupURL, currentAppURL)
+            } catch {
+                // The app is no longer at its install path, so the user has to know where it went.
+                throw UpdateError.rollbackFailed(
+                    installError: installError,
+                    rollbackError: error.localizedDescription,
+                    backupPath: backupURL.path
+                )
+            }
+            throw UpdateError.installFailed("Failed to replace app: \(installError)")
         }
     }
 
