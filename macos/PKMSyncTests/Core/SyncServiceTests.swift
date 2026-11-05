@@ -118,6 +118,33 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertTrue(bisyncArguments.contains("--resync"))
     }
 
+    /// Copilot review on #160: a `!` reset followed by `+ **` wiped the
+    /// prepended exclusion, so `_agent/` was still bisynced.
+    func testSyncKeepsAgentExclusionInForceAfterResetInCustomFilterFile() async throws {
+        let custom = "- .DS_Store\n!\n+ **\n"
+        try custom.write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        let contents = try String(contentsOfFile: configuration.filterFilePath, encoding: .utf8)
+        XCTAssertEqual(contents, "- .DS_Store\n!\n" + BisyncFilterFile.agentExclusionBlock + "+ **\n")
+        XCTAssertTrue(BisyncFilterFile.excludesAgent(contents))
+        XCTAssertTrue(bisyncArguments.contains("--resync"))
+    }
+
+    func testSyncRepairsExclusionThatALaterResetClears() async throws {
+        let custom = "- /_agent/**\n!\n+ **\n"
+        try custom.write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
+        mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))
+
+        _ = try await sut.sync()
+
+        let contents = try String(contentsOfFile: configuration.filterFilePath, encoding: .utf8)
+        XCTAssertEqual(contents, "- /_agent/**\n!\n" + BisyncFilterFile.agentExclusionBlock + "+ **\n")
+        XCTAssertTrue(bisyncArguments.contains("--resync"))
+    }
+
     func testSyncDoesNotResyncTwiceAfterAddingAgentExclusion() async throws {
         try "+ **\n".write(toFile: configuration.filterFilePath, atomically: true, encoding: .utf8)
         mockRunner.result = .success(ProcessOutput(stdout: "", stderr: "", exitCode: 0))

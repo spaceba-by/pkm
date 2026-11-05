@@ -57,6 +57,42 @@ final class SyncConfigurationTests: XCTestCase {
         XCTAssertTrue(BisyncFilterFile.excludesAgent("- .DS_Store\n  - /_agent/**\n+ **\n"))
     }
 
+    /// A `!` line makes rclone clear every rule above it, so an exclusion
+    /// before a reset protects nothing.
+    func testExcludesAgentIgnoresRulesBeforeLastReset() {
+        XCTAssertFalse(BisyncFilterFile.excludesAgent("- /_agent/**\n!\n+ **\n"))
+        XCTAssertFalse(BisyncFilterFile.excludesAgent("- /_agent/**\n  !  \n"))
+        XCTAssertFalse(BisyncFilterFile.excludesAgent("!\n- /_agent/**\n!\n- .DS_Store\n"))
+        XCTAssertTrue(BisyncFilterFile.excludesAgent("+ **\n!\n- /_agent/**\n+ **\n"))
+        XCTAssertTrue(BisyncFilterFile.excludesAgent("# !\n- /_agent/**\n+ **\n"))
+    }
+
+    func testInsertingAgentExclusionGoesAfterLastReset() {
+        let custom = "- .DS_Store\n!\n+ /notes/**\n!\n+ **\n"
+        let result = BisyncFilterFile.insertingAgentExclusion(into: custom)
+
+        XCTAssertEqual(
+            result,
+            "- .DS_Store\n!\n+ /notes/**\n!\n" + BisyncFilterFile.agentExclusionBlock + "+ **\n"
+        )
+        XCTAssertTrue(BisyncFilterFile.excludesAgent(result))
+    }
+
+    func testInsertingAgentExclusionHandlesResetOnLastLine() {
+        let result = BisyncFilterFile.insertingAgentExclusion(into: "+ **\n!")
+
+        XCTAssertEqual(result, "+ **\n!\n" + String(BisyncFilterFile.agentExclusionBlock.dropLast()))
+        XCTAssertTrue(BisyncFilterFile.excludesAgent(result))
+    }
+
+    func testInsertingAgentExclusionPrependsWithoutReset() {
+        let custom = "- .DS_Store\n+ **\n"
+        XCTAssertEqual(
+            BisyncFilterFile.insertingAgentExclusion(into: custom),
+            BisyncFilterFile.agentExclusionBlock + custom
+        )
+    }
+
     func testPersistsValues() {
         sut.vaultPath = "/Users/test/vault"
         sut.bucketName = "my-bucket"

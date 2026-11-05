@@ -10,8 +10,13 @@ enum BisyncFilterFile {
     /// The rule that keeps bisync away from agent output.
     static let agentExclusionRule = "- /_agent/**"
 
-    /// Prepended to a filters file that lacks an effective ``agentExclusionRule``.
-    /// rclone applies the first matching rule, so it must come before any `+`.
+    /// rclone's reset directive: a line that is just `!` clears every rule
+    /// read before it.
+    static let resetDirective = "!"
+
+    /// Inserted into a filters file that lacks an effective ``agentExclusionRule``.
+    /// rclone applies the first matching rule, so it must come before any `+`,
+    /// and after the last ``resetDirective``, which would otherwise clear it.
     static let agentExclusionBlock = """
     # Agent output: pulled one-way from S3 by PKMSync, never pushed back.
     # Added automatically -- PKMSync requires this exclusion.
@@ -64,10 +69,12 @@ enum BisyncFilterFile {
     }
 
     /// Makes the filters file at `path` safe for bisync: creates it with
-    /// ``defaultContents`` if missing, and prepends ``agentExclusionBlock`` if
+    /// ``defaultContents`` if missing, and inserts ``agentExclusionBlock`` if
     /// the existing file does not exclude `_agent/` ahead of any include rule.
     ///
-    /// Apart from that one block, an existing file is left untouched.
+    /// The block goes at the top, or straight after the last `!` reset when the
+    /// file has one, since a reset clears every rule above it. Apart from that
+    /// one block, an existing file is left untouched.
     ///
     /// - Returns: `true` if an existing file was modified. bisync's filter-change
     ///   guard will then refuse to run until a `--resync`.
@@ -81,7 +88,7 @@ enum BisyncFilterFile {
         let contents = try String(contentsOfFile: path, encoding: .utf8)
         guard !excludesAgent(contents) else { return false }
 
-        try (agentExclusionBlock + contents).write(
+        try insertingAgentExclusion(into: contents).write(
             toFile: path,
             atomically: true,
             encoding: .utf8
@@ -89,19 +96,43 @@ enum BisyncFilterFile {
         return true
     }
 
+    /// `contents` with ``agentExclusionBlock`` placed where rclone will still
+    /// apply it: after the last `!` reset if there is one, otherwise first.
+    static func insertingAgentExclusion(into contents: String) -> String {
+        var lines = contents.components(separatedBy: "\n")
+        guard let lastReset = lines.lastIndex(where: { normalizedRule($0) == resetDirective }) else {
+            return agentExclusionBlock + contents
+        }
+
+        // The block ends in a newline, so it splices in as its own lines.
+        lines.insert(String(agentExclusionBlock.dropLast()), at: lastReset + 1)
+        return lines.joined(separator: "\n")
+    }
+
     /// Whether `contents` excludes `_agent/` before any `+` rule could
-    /// re-include it. Earlier `-` rules only exclude more, so they are harmless.
+    /// re-include it, counting only rules after the last `!` reset (rclone
+    /// clears everything above a reset). Earlier `-` rules only exclude more,
+    /// so they are harmless.
     static func excludesAgent(_ contents: String) -> Bool {
+        var excluded = false
+        var includeSeen = false
         for line in contents.components(separatedBy: .newlines) {
-            let rule = line.trimmingCharacters(in: .whitespaces)
-            if rule == agentExclusionRule {
-                return true
-            }
-            if rule.hasPrefix("+") {
-                return false
+            let rule = normalizedRule(line)
+            if rule == resetDirective {
+                excluded = false
+                includeSeen = false
+            } else if rule == agentExclusionRule {
+                if !includeSeen { excluded = true }
+            } else if rule.hasPrefix("+") {
+                includeSeen = true
             }
         }
-        return false
+        return excluded
+    }
+
+    /// A filters-file line as rclone reads it: surrounding whitespace trimmed.
+    private static func normalizedRule(_ line: String) -> String {
+        line.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Default location for the managed filters file.
