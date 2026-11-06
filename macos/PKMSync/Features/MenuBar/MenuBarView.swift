@@ -158,6 +158,9 @@ struct MenuBarView: View {
             },
             onViewReleaseNotes: {
                 viewModel.viewReleaseNotes()
+            },
+            onRevealBackup: { path in
+                viewModel.revealBackup(at: path)
             }
         )
         .padding(.horizontal, 12)

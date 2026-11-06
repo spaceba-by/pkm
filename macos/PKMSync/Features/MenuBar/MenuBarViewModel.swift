@@ -236,7 +236,7 @@ final class MenuBarViewModel {
             } catch {
                 // Retrying must download again, not reinstall a zip that just failed
                 downloadedZipURL = nil
-                updateState = .error(message: error.localizedDescription)
+                updateState = Self.installFailureState(for: error)
             }
             return
         }
@@ -256,6 +256,18 @@ final class MenuBarViewModel {
         } catch {
             updateState = .error(message: error.localizedDescription)
         }
+    }
+
+    /// A failed rollback leaves the app only at its backup path, so the row has to keep that path visible.
+    static func installFailureState(for error: Error) -> UpdateState {
+        if case let UpdateError.rollbackFailed(_, _, backupPath) = error {
+            return .recoveryNeeded(message: error.localizedDescription, backupPath: backupPath)
+        }
+        return .error(message: error.localizedDescription)
+    }
+
+    func revealBackup(at path: String) {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 
     func viewReleaseNotes() {
