@@ -48,6 +48,36 @@ final class ConflictServiceTests: XCTestCase {
         XCTAssertTrue(conflicts.isEmpty)
     }
 
+    func testScanIgnoresConflictFilesUnderAgentDirectory() async throws {
+        let entities = tempDir.appendingPathComponent("_agent/entities/concepts")
+        try FileManager.default.createDirectory(at: entities, withIntermediateDirectories: true)
+        try "stale".write(
+            to: entities.appendingPathComponent("trigger.md.conflict1"),
+            atomically: true,
+            encoding: .utf8
+        )
+        let note = tempDir.appendingPathComponent("note.md.conflict1")
+        try "conflict".write(to: note, atomically: true, encoding: .utf8)
+
+        let conflicts = try await sut.scanForConflicts(in: tempDir.path)
+
+        XCTAssertEqual(conflicts.map { ($0.conflictPath as NSString).lastPathComponent }, ["note.md.conflict1"])
+    }
+
+    func testScanFindsConflictFilesInNestedDirectoryNamedAgent() async throws {
+        let nested = tempDir.appendingPathComponent("projects/_agent")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try "conflict".write(
+            to: nested.appendingPathComponent("note.md.conflict1"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let conflicts = try await sut.scanForConflicts(in: tempDir.path)
+
+        XCTAssertEqual(conflicts.count, 1)
+    }
+
     func testResolveKeepOriginal() throws {
         let original = tempDir.appendingPathComponent("note.md")
         let conflict = tempDir.appendingPathComponent("note.conflict1.md")
