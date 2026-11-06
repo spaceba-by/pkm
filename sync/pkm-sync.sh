@@ -88,6 +88,7 @@ pull_status=0
     --use-server-modtime \
     --exclude "search/vector-index.json" \
     --exclude "dispatch/**" \
+    --exclude "*.conflict[0-9]*" \
     --verbose || pull_status=$?
 
 if [ "$pull_status" -ne 0 ]; then

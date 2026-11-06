@@ -170,6 +170,7 @@ if [ "$INIT_SYNC" = "yes" ]; then
         --use-server-modtime \
         --exclude "search/vector-index.json" \
         --exclude "dispatch/**" \
+        --exclude "*.conflict[0-9]*" \
         --verbose
     echo "✓ Initial sync complete"
 else

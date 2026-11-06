@@ -18,10 +18,13 @@ struct SyncService: SyncServiceProtocol {
     /// Agent artifacts that should never land in an Obsidian vault:
     /// `search/vector-index.json` is a monolithic embeddings blob rewritten in
     /// full on every index run, and `dispatch/` holds unbounded ECS job
-    /// artifacts including code trees.
+    /// artifacts including code trees. `*.conflict[0-9]*` covers losers left in
+    /// S3 from when bisync still managed `_agent/`; pulling them would restore
+    /// them locally after every delete.
     private static let agentPullExcludes = [
         "search/vector-index.json",
         "dispatch/**",
+        "*.conflict[0-9]*",
     ]
 
     private let configuration: SyncConfiguration

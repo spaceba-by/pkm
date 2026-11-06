@@ -1,6 +1,9 @@
 import Foundation
 
 struct ConflictService: ConflictServiceProtocol {
+    /// The vault-root directory pulled one-way from S3 by ``SyncService``.
+    private static let agentDirectoryName = "_agent"
+
     func scanForConflicts(in vaultPath: String) async throws -> [ConflictFile] {
         let vaultURL = URL(fileURLWithPath: vaultPath)
         guard FileManager.default.fileExists(atPath: vaultPath) else {
@@ -16,6 +19,12 @@ struct ConflictService: ConflictServiceProtocol {
         )
 
         while let fileURL = enumerator?.nextObject() as? URL {
+            // S3 owns `_agent/` outright, so nothing in it is the user's to resolve.
+            if enumerator?.level == 1, fileURL.lastPathComponent == Self.agentDirectoryName {
+                enumerator?.skipDescendants()
+                continue
+            }
+
             let path = fileURL.path
             guard path.contains(".conflict") else { continue }
 
