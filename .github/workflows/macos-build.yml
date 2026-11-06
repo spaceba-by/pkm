@@ -73,7 +73,18 @@ jobs:
                 latest=$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"$/\1/p' macos/project.yml)
               fi
 
+              if ! [[ "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "::error::Cannot bump '$latest': it is not a major.minor.patch version"
+                exit 1
+              fi
+
+              # Older tags may carry leading zeros (macos-v1.0.08). Bash reads
+              # those as octal, so 08 fails and 010 becomes 8; the app reads
+              # them as decimal. Force base 10 so the bump matches the app.
               IFS=. read -r major minor patch <<< "$latest"
+              major=$((10#$major))
+              minor=$((10#$minor))
+              patch=$((10#$patch))
               case "$BUMP" in
                 major) version="$((major + 1)).0.0" ;;
                 minor) version="$major.$((minor + 1)).0" ;;
@@ -90,6 +101,14 @@ jobs:
           # The app's version parser only understands major.minor.patch.
           if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::'$version' is not a major.minor.patch version"
+            exit 1
+          fi
+
+          # The app ignores leading zeros, so macos-v1.0.08 would install as
+          # 1.0.8 under a tag that sorts and bumps differently. Ship only the
+          # plain form.
+          if ! [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::'$version' has a leading zero; tag it without one (for example 1.0.8, not 1.0.08)"
             exit 1
           fi
 
