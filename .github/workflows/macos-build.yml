@@ -17,10 +17,16 @@ on:
         options: [patch, minor, major]
         default: patch
 
-# The event name keeps a queued release from being replaced by a later push to
-# main: a concurrency group only holds one pending run.
+# Every run that can publish a release (a dispatch or a macos-v* tag push)
+# shares one group, so two of them never resolve the same version or upload
+# to the same release at once. Ordinary pushes to main keep their own group,
+# which also stops them replacing a queued release: a concurrency group only
+# holds one pending run.
 concurrency:
-  group: macos-build-${{ github.event_name }}-${{ github.ref }}
+  group: >-
+    ${{ (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/macos-v'))
+    && 'macos-build-release'
+    || format('macos-build-{0}-{1}', github.event_name, github.ref) }}
   cancel-in-progress: false
 
 jobs:
@@ -396,6 +402,42 @@ jobs:
         with:
           name: PKMSync-${{ github.sha }}
           path: artifacts/
+
+      # Publishing to a tag that already exists keeps the tag where it is and
+      # overwrites that release's assets with this build. Refuse unless the tag
+      # already points at the commit built here (a tag push, or a re-run).
+      - name: Check release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="macos-v$RELEASE_VERSION"
+
+          if ! ref=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" 2> "$RUNNER_TEMP/tag-lookup.err"); then
+            if grep -q "HTTP 404" "$RUNNER_TEMP/tag-lookup.err"; then
+              echo "$tag does not exist yet; publishing creates it at $GITHUB_SHA."
+              exit 0
+            fi
+            cat "$RUNNER_TEMP/tag-lookup.err" >&2
+            echo "::error::Could not look up $tag"
+            exit 1
+          fi
+
+          type=$(jq -r '.object.type' <<< "$ref")
+          sha=$(jq -r '.object.sha' <<< "$ref")
+          # An annotated tag points at a tag object; follow it to the commit.
+          while [ "$type" = "tag" ]; do
+            obj=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$sha")
+            type=$(jq -r '.object.type' <<< "$obj")
+            sha=$(jq -r '.object.sha' <<< "$obj")
+          done
+
+          if [ "$sha" != "$GITHUB_SHA" ]; then
+            echo "::error::$tag already points at $sha, but this run built $GITHUB_SHA. Not overwriting that release."
+            exit 1
+          fi
+          echo "$tag already points at $GITHUB_SHA; updating its release."
 
       # Creates the tag on a manual run, so a failed build leaves no tag behind
       # to be skipped over. A tag made with GITHUB_TOKEN does not retrigger this

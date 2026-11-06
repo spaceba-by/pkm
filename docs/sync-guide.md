@@ -98,7 +98,7 @@ The app updates itself from GitHub Releases tagged `macos-v<major>.<minor>.<patc
 gh workflow run "macOS Build" --ref main -f bump=patch   # or minor, major
 ```
 
-The workflow works out the next version, builds and notarizes the app, then publishes the release and creates its tag. Published releases are offered to installed apps straight away. Pushing a `macos-v1.2.3` tag by hand also cuts a release.
+The workflow works out the next version, builds and notarizes the app, then publishes the release and creates its tag. Published releases are offered to installed apps straight away. Pushing a `macos-v1.2.3` tag by hand also cuts a release. Release runs from either route wait for each other, and a release is refused if its tag already points at a different commit.
 
 #### Option 2: launchd (CLI-only)
 
