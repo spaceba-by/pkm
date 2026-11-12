@@ -5,6 +5,7 @@ struct UpdateStatusRow: View {
     let onCheck: () -> Void
     let onDownloadAndInstall: () -> Void
     let onViewReleaseNotes: () -> Void
+    let onRevealBackup: (String) -> Void
 
     var body: some View {
         switch state {
@@ -95,6 +96,33 @@ struct UpdateStatusRow: View {
                     .controlSize(.small)
             }
 
+        // The error text is too long for the row, so the backup location gets
+        // its own lines and a way to open it.
+        case let .recoveryNeeded(message, backupPath):
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text("Update failed and the previous version could not be put back.")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .help(message)
+                Text("Your previous version is at:")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(backupPath)
+                    .font(.caption2.monospaced())
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Show in Finder") {
+                    onRevealBackup(backupPath)
+                }
+                .controlSize(.small)
+            }
+
         case .upToDate:
             HStack {
                 Image(systemName: "checkmark.circle")
@@ -115,5 +143,6 @@ enum UpdateState: Equatable {
     case downloading(progress: Double)
     case readyToInstall
     case error(message: String)
+    case recoveryNeeded(message: String, backupPath: String)
     case upToDate
 }

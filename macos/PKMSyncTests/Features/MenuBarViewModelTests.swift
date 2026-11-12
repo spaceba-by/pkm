@@ -132,6 +132,32 @@ final class MenuBarViewModelTests: XCTestCase {
         }
     }
 
+    func testInstallFailureKeepsBackupPathWhenRollbackFails() {
+        let error = UpdateError.rollbackFailed(
+            installError: "disk full",
+            rollbackError: "permission denied",
+            backupPath: "/Applications/PKMSync.backup.app"
+        )
+
+        let state = MenuBarViewModel.installFailureState(for: error)
+
+        XCTAssertEqual(
+            state,
+            .recoveryNeeded(
+                message: error.localizedDescription,
+                backupPath: "/Applications/PKMSync.backup.app"
+            )
+        )
+    }
+
+    func testInstallFailureWithoutRollbackIsPlainError() {
+        let error = UpdateError.installFailed("Failed to replace app: disk full")
+
+        let state = MenuBarViewModel.installFailureState(for: error)
+
+        XCTAssertEqual(state, .error(message: error.localizedDescription))
+    }
+
     func testCheckForUpdatesRateLimits() async {
         mockUpdateService.checkResult = .success(nil)
 
