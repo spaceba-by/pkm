@@ -62,7 +62,9 @@ Both phases run from `sync/pkm-sync.sh` (or from the PKMSync menu bar app).
 - **Strategy:** Newer file wins
 - **Conflict handling:** Older file renamed to `filename.conflict1` (`--conflict-loser num`)
 - **Location:** Conflicts appear in both local and S3
-- **Scope:** Notes only — `_agent/` cannot conflict
+- **Scope:** Notes only — `_agent/` cannot conflict. The pull skips `*.conflict[0-9]*`
+  and PKMSync does not list conflicts under `_agent/`, so losers left over from
+  before `_agent/` was excluded from bisync are safe to delete from both sides.
 
 ### Filters
 
@@ -196,7 +198,8 @@ Uses **Task Scheduler**:
      --filters-file %USERPROFILE%\.config\rclone\pkm-bisync-filter.txt ^
      --conflict-resolve newer --conflict-loser num
    rclone copy pkm-s3:BUCKET_NAME/_agent C:\path\to\vault\_agent ^
-     --use-server-modtime --exclude "search/vector-index.json" --exclude "dispatch/**"
+     --use-server-modtime --exclude "search/vector-index.json" --exclude "dispatch/**" ^
+     --exclude "*.conflict[0-9]*"
    ```
 
 2. Create scheduled task:
@@ -240,6 +243,7 @@ rclone copy pkm-s3:BUCKET_NAME/_agent /path/to/vault/_agent \
   --use-server-modtime \
   --exclude "search/vector-index.json" \
   --exclude "dispatch/**" \
+  --exclude "*.conflict[0-9]*" \
   --verbose
 ```
 

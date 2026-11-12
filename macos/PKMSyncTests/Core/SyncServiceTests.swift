@@ -191,6 +191,7 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertTrue(pull.contains("--use-server-modtime"))
         XCTAssertTrue(pull.contains("search/vector-index.json"))
         XCTAssertTrue(pull.contains("dispatch/**"))
+        XCTAssertTrue(pull.contains("*.conflict[0-9]*"))
         // The pull must never push: bisync is the only bidirectional phase.
         XCTAssertFalse(pull.contains("bisync"))
         XCTAssertFalse(pull.contains("sync"))
