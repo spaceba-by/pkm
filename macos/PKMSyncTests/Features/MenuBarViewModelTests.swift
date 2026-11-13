@@ -183,7 +183,7 @@ final class MenuBarViewModelTests: XCTestCase {
         mockUpdateService.checkGate = gate
         let viewModel: MenuBarViewModel = sut
         let check = Task { await viewModel.checkForUpdates(force: true) }
-        await waitForArrival(at: gate)
+        await waitUntil("the check reaches the service") { mockUpdateService.checkCallCount == 2 }
         XCTAssertEqual(sut.updateState, .checking)
 
         mockInstaller.installResult = .failure(rollbackError)
@@ -216,7 +216,7 @@ final class MenuBarViewModelTests: XCTestCase {
         mockInstaller.installGate = gate
         let viewModel: MenuBarViewModel = sut
         let install = Task { await viewModel.downloadAndInstall() }
-        await waitForArrival(at: gate)
+        await waitUntil("the install starts") { mockInstaller.installCallCount == 1 }
 
         await sut.checkForUpdates(force: true)
         XCTAssertEqual(mockUpdateService.checkCallCount, 1)
@@ -273,12 +273,12 @@ final class MenuBarViewModelTests: XCTestCase {
         return expected
     }
 
-    private func waitForArrival(at gate: AsyncGate) async {
+    /// The mocks count a call before they wait on their gate, so a count shows the call is held there.
+    private func waitUntil(_ what: String, _ condition: () -> Bool) async {
         let deadline = Date().addingTimeInterval(5)
-        while await gate.arrivals == 0, Date() < deadline {
+        while !condition(), Date() < deadline {
             try? await Task.sleep(for: .milliseconds(5))
         }
-        let arrivals = await gate.arrivals
-        XCTAssertEqual(arrivals, 1, "The call never reached the gate")
+        XCTAssertTrue(condition(), "Timed out waiting until \(what)")
     }
 }
