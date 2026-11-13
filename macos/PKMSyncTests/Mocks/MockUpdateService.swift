@@ -1,7 +1,9 @@
 import Foundation
 @testable import PKMSync
 
-final class MockUpdateService: UpdateServiceProtocol, @unchecked Sendable {
+/// Main-actor isolated so the counters the tests poll mid-call are never raced.
+@MainActor
+final class MockUpdateService: UpdateServiceProtocol {
     var checkResult: Result<AppUpdate?, Error> = .success(nil)
     var downloadResult: Result<URL, Error> = .success(URL(fileURLWithPath: "/tmp/test.zip"))
     /// When set, `checkForUpdate` waits here, so a test can act while a check is in flight.

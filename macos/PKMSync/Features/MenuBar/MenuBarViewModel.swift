@@ -228,8 +228,8 @@ final class MenuBarViewModel {
             let update = try await Task.detached {
                 try await service.checkForUpdate(currentVersion: version)
             }.value
-            // The rollback may have failed while this check was in flight
-            guard !needsRecovery else { return }
+            // An install, or a rollback failure, may have begun while this check was in flight
+            guard !needsRecovery, !isInstalling else { return }
             if let update {
                 availableUpdate = update
                 setUpdateState(.available(version: update.version))
@@ -237,6 +237,7 @@ final class MenuBarViewModel {
                 setUpdateState(.upToDate)
             }
         } catch {
+            guard !needsRecovery, !isInstalling else { return }
             setUpdateState(.error(message: error.localizedDescription))
         }
     }
@@ -249,6 +250,8 @@ final class MenuBarViewModel {
             // Already downloaded, proceed to install
             isInstalling = true
             defer { isInstalling = false }
+            // A check may have replaced the install row; it stays put until the install ends
+            setUpdateState(.readyToInstall)
             let install = installUpdate
             do {
                 try await Task.detached {

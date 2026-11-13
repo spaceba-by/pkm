@@ -226,6 +226,56 @@ final class MenuBarViewModelTests: XCTestCase {
         await install.value
     }
 
+    func testCheckFinishingDuringInstallKeepsInstallRow() async throws {
+        mockUpdateService.checkResult = try .success(makeUpdate())
+        await sut.checkForUpdates()
+        await sut.downloadAndInstall()
+
+        let checkGate = AsyncGate()
+        mockUpdateService.checkGate = checkGate
+        let viewModel: MenuBarViewModel = sut
+        let check = Task { await viewModel.checkForUpdates(force: true) }
+        await waitUntil("the check reaches the service") { mockUpdateService.checkCallCount == 2 }
+
+        let installGate = AsyncGate()
+        mockInstaller.installGate = installGate
+        let install = Task { await viewModel.downloadAndInstall() }
+        await waitUntil("the install starts") { mockInstaller.installCallCount == 1 }
+        XCTAssertEqual(sut.updateState, .readyToInstall)
+
+        await checkGate.open()
+        await check.value
+        XCTAssertEqual(sut.updateState, .readyToInstall, "A check finishing mid-install must not replace the row")
+
+        await installGate.open()
+        await install.value
+    }
+
+    func testFailedCheckFinishingDuringInstallKeepsInstallRow() async throws {
+        mockUpdateService.checkResult = try .success(makeUpdate())
+        await sut.checkForUpdates()
+        await sut.downloadAndInstall()
+
+        let checkGate = AsyncGate()
+        mockUpdateService.checkGate = checkGate
+        mockUpdateService.checkResult = .failure(UpdateError.networkError("timeout"))
+        let viewModel: MenuBarViewModel = sut
+        let check = Task { await viewModel.checkForUpdates(force: true) }
+        await waitUntil("the check reaches the service") { mockUpdateService.checkCallCount == 2 }
+
+        let installGate = AsyncGate()
+        mockInstaller.installGate = installGate
+        let install = Task { await viewModel.downloadAndInstall() }
+        await waitUntil("the install starts") { mockInstaller.installCallCount == 1 }
+
+        await checkGate.open()
+        await check.value
+        XCTAssertEqual(sut.updateState, .readyToInstall)
+
+        await installGate.open()
+        await install.value
+    }
+
     func testCheckForUpdatesRateLimits() async {
         mockUpdateService.checkResult = .success(nil)
 
