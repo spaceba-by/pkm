@@ -8,6 +8,7 @@ final class MenuBarViewModelTests: XCTestCase {
     private var mockConflictService: MockConflictService!
     private var mockSyncService: MockSyncService!
     private var mockUpdateService: MockUpdateService!
+    private var mockInstaller: MockUpdateInstaller!
     private var sut: MenuBarViewModel!
 
     override func setUp() async throws {
@@ -19,6 +20,8 @@ final class MenuBarViewModelTests: XCTestCase {
         mockConflictService = MockConflictService()
         mockSyncService = MockSyncService()
         mockUpdateService = MockUpdateService()
+        mockInstaller = MockUpdateInstaller()
+        let installer: MockUpdateInstaller = mockInstaller
 
         let scheduler = SyncScheduler(
             syncService: mockSyncService,
@@ -28,7 +31,8 @@ final class MenuBarViewModelTests: XCTestCase {
             configuration: configuration,
             scheduler: scheduler,
             conflictService: mockConflictService,
-            updateService: mockUpdateService
+            updateService: mockUpdateService,
+            installUpdate: { try await installer.install($0) }
         )
     }
 
@@ -158,6 +162,70 @@ final class MenuBarViewModelTests: XCTestCase {
         XCTAssertEqual(state, .error(message: error.localizedDescription))
     }
 
+    // MARK: - Recovery Latch
+
+    func testCheckAfterRollbackFailureKeepsRecoveryState() async throws {
+        let recovery = try await driveToRollbackFailure()
+
+        await sut.checkForUpdates(force: true)
+
+        XCTAssertEqual(sut.updateState, recovery)
+        XCTAssertEqual(mockUpdateService.checkCallCount, 1, "A check must not run while recovery is needed")
+    }
+
+    func testCheckInFlightDuringRollbackFailureKeepsRecoveryState() async throws {
+        mockUpdateService.checkResult = try .success(makeUpdate())
+        await sut.checkForUpdates()
+        await sut.downloadAndInstall()
+        XCTAssertEqual(sut.updateState, .readyToInstall)
+
+        let gate = AsyncGate()
+        mockUpdateService.checkGate = gate
+        let viewModel: MenuBarViewModel = sut
+        let check = Task { await viewModel.checkForUpdates(force: true) }
+        await waitForArrival(at: gate)
+        XCTAssertEqual(sut.updateState, .checking)
+
+        mockInstaller.installResult = .failure(rollbackError)
+        await sut.downloadAndInstall()
+        let recovery = sut.updateState
+        XCTAssertTrue(sut.needsRecovery)
+
+        await gate.open()
+        await check.value
+
+        XCTAssertEqual(sut.updateState, recovery)
+    }
+
+    func testRollbackFailureDoesNotOfferAnotherInstall() async throws {
+        let recovery = try await driveToRollbackFailure()
+
+        await sut.downloadAndInstall()
+
+        XCTAssertEqual(sut.updateState, recovery)
+        XCTAssertEqual(mockUpdateService.downloadCallCount, 1)
+        XCTAssertEqual(mockInstaller.installCallCount, 1)
+    }
+
+    func testCheckDuringInstallIsSkipped() async throws {
+        mockUpdateService.checkResult = try .success(makeUpdate())
+        await sut.checkForUpdates()
+        await sut.downloadAndInstall()
+
+        let gate = AsyncGate()
+        mockInstaller.installGate = gate
+        let viewModel: MenuBarViewModel = sut
+        let install = Task { await viewModel.downloadAndInstall() }
+        await waitForArrival(at: gate)
+
+        await sut.checkForUpdates(force: true)
+        XCTAssertEqual(mockUpdateService.checkCallCount, 1)
+        XCTAssertEqual(sut.updateState, .readyToInstall)
+
+        await gate.open()
+        await install.value
+    }
+
     func testCheckForUpdatesRateLimits() async {
         mockUpdateService.checkResult = .success(nil)
 
@@ -167,5 +235,50 @@ final class MenuBarViewModelTests: XCTestCase {
         // Second call within 5 minutes should be skipped
         await sut.checkForUpdates()
         XCTAssertEqual(mockUpdateService.checkCallCount, 1)
+    }
+
+    // MARK: - Helpers
+
+    private var rollbackError: UpdateError {
+        .rollbackFailed(
+            installError: "disk full",
+            rollbackError: "permission denied",
+            backupPath: "/Applications/PKMSync.backup.app"
+        )
+    }
+
+    private func makeUpdate() throws -> AppUpdate {
+        try AppUpdate(
+            version: "1.1.0",
+            releaseNotes: "New feature",
+            downloadURL: XCTUnwrap(URL(string: "https://example.com/update.zip")),
+            publishedAt: Date(),
+            assetSize: 5_000_000
+        )
+    }
+
+    /// Check, download, then an install whose rollback fails. Returns the recovery state it left.
+    private func driveToRollbackFailure() async throws -> UpdateState {
+        mockUpdateService.checkResult = try .success(makeUpdate())
+        await sut.checkForUpdates()
+        await sut.downloadAndInstall()
+        mockInstaller.installResult = .failure(rollbackError)
+        await sut.downloadAndInstall()
+
+        let expected = UpdateState.recoveryNeeded(
+            message: rollbackError.localizedDescription,
+            backupPath: "/Applications/PKMSync.backup.app"
+        )
+        XCTAssertEqual(sut.updateState, expected)
+        return expected
+    }
+
+    private func waitForArrival(at gate: AsyncGate) async {
+        let deadline = Date().addingTimeInterval(5)
+        while await gate.arrivals == 0, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        let arrivals = await gate.arrivals
+        XCTAssertEqual(arrivals, 1, "The call never reached the gate")
     }
 }
