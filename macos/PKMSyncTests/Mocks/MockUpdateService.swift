@@ -1,9 +1,13 @@
 import Foundation
 @testable import PKMSync
 
-final class MockUpdateService: UpdateServiceProtocol, @unchecked Sendable {
+/// Main-actor isolated so the counters the tests poll mid-call are never raced.
+@MainActor
+final class MockUpdateService: UpdateServiceProtocol {
     var checkResult: Result<AppUpdate?, Error> = .success(nil)
     var downloadResult: Result<URL, Error> = .success(URL(fileURLWithPath: "/tmp/test.zip"))
+    /// When set, `checkForUpdate` waits here, so a test can act while a check is in flight.
+    var checkGate: AsyncGate?
     private(set) var checkCallCount = 0
     private(set) var downloadCallCount = 0
     private(set) var lastCheckedVersion: String?
@@ -11,6 +15,9 @@ final class MockUpdateService: UpdateServiceProtocol, @unchecked Sendable {
     func checkForUpdate(currentVersion: String) async throws -> AppUpdate? {
         checkCallCount += 1
         lastCheckedVersion = currentVersion
+        if let checkGate {
+            await checkGate.wait()
+        }
         return try checkResult.get()
     }
 

@@ -10,6 +10,7 @@ final class MenuBarViewModel {
     let scheduler: SyncScheduler
     private let conflictService: ConflictServiceProtocol
     private let updateService: UpdateServiceProtocol
+    private let installUpdate: @Sendable (URL) async throws -> Void
 
     private(set) var conflicts: [ConflictFile] = []
     private(set) var recentFiles: [RecentFile] = []
@@ -19,6 +20,7 @@ final class MenuBarViewModel {
     private var downloadedZipURL: URL?
     private var updateCheckTask: Task<Void, Never>?
     private var lastUpdateCheck: Date?
+    private var isInstalling = false
 
     private let detailWindowController = WindowController()
     private let diffWindowController = WindowController()
@@ -30,7 +32,8 @@ final class MenuBarViewModel {
         configuration: SyncConfiguration = SyncConfiguration(),
         scheduler: SyncScheduler? = nil,
         conflictService: ConflictServiceProtocol = ConflictService(),
-        updateService: UpdateServiceProtocol = GitHubUpdateService()
+        updateService: UpdateServiceProtocol = GitHubUpdateService(),
+        installUpdate: @escaping @Sendable (URL) async throws -> Void = { try await UpdateInstaller.install(zipAt: $0) }
     ) {
         self.configuration = configuration
         if let scheduler {
@@ -44,6 +47,7 @@ final class MenuBarViewModel {
         }
         self.conflictService = conflictService
         self.updateService = updateService
+        self.installUpdate = installUpdate
     }
 
     // MARK: - Sync State
@@ -198,13 +202,24 @@ final class MenuBarViewModel {
         }
     }
 
+    /// A failed rollback leaves the app only at its backup path, and nothing this
+    /// process does can undo that. So the recovery row stays until the app is
+    /// relaunched, and no check or install may replace it.
+    var needsRecovery: Bool {
+        if case .recoveryNeeded = updateState { true } else { false }
+    }
+
     func checkForUpdates(force: Bool = false) async {
+        // A check would swap the recovery row for a normal result, hiding the backup
+        // path; one during an install would show stale state over it
+        guard !needsRecovery, !isInstalling else { return }
+
         // Rate limit: skip if checked within last 5 minutes (unless forced)
         if !force, let last = lastUpdateCheck, Date().timeIntervalSince(last) < 300 {
             return
         }
 
-        updateState = .checking
+        setUpdateState(.checking)
         lastUpdateCheck = Date()
 
         let service = updateService
@@ -213,49 +228,64 @@ final class MenuBarViewModel {
             let update = try await Task.detached {
                 try await service.checkForUpdate(currentVersion: version)
             }.value
+            // An install, or a rollback failure, may have begun while this check was in flight
+            guard !needsRecovery, !isInstalling else { return }
             if let update {
                 availableUpdate = update
-                updateState = .available(version: update.version)
+                setUpdateState(.available(version: update.version))
             } else {
-                updateState = .upToDate
+                setUpdateState(.upToDate)
             }
         } catch {
-            updateState = .error(message: error.localizedDescription)
+            guard !needsRecovery, !isInstalling else { return }
+            setUpdateState(.error(message: error.localizedDescription))
         }
     }
 
     func downloadAndInstall() async {
-        guard let update = availableUpdate else { return }
+        // Installing over a failed rollback could lose the only copy of the app
+        guard !needsRecovery, !isInstalling, let update = availableUpdate else { return }
 
         if let zipURL = downloadedZipURL {
             // Already downloaded, proceed to install
+            isInstalling = true
+            defer { isInstalling = false }
+            // A check may have replaced the install row; it stays put until the install ends
+            setUpdateState(.readyToInstall)
+            let install = installUpdate
             do {
                 try await Task.detached {
-                    try await UpdateInstaller.install(zipAt: zipURL)
+                    try await install(zipURL)
                 }.value
             } catch {
                 // Retrying must download again, not reinstall a zip that just failed
                 downloadedZipURL = nil
-                updateState = Self.installFailureState(for: error)
+                setUpdateState(Self.installFailureState(for: error))
             }
             return
         }
 
-        updateState = .downloading(progress: 0)
+        setUpdateState(.downloading(progress: 0))
         let service = updateService
         do {
             let zipURL = try await Task.detached {
                 try await service.downloadUpdate(update) { progress in
                     Task { @MainActor [weak self] in
-                        self?.updateState = .downloading(progress: progress)
+                        self?.setUpdateState(.downloading(progress: progress))
                     }
                 }
             }.value
             downloadedZipURL = zipURL
-            updateState = .readyToInstall
+            setUpdateState(.readyToInstall)
         } catch {
-            updateState = .error(message: error.localizedDescription)
+            setUpdateState(.error(message: error.localizedDescription))
         }
+    }
+
+    /// Every update-state change goes through here, so recovery state is never replaced.
+    private func setUpdateState(_ state: UpdateState) {
+        guard !needsRecovery else { return }
+        updateState = state
     }
 
     /// A failed rollback leaves the app only at its backup path, so the row has to keep that path visible.
