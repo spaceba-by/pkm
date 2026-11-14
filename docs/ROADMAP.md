@@ -260,10 +260,10 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 #### Tier 5 — Platform Expansion
 
-- **Task 0034: Local Vault Store, App Intents & Spotlight**
+- **Task 0034: Local Vault Mirror, App Intents & Spotlight**
 
   - See: [0034-local-vault-store](tasks/0034-local-vault-store.md)
-  - Shared on-device metadata store (manifest sync, lazy content) for fast note loading, Siri/Shortcuts App Intents, and Spotlight indexing across iOS and macOS
+  - Full on-device vault mirror (manifest-driven metadata, direct-S3 content) for instant note loading, Siri/Shortcuts App Intents, and full-text Spotlight across iOS and macOS
   - Prerequisite for Task 0027 widgets and Task 0029 macOS reader
 
 - **Task 0027: iOS Widgets, Spotlight & Share Extension**
