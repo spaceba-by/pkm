@@ -35,7 +35,7 @@ The vault holds roughly 13,000 S3 objects (as of 2026-11-14), including attachme
 
 **Manifest scope and reconciliation.** The manifest declares its scope explicitly: markdown files outside `_agent/` and `.obsidian/`. The mirror holds only documents in that scope, and absence-based deletion applies only within it. `_agent/` outputs (daily summaries, weekly reports, search summaries) continue to be fetched by the Insights screens through `getDocument` and are never written into the mirror. This removes the need for backend tombstones.
 
-**Change detection does not rely on `modified`.** The backend `modified` value is unreliable as a change signal: date resolution prefers frontmatter dates (`extract_metadata` `resolve-dates`), so an Obsidian edit that leaves the frontmatter untouched does not advance it, and classification deliberately preserves it while changing metadata. The client therefore compares every manifest entry against its local record field by field (or by a per-row hash computed by the manifest generator): any metadata difference upserts the row, and an ETag difference re-fetches the body. `modified` is display data and a sort key, not a version. Delta sync via the `all-documents-modified-index` GSI remains useful as a cheap foreground hint between manifest refreshes but is not load-bearing for correctness.
+**Change detection does not rely on `modified`.** The backend `modified` value is unreliable as a change signal: date resolution prefers frontmatter dates (`extract_metadata` `resolve-dates`), so an Obsidian edit that leaves the frontmatter untouched does not advance it, and classification deliberately preserves it while changing metadata. The client therefore compares every manifest entry against its local record field by field (or by a per-row hash computed by the manifest generator): any metadata difference upserts the row, and an ETag difference re-fetches the body. `modified` is display data and a sort key, not a version. There is no separate GSI-based delta sync: `GET /documents` has no modification cutoff parameter and the Identity Pool role cannot query DynamoDB, so the manifest refresh is the only incremental mechanism. Manifest regeneration runs on a short schedule (aligned with the 5-minute rclone cadence) and can later be made event-driven by chaining it to pipeline completion.
 
 **Keep `DocumentCacheService`, delete `CacheServiceProtocol`.** Neither abstraction is in use. `DocumentCacheService` is already wired to the Settings clear-cache action and is the SwiftData-backed one, so it evolves into the store. The generic key/value `CacheServiceProtocol`, `CacheKey`, and `MockCacheService` are removed.
 
@@ -43,7 +43,7 @@ The vault holds roughly 13,000 S3 objects (as of 2026-11-14), including attachme
 
 **Two feeders, one store.** A `VaultFeeder` protocol abstracts where document records and bodies come from:
 
-- `S3Feeder` (iOS): manifest download, delta sync via modified GSI, direct S3 `GetObject` for bodies with bounded concurrency, resumable across launches.
+- `S3Feeder` (iOS): manifest download and comparison, direct S3 `GetObject` for bodies with bounded concurrency, resumable across launches.
 - `FilesystemFeeder` (macOS): reads markdown directly from the configured vault path and watches it for changes. Classification, tags, and entities still come from the manifest since they live in DynamoDB, not in the file.
 
 The S3 key and the vault-relative file path are the same string, so document identity, Spotlight identifiers, and deep links are identical on both platforms.
@@ -54,6 +54,8 @@ The S3 key and the vault-relative file path are the same string, so document ide
 
 **Write-through on every mutation.** Classification updates, edits, creates, and deletes performed in-app update the local store, the body file, and the Spotlight index before anything else observes them. Widgets and intents are strictly read-only consumers.
 
+**Pending local mutations survive stale manifests.** The manifest is generated on a schedule, so one can predate a successful in-app mutation; applying it unconditionally would delete a newly created note, resurrect a deleted one, or roll back a classification change. Each manifest carries a `generatedAt` timestamp taken before its S3 listing begins. Each write-through records a per-field pending state on the local row (`pendingBodyETag`, `pendingClassification`, `pendingDeleted`, each with the mutation time). Reconciliation skips a pending field until a manifest both postdates the mutation and reflects the expected value: the key present with the expected ETag for creates and edits (the write endpoints return the new ETag), the key absent for deletes, the classification equal to the expected value. Body and metadata confirm independently because the classification Lambda runs asynchronously after the S3 event, so a manifest can show a new body with old metadata. If a manifest postdates the mutation by more than a grace window (15 minutes) and still does not reflect it, the row is flagged for the user as unconfirmed rather than rolled back silently, and a fresh `getDocument` resolves it.
+
 **Spotlight indexes full text by default.** Each `CSSearchableItem` carries title, tags, classification, and the body as `textContent`. Indexing is batched (500–1000 items) with Core Spotlight client state so a killed app resumes rather than restarts, and the reindex-all delegate callback replays from the mirror. Core Spotlight's index is on-device only and never leaves the device; the one exposure is that note snippets are visible in Spotlight results to anyone holding the unlocked device. A Settings toggle allows body indexing to be disabled, which matters if an app lock is ever added.
 
 **Local search and pagination.** Once the mirror is populated, the Documents tab queries SwiftData directly for sort, classification filter, and tag filter, and keyword search runs locally against the mirrored bodies. Semantic search stays on the API. `GET /documents` and `GET /search?mode=keyword` become fallbacks, not the UI's data source.
@@ -62,9 +64,9 @@ The S3 key and the vault-relative file path are the same string, so document ide
 
 1. **First launch after sign-in.** Download manifest, batch-upsert metadata, mark all bodies as pending. Start body fetch with bounded concurrency (on the order of 16–32 in flight). Show progress in the Documents tab and Settings. The app is fully browsable during this phase; opening a pending note fetches it immediately and out of order.
 2. **Foreground refresh.** Fetch manifest, compare every entry field-wise, upsert changed metadata, fetch bodies whose ETag differs, delete in-scope keys missing from the manifest.
-3. **Background.** `BGAppRefreshTask` for manifest deltas; `BGProcessingTask` for completing a large initial or resumed body sync.
+3. **Background.** `BGAppRefreshTask` for manifest refreshes; `BGProcessingTask` for completing a large initial or resumed body sync.
 4. **Push.** Existing push notification infrastructure can later nudge a manifest refresh when the pipeline finishes processing a change.
-5. **Sign-out.** Delete the store, the content directory, and the Spotlight index.
+5. **Authentication loss.** Any transition to `signedOut`, whether from an explicit sign-out or from `transitionToSignedOut()` on token or session failure, cancels in-flight sync and indexing, then deletes the store, the content directory, and the Spotlight index. Sync and indexing work carry a generation token checked before every write so a late completion cannot repopulate the mirror after cleanup. Re-authentication starts a fresh initial sync.
 
 ### Cross-Platform Considerations
 
@@ -99,7 +101,7 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - `shared/PKMCore/Sources/Store/VaultStore.swift` — Evolved `DocumentCacheService` with background context, batched upserts, ETag and sync state
 - `shared/PKMCore/Sources/Store/VaultContentDirectory.swift` — Reads and writes body files under the App Group container keyed by vault-relative path
 - `shared/PKMCore/Sources/Store/VaultFeeder.swift` — Feeder protocol
-- `shared/PKMCore/Sources/Store/S3Feeder.swift` — Manifest diff, delta sync via modified GSI, direct S3 body fetch with bounded concurrency and resume
+- `shared/PKMCore/Sources/Store/S3Feeder.swift` — Manifest comparison with pending-mutation guard, direct S3 body fetch with bounded concurrency and resume
 - `shared/PKMCore/Sources/Store/FilesystemFeeder.swift` — macOS vault directory reader and watcher
 - `shared/PKMCore/Sources/Store/LocalSearch.swift` — Local keyword search over mirrored bodies
 - `shared/PKMCore/Sources/Spotlight/SpotlightIndexer.swift` — Batched full-text Core Spotlight indexing with client state
@@ -113,7 +115,8 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 
 - `terraform/cognito.tf` — Read-only S3 permissions on the authenticated Identity Pool role
 - `lambda/functions/api_get_document/handler.clj` — Return the S3 ETag alongside content
-- `lambda/functions/api_update_document/handler.clj` — Accept `ifMatch` and write with S3 conditional `If-Match`; keep `ifUnmodifiedSince` as fallback
+- `lambda/functions/api_update_document/handler.clj` — Accept `ifMatch` and write with S3 conditional `If-Match`; keep `ifUnmodifiedSince` as fallback; return the new ETag
+- `lambda/functions/api_create_document/handler.clj` — Return the new ETag so the client can record pending state
 - `lambda/shared/aws/s3.clj` — `put-object` variant with `If-Match`; `get-object` variant returning ETag
 - `ios/PKMReader/Core/Cache/DocumentCacheService.swift` — Moved to shared package and rewritten as `VaultStore`
 - `ios/PKMReader/Core/Cache/CachedDocument.swift` — Moved to shared package; schema extended with ETag, body state, Spotlight state
@@ -122,7 +125,7 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - `ios/PKMReader/Features/Editor/DocumentEditorViewModel.swift` — Fresh `getDocument` before editing; use its `modified` for `ifUnmodifiedSince`
 - `ios/PKMReader/App/PKMReaderApp.swift` — Amplify bootstrap, URL scheme handling, background task registration
 - `ios/PKMReader/App/MainTabView.swift` — Document deep link route
-- `ios/PKMReader/Core/Auth/AuthService.swift` — Lazy shared configuration; AWS credential access; clear mirror and index on sign-out
+- `ios/PKMReader/Core/Auth/AuthService.swift` — Lazy shared configuration; AWS credential access; publish auth-loss events that trigger mirror and index cleanup for both explicit sign-out and `transitionToSignedOut()`
 - `ios/PKMReader/Features/Settings/SettingsViewModel.swift` — Clear-cache wiring follows the moved store; body indexing toggle; sync status
 - `ios/project.yml` — Shared package dependency, Amplify Storage plugin, App Group and keychain group (`entitlements.properties`), `CFBundleURLTypes` (`info.properties`), background modes
 - `macos/project.yml` — App Group and keychain group (if sync app feeds the store)
@@ -147,7 +150,7 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - [ ] In-scope documents absent from the manifest are removed from the store, the content directory, and the Spotlight index; out-of-scope keys are never evicted by reconciliation
 - [ ] Metadata is upserted on any field difference regardless of `modified` ordering (covers frontmatter-dated edits and classification changes)
 - [ ] Bodies are re-fetched when the manifest ETag differs from the locally stored ETag
-- [ ] Delta sync via modified GSI runs on foreground and under `BGAppRefreshTask`
+- [ ] Manifest refresh runs on foreground and under `BGAppRefreshTask`; no other incremental sync path exists
 - [ ] Documents list renders from the store with local sort, classification, tag filtering, and local keyword search
 - [ ] Document detail renders mirrored content immediately with no network call when the body is present
 - [ ] Editor fetches fresh content before editing and sends the matching `modified` as `ifUnmodifiedSince` and the ETag as `ifMatch`
@@ -159,7 +162,8 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - [ ] App Intents: open document, search documents, read document; entity query and read resolve from the mirror without network
 - [ ] Intents work when the app is launched in the background (Amplify configured outside `RootView`); verified by an authenticated background-launch test with the device locked after first unlock
 - [ ] Amplify keychain accessibility and shared access group confirmed; `amplifyconfiguration.json` bundled in every authenticating target
-- [ ] Sign-out clears the store, the content directory, and the Spotlight index
+- [ ] Any transition to signed-out (explicit sign-out or token/session failure) cancels in-flight sync and indexing and clears the store, the content directory, and the Spotlight index; a late-completing sync cannot repopulate data after cleanup
+- [ ] Manifests carry `generatedAt`; write-through records per-field pending state; reconciliation never rolls back a pending create, delete, edit, or classification change until a postdating manifest confirms it; unconfirmed mutations past the grace window are surfaced, not reverted
 - [ ] `FilesystemFeeder` protocol conformance exists and is covered by unit tests (full macOS reader integration lands with Task 0029)
 - [ ] Entitlements declared under `entitlements.properties` and `CFBundleURLTypes` under `info.properties` in `project.yml`
 - [ ] All existing iOS and Lambda tests continue to pass; `terraform plan` shows only the intended IAM and manifest additions
@@ -173,11 +177,11 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - [ ] Step 4b: Backend: return ETag from `api_get_document`; add `ifMatch` with S3 conditional `If-Match` to `api_update_document`
 - [ ] Step 5: Terraform: read-only S3 policy on the Identity Pool authenticated role
 - [ ] Step 6: iOS S3 access: Amplify Storage plugin (or SigV4 fallback) reading objects with Identity Pool credentials
-- [ ] Step 7: Implement `VaultFeeder` protocol and `S3Feeder` (field-wise manifest comparison, scoped deletion, ETag-driven body fetch with bounded concurrency, resume state, progress reporting)
+- [ ] Step 7: Implement `VaultFeeder` protocol and `S3Feeder` (field-wise manifest comparison honoring pending-mutation state, scoped deletion, ETag-driven body fetch with bounded concurrency, resume state, progress reporting)
 - [ ] Step 8: Register `BGAppRefreshTask` and `BGProcessingTask`; wire foreground refresh
 - [ ] Step 9: Wire `DocumentListViewModel` to the store with local pagination, filters, keyword search, and sync progress
 - [ ] Step 10: Wire `DocumentDetailViewModel` to the mirror; fix editor to fetch fresh and send its `modified` and ETag
-- [ ] Step 11: Write-through from all mutation paths; clear store, content directory, and index on sign-out
+- [ ] Step 11: Write-through from all mutation paths with per-field pending state and manifest confirmation; cleanup on any signed-out transition with cancellation and generation token
 - [ ] Step 12: Move Amplify bootstrap out of `RootView`; verify Amplify keychain accessibility and configure shared access group; add `CFBundleURLTypes` and document deep link route
 - [ ] Step 13: Implement `SpotlightIndexer` with full-text items, batching, client state, reindex-all callback, and the body indexing toggle
 - [ ] Step 14: Implement `DocumentEntity`, `EntityQuery`, and the open / search / read intents; verify background launch

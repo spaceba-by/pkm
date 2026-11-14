@@ -11,7 +11,9 @@ Extend the iOS app with system-level integrations: home screen widgets for at-a-
 - **Recent Summary Widget** (small/medium): Shows the latest daily summary title and date
 - **Document Count Widget** (small): Shows total document count and recent activity
 - **Search Monitor Widget** (medium): Shows active monitors with latest novelty scores
-- Widgets use WidgetKit with timeline-based updates and read the shared App Group store from Task 0034; they do not call the API
+- Widgets use WidgetKit with timeline-based updates and read only from the shared App Group container; they do not call the API
+- Document data (counts, recent activity) comes from the Task 0034 vault mirror
+- Summary and search monitor data is not in the mirror (summaries live under `_agent/`, monitor configuration and novelty scores are per-user API data). The main app writes small snapshots (`latest-summary.json`, `search-monitors.json`) into the App Group container whenever it refreshes the Insights or Search Monitor screens or handles a related push notification, then calls `WidgetCenter.reloadTimelines`. Snapshots are deleted on any signed-out transition alongside the Task 0034 cleanup, and widgets render a signed-out placeholder when they are absent
 
 ### Spotlight Integration
 
