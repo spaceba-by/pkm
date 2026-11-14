@@ -26,7 +26,7 @@ Extend the iOS app with system-level integrations: home screen widgets for at-a-
 - Minimal UI: title field, optional tags, content preview
 - Requires shared keychain for authentication token access
 
-**Depends on:** Task 0021 (Push Notifications) for widget update triggers.
+**Depends on:** Task 0021 (Push Notifications) for widget update triggers; Task 0034 (Local Vault Store) for the shared App Group store that widgets read and for Spotlight indexing, which is now specified in Task 0034 rather than here.
 
 ## Relevant Files
 
