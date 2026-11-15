@@ -50,7 +50,7 @@ The S3 key and the vault-relative file path are the same string, so document ide
 
 **Stale-while-revalidate for reading; fresh fetch for editing.** S3 is the source of truth and Obsidian edits arrive via rclone outside the app. The list and detail views render from the mirror immediately and revalidate against the manifest's ETag. The editor always opens from a fresh `getDocument` call and sends that response's `modified` as `ifUnmodifiedSince`. This fixes the client-side token mismatch (today the editor sends the list's `modified`, not the fetched content's) but does not by itself guarantee no silent overwrite: `api_update_document` checks the DynamoDB timestamp and then performs an unconditional S3 write, so an external rclone edit can race the check, and `modified` is a weak version for the reasons above.
 
-**Body-bound conflict detection (backend).** Since the mirror and manifest carry S3 ETags, `api_get_document` returns the object's ETag, the client sends it back as `ifMatch`, and `api_update_document` writes with S3's conditional `If-Match` so the check is atomic at the object level. `ifUnmodifiedSince` stays as a fallback for older clients. The guarantee the task claims is scoped to this: once the ETag path is in place, a stale mirror or a concurrent rclone edit yields a 409, never an overwrite.
+**Body-bound conflict detection (backend).** Since the mirror and manifest carry S3 ETags, `api_get_document` returns the ETag from the same `GetObject` response as the content it returns (never from a separate `HeadObject` or the manifest), the client sends it back as `ifMatch`, and `api_update_document` writes with S3's conditional `If-Match` so the check is atomic at the object level. `api_create_document` replaces its exists-then-put check with `If-None-Match: *`, which has the same race today. Clients built with this task always send `ifMatch`; `ifUnmodifiedSince` stays only as a fallback for older builds, and once those are retired the endpoint rejects updates without `ifMatch`. On a 409 the editor keeps the user's draft, fetches the current body, and offers to reapply or discard; it never drops typed text. The guarantee the task claims is scoped to this: once the ETag path is in place, a stale mirror or a concurrent S3-side write yields a 409, never an overwrite. An Obsidian edit still sitting on the Mac between rclone runs is outside it: bisync resolves that against the app's write with `--conflict-resolve newer` and keeps the loser as a renamed copy, so nothing is lost silently, but the app's edit can end up in the copy.
 
 **Write-through on every mutation.** Classification updates, edits, creates, and deletes performed in-app update the local store, the body file, and the Spotlight index before anything else observes them. Widgets and intents are strictly read-only consumers.
 
@@ -89,9 +89,13 @@ The S3 key and the vault-relative file path are the same string, so document ide
 Add to the `cognito_authenticated` role policy in `terraform/cognito.tf`:
 
 - `s3:GetObject` on `arn:aws:s3:::<vault-bucket>/*`
-- Optionally `s3:ListBucket` on the bucket, scoped to be used only as a reconciliation fallback; the manifest is the primary source of the key set.
+- Optionally `s3:ListBucket` on the bucket, used only as a reconciliation fallback; the manifest is the primary source of the key set.
 
-No write permissions. Both the `admin` and `reader` Cognito groups can already read every document through the API, so read-only S3 access does not widen what either group can see. The `generate_manifest` Lambda's execution role needs `s3:ListBucket` and `s3:GetObject` on the bucket and `dynamodb:Query` on the metadata table; `api_update_document` needs no new permissions for conditional writes.
+No write permissions. Every object in the bucket is intentionally readable by any signed-in user, through the API and directly from S3 alike; there is no per-prefix or per-group read restriction.
+
+That makes the set of users who can sign in the whole read boundary. The User Pool has no `admin_create_user_config`, so `allow_admin_create_user_only` defaults to false and anyone holding the (non-secret) app client ID can call `SignUp` and then read the vault. Set `allow_admin_create_user_only = true` so only admin-created users can sign in.
+
+The bucket uses SSE-S3 (`AES256`), so no KMS grant is needed. The `generate_manifest` Lambda's execution role needs `s3:ListBucket` and `s3:GetObject` on the bucket and `dynamodb:Query` on the metadata table; `api_update_document` and `api_create_document` need no new permissions for conditional writes.
 
 ## Relevant Files
 
@@ -116,7 +120,7 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - `terraform/cognito.tf` — Read-only S3 permissions on the authenticated Identity Pool role
 - `lambda/functions/api_get_document/handler.clj` — Return the S3 ETag alongside content
 - `lambda/functions/api_update_document/handler.clj` — Accept `ifMatch` and write with S3 conditional `If-Match`; keep `ifUnmodifiedSince` as fallback; return the new ETag
-- `lambda/functions/api_create_document/handler.clj` — Return the new ETag so the client can record pending state
+- `lambda/functions/api_create_document/handler.clj` — Write with `If-None-Match: *` instead of exists-then-put; return the new ETag so the client can record pending state
 - `lambda/shared/aws/s3.clj` — `put-object` variant with `If-Match`; `get-object` variant returning ETag
 - `ios/PKMReader/Core/Cache/DocumentCacheService.swift` — Moved to shared package and rewritten as `VaultStore`
 - `ios/PKMReader/Core/Cache/CachedDocument.swift` — Moved to shared package; schema extended with ETag, body state, Spotlight state
@@ -142,6 +146,7 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - [ ] Store, content directory, feeders, indexer, and intents live in a shared Swift package imported by the iOS app target
 - [ ] SwiftData store and content directory are located in an App Group container
 - [ ] Identity Pool authenticated role has read-only `s3:GetObject` on the vault bucket and no write permissions
+- [ ] User Pool self sign-up disabled (`allow_admin_create_user_only = true`)
 - [ ] Manifest Lambda builds the inventory from `ListObjectsV2`, joins DynamoDB metadata, synthesizes metadata for unprocessed notes, and writes `_agent/manifest.json.gz` with scope declaration, ETags, and per-row hashes; a new API endpoint serves it
 - [ ] `_agent/` documents are never written to the mirror; Insights screens continue to fetch them via `getDocument`
 - [ ] Initial sync completes with one manifest download, batched metadata upserts on a background context, and direct S3 body fetches with bounded concurrency
@@ -154,7 +159,8 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - [ ] Documents list renders from the store with local sort, classification, tag filtering, and local keyword search
 - [ ] Document detail renders mirrored content immediately with no network call when the body is present
 - [ ] Editor fetches fresh content before editing and sends the matching `modified` as `ifUnmodifiedSince` and the ETag as `ifMatch`
-- [ ] `api_update_document` performs an S3 conditional write on `If-Match` and returns 409 on mismatch
+- [ ] `api_update_document` performs an S3 conditional write on `If-Match` and returns 409 on mismatch; `api_create_document` writes with `If-None-Match: *`
+- [ ] On a 409 the editor preserves the draft and offers reload and reapply
 - [ ] Classification updates, edits, creates, and deletes write through to the store, body file, and Spotlight index
 - [ ] Spotlight indexes title, tags, classification, and full body text in batches with client state; reindex-all callback implemented
 - [ ] Settings toggle disables body indexing and triggers a reindex without bodies
@@ -175,7 +181,7 @@ No write permissions. Both the `admin` and `reader` Cognito groups can already r
 - [ ] Step 3: Rewrite the store: App Group container location, background `ModelContext`, batched upserts keyed on a single fetch of existing identifiers, bulk delete of missing keys, ETag and body state columns; add `VaultContentDirectory`
 - [ ] Step 4: Backend: `generate_manifest` Lambda on an EventBridge schedule (S3 inventory joined with DynamoDB, scope declaration, ETags, row hashes) writing `_agent/manifest.json.gz`; `api_get_manifest` endpoint; Terraform
 - [ ] Step 4b: Backend: return ETag from `api_get_document`; add `ifMatch` with S3 conditional `If-Match` to `api_update_document`
-- [ ] Step 5: Terraform: read-only S3 policy on the Identity Pool authenticated role
+- [ ] Step 5: Terraform: read-only S3 policy on the Identity Pool authenticated role; disable User Pool self sign-up
 - [ ] Step 6: iOS S3 access: Amplify Storage plugin (or SigV4 fallback) reading objects with Identity Pool credentials
 - [ ] Step 7: Implement `VaultFeeder` protocol and `S3Feeder` (field-wise manifest comparison honoring pending-mutation state, scoped deletion, ETag-driven body fetch with bounded concurrency, resume state, progress reporting)
 - [ ] Step 8: Register `BGAppRefreshTask` and `BGProcessingTask`; wire foreground refresh
