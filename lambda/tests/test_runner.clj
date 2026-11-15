@@ -31,6 +31,7 @@
 (require '[workflows.engine-test])
 (require '[workflows.triggers-test])
 (require '[workflows.schema-test])
+(require '[workflows.api-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -61,7 +62,8 @@
                  'dispatch.api-test
                  'workflows.engine-test
                  'workflows.triggers-test
-                 'workflows.schema-test)]
+                 'workflows.schema-test
+                 'workflows.api-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))
