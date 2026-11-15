@@ -65,9 +65,10 @@ resource "aws_lambda_function" "classify_document" {
 
   environment {
     variables = {
-      S3_BUCKET_NAME      = aws_s3_bucket.vault.id
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.metadata.name
-      BEDROCK_MODEL_ID    = var.bedrock_haiku_model_id
+      S3_BUCKET_NAME                  = aws_s3_bucket.vault.id
+      DYNAMODB_TABLE_NAME             = aws_dynamodb_table.metadata.name
+      BEDROCK_MODEL_ID                = var.bedrock_haiku_model_id
+      WORKFLOW_DISPATCH_FUNCTION_NAME = var.enable_workflows ? local.workflow_dispatch_function_name : ""
     }
   }
 
@@ -156,9 +157,10 @@ resource "aws_lambda_function" "extract_metadata" {
 
   environment {
     variables = {
-      S3_BUCKET_NAME                = aws_s3_bucket.vault.id
-      DYNAMODB_TABLE_NAME           = aws_dynamodb_table.metadata.name
-      COMMAND_PROCESS_FUNCTION_NAME = "${var.project_name}-command-process"
+      S3_BUCKET_NAME                  = aws_s3_bucket.vault.id
+      DYNAMODB_TABLE_NAME             = aws_dynamodb_table.metadata.name
+      COMMAND_PROCESS_FUNCTION_NAME   = "${var.project_name}-command-process"
+      WORKFLOW_DISPATCH_FUNCTION_NAME = var.enable_workflows ? local.workflow_dispatch_function_name : ""
     }
   }
 

@@ -216,6 +216,6 @@ Workflows are reached from the Insights tab alongside Dispatch. `WorkflowListVie
 - [x] Step 4: Create workflow execution Lambda (`workflow_execute`)
 - [x] Step 5: Create workflow CRUD API Lambda (`api_workflows`) with tests
 - [x] Step 6: Create `workflow_dispatch` Lambda and wire `classify_document` and `extract_metadata` to it
-- [ ] Step 7: Add Terraform infrastructure (`workflows.tf`, schedule rule, env vars, routes) and update `docs/architecture.md`
+- [x] Step 7: Add Terraform infrastructure (`workflows.tf`, schedule rule, env vars, routes) and update `docs/architecture.md`
 - [ ] Step 8: Create iOS workflow management views
 - [ ] Step 9: End-to-end verification against the deployed stack and final test pass

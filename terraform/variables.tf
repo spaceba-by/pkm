@@ -235,3 +235,19 @@ variable "dispatch_task_memory" {
   type        = number
   default     = 2048
 }
+
+# =============================================================================
+# Custom Agent Workflow Variables (Task 0026)
+# =============================================================================
+
+variable "enable_workflows" {
+  description = "Enable custom agent workflows (workflow-dispatch, workflow-execute, api-workflows, schedule polling)"
+  type        = bool
+  default     = true
+}
+
+variable "workflow_schedule_poll_rate" {
+  description = "EventBridge schedule expression for polling due schedule-triggered workflows"
+  type        = string
+  default     = "rate(15 minutes)"
+}

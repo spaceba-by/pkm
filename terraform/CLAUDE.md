@@ -48,6 +48,8 @@ terraform plan -var="lambda_source_type=s3" -var="lambda_build_tag=main-abc123"
 | `secrets.tf` | Secrets Manager resources |
 | `webhooks.tf` | Webhook receiving infrastructure and API routes |
 | `insights.tf` | Insights viewed tracking and unviewed counts |
+| `dispatch.tf` | Self-improvement dispatch (ECS Fargate sandbox, dispatch Lambdas, API routes) |
+| `workflows.tf` | Custom agent workflows (dispatch/execute Lambdas, schedule rule, API routes) |
 | `state.tf` | Remote state backend configuration |
 
 ## Naming Conventions
@@ -87,6 +89,8 @@ resource "aws_iam_openid_connect_provider" "github" {
 Key enable flags:
 - `enable_github_oidc` - GitHub Actions OIDC authentication
 - `enable_mobile_api` - Cognito and API Gateway (default: true)
+- `enable_dispatch` - Self-improvement dispatch infrastructure (default: false)
+- `enable_workflows` - Custom agent workflows (default: true)
 - `cognito_deletion_protection` - Prevent accidental User Pool deletion
 
 ## Adding New Lambda Functions

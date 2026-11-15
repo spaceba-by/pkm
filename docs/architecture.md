@@ -16,11 +16,11 @@ graph TD
         Cognito[Amazon Cognito<br/>User Pool · App Client · Identity Pool]
 
         S3 -->|S3 Events| EB[EventBridge<br/>markdown-events · daily-schedule · weekly-schedule]
-        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 49 routes]
+        Cognito -->|JWT Auth| APIGW[API Gateway HTTP<br/>JWT Authorizer · CORS · 56 routes]
 
-        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata · extract-tasks<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document · command-process<br/>persistent-search-execute · persistent-search-summarize<br/>notification-dispatch · webhook-receive<br/>dispatch-job · collect-results]
+        EB --> ProcLambda[Processing Lambdas<br/>classify-document · extract-entities · extract-metadata · extract-tasks<br/>generate-daily-summary · generate-weekly-report · update-classification-index<br/>bulk-reclassify · delete-document · command-process<br/>persistent-search-execute · persistent-search-summarize<br/>notification-dispatch · webhook-receive<br/>dispatch-job · collect-results<br/>workflow-dispatch · workflow-execute]
 
-        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed<br/>chat-list · chat-messages · chat-send<br/>tasks · tasks-stats<br/>list-jobs · get-job · create-job<br/>claim-job · complete-job · agent-types]
+        APIGW --> APILambda[API Lambdas<br/>list-documents · get-document · search<br/>list-tags · documents-by-tag · list-classifications<br/>list-summaries · list-reports · update-classification<br/>bulk-reclassify · create/update/delete<br/>graph-data · search-monitors<br/>device-tokens · notifications<br/>webhook-sources · webhook-events<br/>insights-count · mark-viewed<br/>chat-list · chat-messages · chat-send<br/>tasks · tasks-stats<br/>list-jobs · get-job · create-job<br/>claim-job · complete-job · agent-types<br/>workflows]
 
         ProcLambda --> DynamoDB[DynamoDB Table<br/>PK: doc#path · tag#name · entity#type#name<br/>SK: metadata · doc#path · mention#doc<br/>GSI: tag-index · classification-index · entity-index]
         APILambda --> DynamoDB
@@ -69,7 +69,7 @@ graph TD
 
 #### Lambda Functions
 
-**Processing Functions (16):**
+**Processing Functions (18):**
 
 | Function | Runtime | Memory | Timeout | Trigger | Purpose |
 |----------|---------|--------|---------|---------|---------|
@@ -89,6 +89,8 @@ graph TD
 | `webhook-receive` | Babashka | 256 MB | 30s | API Gateway (POST /webhooks/{source-id}) | Validate and route incoming webhooks |
 | `dispatch-job` | Babashka | 512 MB | 60s | Async invoke | Create dispatch jobs and provision ECS Fargate sandbox or queue for local agent |
 | `collect-results` | Babashka | 256 MB | 30s | EventBridge (ECS task stopped) | Collect sandbox output and update job records |
+| `workflow-dispatch` | Babashka | 256 MB | 30s | Async invoke (classify-document, extract-metadata) · Scheduled (every 15 min) | Match document, @workflow command and schedule events against custom workflow definitions and queue runs |
+| `workflow-execute` | Babashka | 1024 MB | 300s | Async invoke | Render a workflow prompt template, invoke Bedrock, write output to `_agent/`, DynamoDB or a notification, record the run |
 
 **CLI Utilities** (run locally, not deployed as Lambda):
 
@@ -96,7 +98,7 @@ graph TD
 |--------|---------|
 | `index-embeddings` | Generate vector embeddings for semantic search index |
 
-**API Functions (34):**
+**API Functions (35):**
 
 | Function | Runtime | Memory | Timeout | Endpoint | Purpose |
 |----------|---------|--------|---------|----------|---------|
@@ -134,6 +136,7 @@ graph TD
 | `api-claim-job` | Babashka | 256 MB | 30s | POST /dispatch/jobs/claim | Claim pending job (local agent polling) |
 | `api-complete-job` | Babashka | 256 MB | 30s | POST /dispatch/jobs/{jobId}/complete | Submit results for claimed job |
 | `api-agent-types` | Babashka | 256 MB | 30s | GET/POST /dispatch/agent-types; DELETE /dispatch/agent-types/{name} | Manage agent type definitions |
+| `api-workflows` | Babashka | 256 MB | 30s | GET/POST /workflows; GET/PUT/DELETE /workflows/{id}; POST /workflows/{id}/run; GET /workflows/{id}/runs | Manage custom agent workflow definitions, trigger manual runs, browse run history (writes admin only) |
 
 **Shared Code:**
 - AWS wrappers in `lambda/shared/aws/`: `bedrock.clj`, `dynamodb.clj`, `s3.clj`, `sns.clj`, `lambda.clj`, `secrets_manager.clj`, `brave_search.clj`
