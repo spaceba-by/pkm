@@ -275,8 +275,8 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 - **Task 0029: iPad & macOS App**
 
   - See: [0029-multiplatform-app](tasks/0029-multiplatform-app.md)
-  - Multi-platform SwiftUI app with platform-adaptive layouts
-  - Split view (iPad), sidebar navigation (macOS), shared code extraction
+  - iPad split view in the iOS app; macOS reader built into the existing sync app (one app, one process) on the Task 0034 shared package
+  - Depends on: Task 0034
 
 #### Tier 6 — Integrations & Advanced
 

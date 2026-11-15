@@ -70,11 +70,32 @@ The S3 key and the vault-relative file path are the same string, so document ide
 
 ### Cross-Platform Considerations
 
-- **macOS has the vault on disk.** The sync app (`macos/`, bundle `by.spaceba.pkm.sync`) already keeps a local vault via rclone bisync. A macOS reader does not need the S3 feeder; the `FilesystemFeeder` reads files directly. macOS Spotlight already indexes plain markdown in the vault folder, so the custom index there is primarily for deep linking into the app.
-- **One app or two on macOS.** The sync app and the planned reader (Task 0029) are separate bundle IDs today. If they stay separate, the App Group and keychain access group must span all targets, and the sync app becomes the natural filesystem feeder. This decision should be made before the shared package is created.
+- **macOS has the vault on disk.** The sync app (`macos/`, bundle `by.spaceba.pkm.sync`) already keeps a local vault via rclone bisync. The macOS reader does not need the S3 feeder; the `FilesystemFeeder` reads files directly. macOS Spotlight already indexes plain markdown in the vault folder, so the custom index there is primarily for deep linking into the app.
+- **Decision (2026-11-15): one macOS app, one process.** The reader is built into the existing sync app rather than shipped as a macOS destination of the iOS project. Rationale and consequences are in "macOS: One App" below; Task 0029 is restructured accordingly.
 - **Entitlements and Info.plist keys live in `project.yml`.** XcodeGen overwrites entitlements files on every `generate`, and the targets use `GENERATE_INFOPLIST_FILE`. App Groups and keychain sharing go under `entitlements.properties`. The document URL scheme is Info.plist configuration, not an entitlement: declare `CFBundleURLTypes` under the target's `info.properties` in `project.yml`, or the deep link scheme will not be registered.
 - **Unsandboxed macOS sync app.** The sync app is not sandboxed and runs rclone as a subprocess. Unsandboxed apps can still use App Groups, but the container path differs; resolve it via `containerURL(forSecurityApplicationGroupIdentifier:)` and never hardcode it.
 - **Widgets are the strictest consumer.** They run in a separate process with tight memory and should not rely on network. They read the shared store and nothing else.
+
+### macOS: One App
+
+The existing sync app is unsandboxed with hardened runtime, menu-bar only (`LSUIElement`), distributed as a signed and notarized GitHub release with its own self-updater, launches at login, and reaches S3 through rclone's own AWS credentials rather than Cognito. Sync cannot run inside the App Sandbox without bundling rclone and reworking credentials and bisync state, so a combined app is necessarily unsandboxed, Developer ID signed, and never on the Mac App Store. That is accepted.
+
+**Why one app.** Sync completion triggers the `FilesystemFeeder` rescan and Spotlight update directly in-process with no App Group coordination, FSEvents bridging, or XPC. Sync conflicts (the existing `ConflictService` and `DiffService`) surface in the reader UI next to the note. There is one install, one update, and one login item, so the thing that syncs and the thing that reads can never skew.
+
+**Identity.** The bundle identifier stays `by.spaceba.pkm.sync`; the self-updater matches installed copies by bundle, and renaming would orphan every installed copy from the `macos-v*` release chain. The display name becomes "Sal" (the iOS app's display name) and the Dock and menu bar represent one product. The `macos/` project imports the shared package and gains the reader features; the iOS project stays iOS-only.
+
+**Risks and required mitigations.** These are acceptance criteria for Task 0029, not optional polish:
+
+- *Lifecycle.* The app is no longer a pure menu bar item. Activation policy switches to `.regular` (Dock icon) while a window is open and back to `.accessory` when the last window closes. Closing windows never stops sync. Cmd-Q presents a confirmation stating that quitting stops sync, with a "Close windows instead" default.
+- *Crash coupling.* Sync is the critical path for the whole system and a crash in the reader (graph rendering, a 13k-row list) would take the scheduler down with it. The scheduler and `SyncService` run on an isolated actor with no dependency on UI state, and reader view models never hold references into sync internals. If crash coupling bites in practice, the documented escape hatch is one bundle with two processes: sync as an embedded login-item helper registered via `SMAppService`, with XPC for status and conflicts.
+- *Self-update.* The updater replaces the bundle and relaunches. It must defer while any editor has unsaved changes or a sync phase is mid-run, and the relaunch must restore open windows.
+- *Credentials.* rclone keeps using its configured IAM keys; the reader uses Cognito through Amplify. Both live in one binary. Unifying them (feeding Identity Pool credentials to rclone via `env_auth`) would require S3 write permissions on the authenticated role, which this task deliberately withholds, so unification is out of scope.
+- *CI.* The macOS build grows from roughly a minute toward the iOS build time; apply the same DerivedData and SPM caching the iOS workflows use.
+
+**Shared identifiers (proposed defaults, confirm in Step 1).**
+
+- App Group: `group.by.spaceba.pkm` on both platforms. On macOS the unsandboxed app and its future widget and intent extensions resolve the container via `containerURL(forSecurityApplicationGroupIdentifier:)`.
+- Keychain access group: `$(AppIdentifierPrefix)by.spaceba.pkm.shared`, passed to Amplify's configuration so extensions share the Cognito session.
 
 ### Auth and Navigation Prerequisites
 
@@ -106,7 +127,7 @@ The bucket uses SSE-S3 (`AES256`), so no KMS grant is needed. The `generate_mani
 - `shared/PKMCore/Sources/Store/VaultContentDirectory.swift` — Reads and writes body files under the App Group container keyed by vault-relative path
 - `shared/PKMCore/Sources/Store/VaultFeeder.swift` — Feeder protocol
 - `shared/PKMCore/Sources/Store/S3Feeder.swift` — Manifest comparison with pending-mutation guard, direct S3 body fetch with bounded concurrency and resume
-- `shared/PKMCore/Sources/Store/FilesystemFeeder.swift` — macOS vault directory reader and watcher
+- `shared/PKMCore/Sources/Store/FilesystemFeeder.swift` — macOS vault directory reader; rescans on sync completion in-process and watches for Obsidian edits between runs
 - `shared/PKMCore/Sources/Store/LocalSearch.swift` — Local keyword search over mirrored bodies
 - `shared/PKMCore/Sources/Spotlight/SpotlightIndexer.swift` — Batched full-text Core Spotlight indexing with client state
 - `shared/PKMCore/Sources/Intents/DocumentEntity.swift` — `AppEntity` and `EntityQuery` backed by the store
@@ -132,7 +153,8 @@ The bucket uses SSE-S3 (`AES256`), so no KMS grant is needed. The `generate_mani
 - `ios/PKMReader/Core/Auth/AuthService.swift` — Lazy shared configuration; AWS credential access; publish auth-loss events that trigger mirror and index cleanup for both explicit sign-out and `transitionToSignedOut()`
 - `ios/PKMReader/Features/Settings/SettingsViewModel.swift` — Clear-cache wiring follows the moved store; body indexing toggle; sync status
 - `ios/project.yml` — Shared package dependency, Amplify Storage plugin, App Group and keychain group (`entitlements.properties`), `CFBundleURLTypes` (`info.properties`), background modes
-- `macos/project.yml` — App Group and keychain group (if sync app feeds the store)
+- `macos/project.yml` — Shared package dependency, App Group and keychain group, `LSUIElement` removed in favor of runtime activation policy, `CFBundleURLTypes`, display name "Sal"
+- `macos/PKMSync/App/PKMSyncApp.swift` — Adds `WindowGroup` reader scenes alongside the existing `MenuBarExtra`; activation policy switching (reader UI itself lands in Task 0029)
 - `docs/tasks/0027-ios-extensions.md` — Spotlight indexing now provided by this task; widgets read the shared store
 
 ### Files to Delete
@@ -170,13 +192,13 @@ The bucket uses SSE-S3 (`AES256`), so no KMS grant is needed. The `generate_mani
 - [ ] Amplify keychain accessibility and shared access group confirmed; `amplifyconfiguration.json` bundled in every authenticating target
 - [ ] Any transition to signed-out (explicit sign-out or token/session failure) cancels in-flight sync and indexing and clears the store, the content directory, and the Spotlight index; a late-completing sync cannot repopulate data after cleanup
 - [ ] Manifests carry `generatedAt`; write-through records per-field pending state; reconciliation never rolls back a pending create, delete, edit, or classification change until a postdating manifest confirms it; unconfirmed mutations past the grace window are surfaced, not reverted
-- [ ] `FilesystemFeeder` protocol conformance exists and is covered by unit tests (full macOS reader integration lands with Task 0029)
+- [ ] `FilesystemFeeder` protocol conformance exists and is covered by unit tests; it is triggered in-process by `SyncService` completion (full macOS reader UI lands with Task 0029)
 - [ ] Entitlements declared under `entitlements.properties` and `CFBundleURLTypes` under `info.properties` in `project.yml`
 - [ ] All existing iOS and Lambda tests continue to pass; `terraform plan` shows only the intended IAM and manifest additions
 
 ## Implementation Steps
 
-- [ ] Step 1: Decide App Group identifier, keychain access group, and whether the macOS reader and sync app share a bundle; record in this document
+- [ ] Step 1: Confirm the proposed App Group (`group.by.spaceba.pkm`) and keychain access group (`$(AppIdentifierPrefix)by.spaceba.pkm.shared`); the one-app macOS decision is recorded above (2026-11-15)
 - [ ] Step 2: Create the shared Swift package; move models, networking, `DocumentCacheService`, and `CachedDocument` into it; delete `CacheServiceProtocol` and `MockCacheService`
 - [ ] Step 3: Rewrite the store: App Group container location, background `ModelContext`, batched upserts keyed on a single fetch of existing identifiers, bulk delete of missing keys, ETag and body state columns; add `VaultContentDirectory`
 - [ ] Step 4: Backend: `generate_manifest` Lambda on an EventBridge schedule (S3 inventory joined with DynamoDB, scope declaration, ETags, row hashes) writing `_agent/manifest.json.gz`; `api_get_manifest` endpoint; Terraform
