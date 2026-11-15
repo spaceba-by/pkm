@@ -45,7 +45,8 @@
          "functions/api_create_job"
          "functions/api_claim_job"
          "functions/api_complete_job"
-         "functions/api_agent_types"]
+         "functions/api_agent_types"
+         "functions/workflow_execute"]
  :deps {clj-commons/clj-yaml {:mvn/version "1.0.27"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.babashka/http-client {:mvn/version "0.4.19"}
