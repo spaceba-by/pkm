@@ -73,6 +73,26 @@ struct InsightsView: View {
                             .padding(.horizontal)
                             .accessibilityIdentifier("DispatchNavigationLink")
 
+                            // Workflows section
+                            NavigationLink {
+                                WorkflowListView(apiClient: apiClient)
+                            } label: {
+                                HStack {
+                                    Label("Workflows", systemImage: "gearshape.2")
+                                        .font(.headline)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding()
+                                .background(.regularMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal)
+                            .accessibilityIdentifier("WorkflowsNavigationLink")
+
                             CalendarView(
                                 viewModel: viewModel,
                                 onSummaryTap: { summary in

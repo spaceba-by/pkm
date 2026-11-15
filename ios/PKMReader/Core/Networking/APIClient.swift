@@ -383,6 +383,49 @@ actor APIClient: APIClientProtocol { // swiftlint:disable:this type_body_length
         return response.agentTypes
     }
 
+    // MARK: - Workflows
+
+    func listWorkflows() async throws -> [Workflow] {
+        let url = baseURL.appending(path: APIEndpoints.workflows)
+        let response: WorkflowListResponse = try await performRequestWithRetry(url: url)
+        return response.workflows
+    }
+
+    func getWorkflow(id: String) async throws -> Workflow {
+        let url = baseURL.appending(path: APIEndpoints.workflow(id: id))
+        return try await performRequestWithRetry(url: url)
+    }
+
+    func createWorkflow(request: WorkflowRequest) async throws -> Workflow {
+        let url = baseURL.appending(path: APIEndpoints.workflows)
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "POST", body: request)
+    }
+
+    func updateWorkflow(id: String, request: WorkflowRequest) async throws -> Workflow {
+        let url = baseURL.appending(path: APIEndpoints.workflow(id: id))
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "PUT", body: request)
+    }
+
+    func deleteWorkflow(id: String) async throws {
+        let url = baseURL.appending(path: APIEndpoints.workflow(id: id))
+        try await performDeleteRequestWithRetry(url: url)
+    }
+
+    func runWorkflow(id: String, documentPath: String?) async throws -> WorkflowRunResponse {
+        let url = baseURL.appending(path: APIEndpoints.workflowRun(id: id))
+        struct RunWorkflowRequest: Encodable {
+            let documentPath: String?
+        }
+        let body = RunWorkflowRequest(documentPath: documentPath)
+        return try await performEncodableMutatingRequestWithRetry(url: url, method: "POST", body: body)
+    }
+
+    func listWorkflowRuns(workflowId: String, limit: Int, cursor: String?) async throws -> WorkflowRunListResponse {
+        let path = APIEndpoints.workflowRuns(id: workflowId, limit: limit, cursor: cursor)
+        let url = baseURL.appending(path: path)
+        return try await performRequestWithRetry(url: url)
+    }
+
     // MARK: - Insight Viewed Status
 
     func markSummaryViewed(date: String) async throws {

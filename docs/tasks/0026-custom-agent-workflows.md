@@ -184,11 +184,15 @@ Workflows are reached from the Insights tab alongside Dispatch. `WorkflowListVie
 - `terraform/workflows.tf` — Lambda functions, API routes, schedule rule, permissions
 
 ### iOS (new)
-- `ios/PKMReader/Features/Workflows/WorkflowListView.swift` — Workflow management UI
-- `ios/PKMReader/Features/Workflows/WorkflowFormView.swift` — Create/edit workflow
-- `ios/PKMReader/Features/Workflows/WorkflowRunsView.swift` — Run history and results
-- `ios/PKMReader/Features/Workflows/WorkflowListViewModel.swift` — List and mutation view model
-- `ios/PKMReader/Models/Workflow.swift` — Workflow and WorkflowRun models
+- `ios/PKMReader/Models/Workflow.swift` — Workflow, WorkflowRun, request/response types, template variable reference
+- `ios/PKMReader/Features/Workflows/WorkflowDraft.swift` — Editable form state with client-side validation and request mapping
+- `ios/PKMReader/Features/Workflows/WorkflowListView.swift`, `WorkflowListViewModel.swift` — List with enable toggle, create sheet, swipe to delete
+- `ios/PKMReader/Features/Workflows/WorkflowFormView.swift`, `WorkflowTriggerSection.swift`, `WorkflowPromptSection.swift` — Create/edit form (trigger, filter, prompt, output) and template variable picker
+- `ios/PKMReader/Features/Workflows/WorkflowDetailView.swift`, `WorkflowDetailViewModel.swift` — Configuration summary, Run Now, paginated run history
+- `ios/PKMReader/Features/Workflows/WorkflowRunDetailView.swift` — Run status, tokens, output key and result text
+- `ios/PKMReader/Core/Networking/*` — Seven workflow endpoints on `APIClientProtocol`, `APIClient`, `APIEndpoints`
+- `ios/PKMReader/Features/Insights/InsightsView.swift` — Workflows entry card next to Dispatch
+- `ios/PKMReaderTests/Models/WorkflowTests.swift`, `ios/PKMReaderTests/Features/Workflows/*` — Model decoding, draft validation and mapping, view model tests
 
 ### Tests
 - `lambda/tests/workflows/engine_test.clj` — Interpolation, context rendering, output path normalization
@@ -217,5 +221,5 @@ Workflows are reached from the Insights tab alongside Dispatch. `WorkflowListVie
 - [x] Step 5: Create workflow CRUD API Lambda (`api_workflows`) with tests
 - [x] Step 6: Create `workflow_dispatch` Lambda and wire `classify_document` and `extract_metadata` to it
 - [x] Step 7: Add Terraform infrastructure (`workflows.tf`, schedule rule, env vars, routes) and update `docs/architecture.md`
-- [ ] Step 8: Create iOS workflow management views
+- [x] Step 8: Create iOS workflow management views
 - [ ] Step 9: End-to-end verification against the deployed stack and final test pass
