@@ -365,3 +365,32 @@
       (:last_run item) (assoc :lastRun (:last_run item))
       (:last_status item) (assoc :lastStatus (:last_status item))
       (:created_by item) (assoc :createdBy (:created_by item)))))
+
+;; =============================================================================
+;; Schedule claims
+;; =============================================================================
+
+(defn claim-next-run
+  "Update expression that advances a schedule-triggered workflow's next_run
+   only if nobody else has already done so. Returns a map with :update-expr,
+   :expr-attr-values and :condition-expr for ddb/update-item. When the stored
+   next_run is blank the condition requires the attribute to be absent."
+  [workflow now]
+  (let [expected (:next_run workflow)
+        next (triggers/next-run (get-in workflow [:trigger :schedule]) now)
+        now-iso (str (.truncatedTo ^Instant now ChronoUnit/SECONDS))]
+    (if (str/blank? expected)
+      {:update-expr "SET next_run = :next, updated = :u"
+       :expr-attr-values {":next" next ":u" now-iso}
+       :condition-expr "attribute_not_exists(next_run) OR next_run = :empty"
+       :extra-values {":empty" ""}}
+      {:update-expr "SET next_run = :next, updated = :u"
+       :expr-attr-values {":next" next ":u" now-iso ":expected" expected}
+       :condition-expr "next_run = :expected"})))
+
+(defn execute-event
+  "Payload for an asynchronous workflow_execute invocation"
+  [workflow-id trigger & {:keys [document-path command]}]
+  (cond-> {:workflow-id workflow-id :trigger trigger}
+    document-path (assoc :document-path document-path)
+    command (assoc :command (select-keys command [:name :args]))))

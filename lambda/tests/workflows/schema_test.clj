@@ -3,7 +3,8 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
             [workflow.schema :as schema]
-            [workflow.engine :as engine]))
+            [workflow.engine :as engine])
+  (:import [java.time Instant]))
 
 (def workflow
   {:workflow_id "wf-1" :name "action-items" :created_by "user-1"
@@ -139,3 +140,28 @@
       (is (not (contains? f :documentPath)))))
   (testing "Includes error for failed runs"
     (is (= "boom" (:error (schema/format-run {:run_id "r" :status "failed" :error "boom"}))))))
+
+(deftest claim-next-run-test
+  (let [now (Instant/parse "2026-11-15T12:30:00Z")
+        base {:workflow_id "wf-1" :trigger {:type "schedule" :schedule {:frequency "daily" :hour 6}}}]
+    (testing "With a stored next_run the condition pins the expected value"
+      (let [claim (schema/claim-next-run (assoc base :next_run "2026-11-15T06:00:00Z") now)]
+        (is (= "next_run = :expected" (:condition-expr claim)))
+        (is (= "2026-11-15T06:00:00Z" (get-in claim [:expr-attr-values ":expected"])))
+        (is (= "2026-11-16T06:00:00Z" (get-in claim [:expr-attr-values ":next"])))
+        (is (= "2026-11-15T12:30:00Z" (get-in claim [:expr-attr-values ":u"])))
+        (is (str/starts-with? (:update-expr claim) "SET next_run = :next"))
+        (is (nil? (:extra-values claim)))))
+    (testing "Without a stored next_run the condition requires absence"
+      (let [claim (schema/claim-next-run base now)]
+        (is (str/includes? (:condition-expr claim) "attribute_not_exists(next_run)"))
+        (is (= "" (get-in claim [:extra-values ":empty"])))
+        (is (= "2026-11-16T06:00:00Z" (get-in claim [:expr-attr-values ":next"])))))))
+
+(deftest execute-event-test
+  (is (= {:workflow-id "wf" :trigger "schedule"} (schema/execute-event "wf" "schedule")))
+  (is (= {:workflow-id "wf" :trigger "document" :document-path "a.md"}
+         (schema/execute-event "wf" "document" :document-path "a.md")))
+  (is (= {:workflow-id "wf" :trigger "command" :document-path "a.md" :command {:name "r" :args "x"}}
+         (schema/execute-event "wf" "command" :document-path "a.md"
+                               :command {:name "r" :args "x" :line-number 3}))))

@@ -151,7 +151,8 @@
    "api_agent_types"              "handler/handler"
    ;; Custom agent workflow Lambda functions
    "workflow_execute"             "handler/handler"
-   "api_workflows"                "handler/handler"})
+   "api_workflows"                "handler/handler"
+   "workflow_dispatch"            "handler/handler"})
 
 (defn build-all []
   (println "Building all Lambda functions...\n")

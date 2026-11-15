@@ -3,6 +3,7 @@
   (:require [aws.s3 :as s3]
             [aws.dynamodb :as ddb]
             [aws.bedrock :as bedrock]
+            [aws.lambda :as lambda]
             [markdown.utils :as md]
             [cheshire.core :as json]
             [clojure.string :as str]))
@@ -10,6 +11,24 @@
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def bedrock-model (System/getenv "BEDROCK_MODEL_ID"))
+(def workflow-dispatch-fn (System/getenv "WORKFLOW_DISPATCH_FUNCTION_NAME"))
+
+(defn- dispatch-workflows
+  "Hand the document to workflow_dispatch now that its classification is
+   final. A failure here is logged, not rethrown: failing the classification
+   would make EventBridge retry it and re-spend Bedrock tokens, while the
+   workflow run itself is best-effort."
+  [bucket-name object-key]
+  (when-not (str/blank? workflow-dispatch-fn)
+    (try
+      (lambda/invoke-async workflow-dispatch-fn
+                           {:trigger "document"
+                            :document-path object-key
+                            :bucket bucket-name})
+      (println "Dispatched document workflows for" object-key)
+      (catch Exception e
+        (println "Error invoking workflow_dispatch for" object-key ":" (ex-message e))
+        (.printStackTrace e)))))
 
 (defn should-skip?
   "Check if file should be skipped"
@@ -162,6 +181,9 @@
                              :SK "METADATA"
                              :document_path object-key))
 
+        ;; Classification is final: let custom workflows react to the document
+        (dispatch-workflows bucket-name object-key)
+
         {:classification classification
          :confidence confidence
          :title (:title metadata)}))))
@@ -202,12 +224,15 @@
     (catch Exception e
       (let [data (ex-data e)]
         (cond
-          ;; Override skip is not an error
+          ;; Override skip is not an error. The document still changed, so
+          ;; workflows get it with the overridden classification.
           (:skipped data)
-          {:statusCode 200
-           :body (json/generate-string {:document (:object-key data)
-                                        :classification (:classification data)
-                                        :skipped true})}
+          (do
+            (dispatch-workflows s3-bucket (:object-key data))
+            {:statusCode 200
+             :body (json/generate-string {:document (:object-key data)
+                                          :classification (:classification data)
+                                          :skipped true})})
 
           ;; Document deleted from S3 - not an error
           (:not-found data)
