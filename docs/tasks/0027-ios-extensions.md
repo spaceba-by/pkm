@@ -11,13 +11,13 @@ Extend the iOS app with system-level integrations: home screen widgets for at-a-
 - **Recent Summary Widget** (small/medium): Shows the latest daily summary title and date
 - **Document Count Widget** (small): Shows total document count and recent activity
 - **Search Monitor Widget** (medium): Shows active monitors with latest novelty scores
-- Widgets use WidgetKit with timeline-based updates
+- Widgets use WidgetKit with timeline-based updates and read only from the shared App Group container; they do not call the API
+- Document data (counts, recent activity) comes from the Task 0034 vault mirror
+- Summary and search monitor data is not in the mirror (summaries live under `_agent/`, monitor configuration and novelty scores are per-user API data). The main app writes small snapshots (`latest-summary.json`, `search-monitors.json`) into the App Group container whenever it refreshes the Insights or Search Monitor screens or handles a related push notification, then calls `WidgetCenter.reloadTimelines`. Snapshots are deleted on any signed-out transition alongside the Task 0034 cleanup, and widgets render a signed-out placeholder when they are absent
 
 ### Spotlight Integration
 
-- Index document titles, tags, and classifications using CoreSpotlight
-- Search results deep link into the app's document detail view
-- Index updated incrementally when documents are fetched from API
+Spotlight indexing, the document deep link, and the shared on-device store are specified and implemented in Task 0034 (shared `SpotlightIndexer` in the shared package, fed from the vault mirror). This task does not build an indexer. Its only Spotlight work is an integration check that widgets and the Share Extension do not break indexing: documents created via the Share Extension must appear in Spotlight after the next sync.
 
 ### Share Extension
 
@@ -26,14 +26,13 @@ Extend the iOS app with system-level integrations: home screen widgets for at-a-
 - Minimal UI: title field, optional tags, content preview
 - Requires shared keychain for authentication token access
 
-**Depends on:** Task 0021 (Push Notifications) for widget update triggers.
+**Depends on:** Task 0021 (Push Notifications) for widget update triggers; Task 0034 (Local Vault Store) for the shared App Group store that widgets read and for Spotlight indexing, which is now specified in Task 0034 rather than here.
 
 ## Relevant Files
 
 ### New Files
 - `ios/PKMReader/Widgets/` — WidgetKit extension target
 - `ios/PKMReader/ShareExtension/` — Share Extension target
-- `ios/PKMReader/Core/Spotlight/SpotlightIndexer.swift` — CoreSpotlight integration
 
 ### Modified Files
 - `ios/project.yml` — Add widget and share extension targets, app groups
@@ -43,8 +42,7 @@ Extend the iOS app with system-level integrations: home screen widgets for at-a-
 
 - [ ] Small, medium widget sizes display PKM summary data
 - [ ] Widgets refresh on timeline schedule and notification triggers
-- [ ] Documents indexed in Spotlight with title, tags, and classification
-- [ ] Spotlight search results navigate to document detail view
+- [ ] Documents created via the Share Extension appear in Spotlight after the next sync (indexer provided by Task 0034)
 - [ ] Share Extension accepts text and URLs from other apps
 - [ ] Share Extension creates documents via write API
 - [ ] Shared keychain enables authentication across app and extensions
@@ -55,8 +53,8 @@ Extend the iOS app with system-level integrations: home screen widgets for at-a-
 - [ ] Step 1: Add WidgetKit extension target to project.yml
 - [ ] Step 2: Create Recent Summary and Document Count widgets
 - [ ] Step 3: Create Search Monitor widget
-- [ ] Step 4: Implement CoreSpotlight indexing in document fetch flow
-- [ ] Step 5: Add Spotlight search result handling with deep linking
+- [ ] Step 4: Verify Share Extension writes reach the shared store and Spotlight via Task 0034's sync path
+- [ ] Step 5: (removed; deep linking provided by Task 0034)
 - [ ] Step 6: Add Share Extension target to project.yml with app groups
 - [ ] Step 7: Create Share Extension UI and write API integration
 - [ ] Step 8: Configure shared keychain for cross-extension authentication

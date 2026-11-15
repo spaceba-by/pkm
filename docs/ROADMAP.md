@@ -260,17 +260,23 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
 
 #### Tier 5 — Platform Expansion
 
+- **Task 0034: Local Vault Mirror, App Intents & Spotlight**
+
+  - See: [0034-local-vault-store](tasks/0034-local-vault-store.md)
+  - Full on-device vault mirror (manifest-driven metadata, direct-S3 content) for instant note loading, Siri/Shortcuts App Intents, and full-text Spotlight across iOS and macOS
+  - Prerequisite for Task 0027 widgets and Task 0029 macOS reader
+
 - **Task 0027: iOS Widgets, Spotlight & Share Extension**
 
   - See: [0027-ios-extensions](tasks/0027-ios-extensions.md)
-  - Home screen widgets, Spotlight indexing, Share Extension for content clipping
-  - Depends on: Task 0021
+  - Home screen widgets, Share Extension for content clipping (Spotlight indexing moved to Task 0034)
+  - Depends on: Task 0021, Task 0034
 
 - **Task 0029: iPad & macOS App**
 
   - See: [0029-multiplatform-app](tasks/0029-multiplatform-app.md)
-  - Multi-platform SwiftUI app with platform-adaptive layouts
-  - Split view (iPad), sidebar navigation (macOS), shared code extraction
+  - iPad split view in the iOS app; macOS reader built into the existing sync app (one app, one process) on the Task 0034 shared package
+  - Depends on: Task 0034
 
 #### Tier 6 — Integrations & Advanced
 
