@@ -210,7 +210,7 @@ Workflows are reached from the Insights tab alongside Dispatch. `WorkflowListVie
 ## Implementation Steps
 
 - [x] Step 1: Design workflow definition schema and DynamoDB key structure
-- [ ] Step 2: Create template interpolation engine (`workflow/engine.clj`) with tests
+- [x] Step 2: Create template interpolation engine (`workflow/engine.clj`) with tests
 - [ ] Step 3: Create trigger matching logic (`workflow/triggers.clj`) and `@workflow:` parsing with tests
 - [ ] Step 4: Create workflow execution Lambda (`workflow_execute`)
 - [ ] Step 5: Create workflow CRUD API Lambda (`api_workflows`) with tests

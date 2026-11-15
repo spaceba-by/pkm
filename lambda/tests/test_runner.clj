@@ -28,6 +28,7 @@
 (require '[dispatch.dispatch-job-test])
 (require '[dispatch.collect-results-test])
 (require '[dispatch.api-test])
+(require '[workflows.engine-test])
 
 (defn -main [& args]
   (let [summary (t/run-tests
@@ -55,7 +56,8 @@
                  'tasks.api-test
                  'dispatch.dispatch-job-test
                  'dispatch.collect-results-test
-                 'dispatch.api-test)]
+                 'dispatch.api-test
+                 'workflows.engine-test)]
     (when (or (pos? (:fail summary))
               (pos? (:error summary)))
       (System/exit 1))))
