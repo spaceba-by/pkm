@@ -34,6 +34,11 @@
       (is (= 1 (count result)))
       (is (= "this should be found" (:command (first result))))))
 
+  (testing "Line numbers after a code block are preserved"
+    (let [content "```\ncode\nmore\n```\n@sal after block"
+          result (parser/parse-commands content)]
+      (is (= 5 (:line-number (first result))))))
+
   (testing "Ignores @sal inside language-tagged code blocks"
     (let [content "```clojure\n@sal ignored\n```\n@sal found"
           result (parser/parse-commands content)]
@@ -72,3 +77,53 @@
 
   (testing "Returns false when @sal only in code blocks"
     (is (false? (parser/has-commands? "```\n@sal ignored\n```")))))
+
+;; =============================================================================
+;; parse-workflow-commands
+;; =============================================================================
+
+(deftest parse-workflow-commands-test
+  (testing "Parses name and args"
+    (let [result (parser/parse-workflow-commands "Intro\n@workflow:research quantum error correction\nMore")]
+      (is (= 1 (count result)))
+      (is (= "research" (:name (first result))))
+      (is (= "quantum error correction" (:args (first result))))
+      (is (= 2 (:line-number (first result))))))
+
+  (testing "Args are optional and default to empty string"
+    (let [result (parser/parse-workflow-commands "@workflow:digest")]
+      (is (= [{:name "digest" :args "" :line-number 1}] result))))
+
+  (testing "Name is lower-cased; hyphenated names allowed"
+    (let [result (parser/parse-workflow-commands "@workflow:Action-Items please")]
+      (is (= "action-items" (:name (first result))))
+      (is (= "please" (:args (first result))))))
+
+  (testing "Multiple commands keep order and line numbers"
+    (let [result (parser/parse-workflow-commands "@workflow:a\ntext\n@workflow:b with args")]
+      (is (= ["a" "b"] (map :name result)))
+      (is (= [1 3] (map :line-number result)))))
+
+  (testing "Ignores commands inside fenced code blocks"
+    (let [result (parser/parse-workflow-commands "```\n@workflow:ignored\n```\n@workflow:found")]
+      (is (= ["found"] (map :name result)))
+      (is (= 4 (:line-number (first result))))))
+
+  (testing "Does not match inline mentions or @sal commands"
+    (is (empty? (parser/parse-workflow-commands "see @workflow:research for details")))
+    (is (empty? (parser/parse-workflow-commands "@sal summarize this")))
+    (is (empty? (parser/parse-workflow-commands "@workflow: missing-name")))
+    (is (empty? (parser/parse-workflow-commands "@workflow:-bad")))
+    (is (empty? (parser/parse-workflow-commands "@Workflow:upper-marker"))))
+
+  (testing "Returns nil without a marker or for nil content"
+    (is (nil? (parser/parse-workflow-commands "nothing here")))
+    (is (nil? (parser/parse-workflow-commands nil))))
+
+  (testing "@sal parsing is unaffected by @workflow lines"
+    (is (= 1 (count (parser/parse-commands "@workflow:x\n@sal do it"))))))
+
+(deftest has-workflow-commands-test
+  (is (true? (parser/has-workflow-commands? "@workflow:x")))
+  (is (false? (parser/has-workflow-commands? "```\n@workflow:x\n```")))
+  (is (false? (parser/has-workflow-commands? nil))))
