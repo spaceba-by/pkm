@@ -143,4 +143,29 @@ enum APIEndpoints {
 
     /// Agent types endpoint
     static let agentTypes = "/dispatch/agent-types"
+
+    // MARK: - Workflows
+
+    /// Workflow definitions collection
+    static let workflows = "/workflows"
+
+    /// Single workflow definition
+    static func workflow(id: String) -> String {
+        "/workflows/\(id)"
+    }
+
+    /// Manual run of a workflow
+    static func workflowRun(id: String) -> String {
+        "/workflows/\(id)/run"
+    }
+
+    /// Run history for a workflow
+    static func workflowRuns(id: String, limit: Int = 20, cursor: String? = nil) -> String {
+        var path = "/workflows/\(id)/runs?limit=\(limit)"
+        if let cursor {
+            let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cursor
+            path += "&cursor=\(encoded)"
+        }
+        return path
+    }
 }

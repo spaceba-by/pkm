@@ -50,15 +50,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Select Xcode 26
+      - name: Select Xcode 26.6
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '26.0'
+          xcode-version: '26.6'
 
       # Recent macos-26 runner images ship Xcode without the iOS device
       # platform preinstalled (platforms are now downloadable components).
       # Without this, `xcodebuild archive -destination generic/platform=iOS`
-      # fails with "iOS 26.0 is not installed".
+      # fails with "iOS 26.x is not installed".
       - name: Install iOS platform
         run: |
           for attempt in 1 2 3; do

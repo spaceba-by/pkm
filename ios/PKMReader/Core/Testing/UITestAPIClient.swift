@@ -570,6 +570,66 @@
             []
         }
 
+        // MARK: - Workflows
+
+        private var fixtureWorkflow: Workflow {
+            Workflow(
+                id: "wf-fixture",
+                name: "action-items",
+                description: "Extract action items from meeting notes",
+                enabled: true,
+                trigger: WorkflowTrigger(type: .document, schedule: nil),
+                filter: WorkflowFilter(pathPrefix: nil, tags: nil, classifications: ["meeting"], lookbackDays: nil),
+                prompt: WorkflowPrompt(
+                    system: nil,
+                    user: "Extract action items from {{document.body}}",
+                    model: .haiku,
+                    maxTokens: 2000,
+                    temperature: 0.3
+                ),
+                output: WorkflowOutput(destination: .s3, path: "_agent/actions/{{document.title}}.md"),
+                cooldownMinutes: 60,
+                runCount: 1,
+                created: "2026-01-01T00:00:00Z",
+                updated: "2026-01-01T00:00:00Z",
+                nextRun: nil,
+                lastRun: "2026-01-02T00:00:00Z",
+                lastStatus: "completed",
+                createdBy: "test-user",
+                recentRuns: nil
+            )
+        }
+
+        func listWorkflows() async throws -> [Workflow] {
+            [fixtureWorkflow]
+        }
+
+        func getWorkflow(id _: String) async throws -> Workflow {
+            fixtureWorkflow
+        }
+
+        func createWorkflow(request _: WorkflowRequest) async throws -> Workflow {
+            fixtureWorkflow
+        }
+
+        func updateWorkflow(id _: String, request _: WorkflowRequest) async throws -> Workflow {
+            fixtureWorkflow
+        }
+
+        func deleteWorkflow(id _: String) async throws {}
+
+        func runWorkflow(id: String, documentPath _: String?) async throws -> WorkflowRunResponse {
+            WorkflowRunResponse(runId: "run-fixture", workflowId: id, status: "queued")
+        }
+
+        func listWorkflowRuns(
+            workflowId _: String,
+            limit _: Int,
+            cursor _: String?
+        ) async throws -> WorkflowRunListResponse {
+            WorkflowRunListResponse(runs: [], count: 0, nextCursor: nil)
+        }
+
         // MARK: - Insight Viewed Status
 
         func markSummaryViewed(date _: String) async throws {}

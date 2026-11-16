@@ -1,8 +1,9 @@
+// swiftlint:disable file_length
 import Foundation
 @testable import PKMReader
 
 /// Mock API client for unit testing
-final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
+final class MockAPIClient: APIClientProtocol, @unchecked Sendable { // swiftlint:disable:this type_body_length
     // MARK: - Configurable Results
 
     var listDocumentsResult: Result<DocumentListResponse, Error> = .success(
@@ -32,7 +33,35 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     var listSearchMonitorSummariesResult: Result<[SearchSummary], Error> = .success([])
     var getSearchMonitorSummaryResult: Result<SearchSummary, Error>?
 
+    var listWorkflowsResult: Result<[Workflow], Error> = .success([])
+    var getWorkflowResult: Result<Workflow, Error>?
+    var createWorkflowResult: Result<Workflow, Error>?
+    var updateWorkflowResult: Result<Workflow, Error>?
+    var deleteWorkflowResult: Result<Void, Error> = .success(())
+    var runWorkflowResult: Result<WorkflowRunResponse, Error> = .success(
+        WorkflowRunResponse(runId: "run-1", workflowId: "wf-1", status: "queued")
+    )
+    var listWorkflowRunsResult: Result<WorkflowRunListResponse, Error> = .success(
+        WorkflowRunListResponse(runs: [], count: 0, nextCursor: nil)
+    )
+
     // MARK: - Call Tracking
+
+    private(set) var listWorkflowsCallCount = 0
+    private(set) var getWorkflowCallCount = 0
+    private(set) var lastGetWorkflowId: String?
+    private(set) var createWorkflowCallCount = 0
+    private(set) var lastCreateWorkflowRequest: WorkflowRequest?
+    private(set) var updateWorkflowCallCount = 0
+    private(set) var lastUpdateWorkflowId: String?
+    private(set) var lastUpdateWorkflowRequest: WorkflowRequest?
+    private(set) var deleteWorkflowCallCount = 0
+    private(set) var lastDeleteWorkflowId: String?
+    private(set) var runWorkflowCallCount = 0
+    private(set) var lastRunWorkflowId: String?
+    private(set) var lastRunWorkflowDocumentPath: String?
+    private(set) var listWorkflowRunsCallCount = 0
+    private(set) var lastListWorkflowRunsCursor: String?
 
     private(set) var listDocumentsCallCount = 0
     private(set) var lastListDocumentsClassification: DocumentClassification?
@@ -375,6 +404,60 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         return try listAgentTypesResult.get()
     }
 
+    // MARK: - Workflows
+
+    func listWorkflows() async throws -> [Workflow] {
+        listWorkflowsCallCount += 1
+        return try listWorkflowsResult.get()
+    }
+
+    func getWorkflow(id: String) async throws -> Workflow {
+        getWorkflowCallCount += 1
+        lastGetWorkflowId = id
+        if let result = getWorkflowResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func createWorkflow(request: WorkflowRequest) async throws -> Workflow {
+        createWorkflowCallCount += 1
+        lastCreateWorkflowRequest = request
+        if let result = createWorkflowResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func updateWorkflow(id: String, request: WorkflowRequest) async throws -> Workflow {
+        updateWorkflowCallCount += 1
+        lastUpdateWorkflowId = id
+        lastUpdateWorkflowRequest = request
+        if let result = updateWorkflowResult {
+            return try result.get()
+        }
+        throw APIError.invalidResponse
+    }
+
+    func deleteWorkflow(id: String) async throws {
+        deleteWorkflowCallCount += 1
+        lastDeleteWorkflowId = id
+        try deleteWorkflowResult.get()
+    }
+
+    func runWorkflow(id: String, documentPath: String?) async throws -> WorkflowRunResponse {
+        runWorkflowCallCount += 1
+        lastRunWorkflowId = id
+        lastRunWorkflowDocumentPath = documentPath
+        return try runWorkflowResult.get()
+    }
+
+    func listWorkflowRuns(workflowId _: String, limit _: Int, cursor: String?) async throws -> WorkflowRunListResponse {
+        listWorkflowRunsCallCount += 1
+        lastListWorkflowRunsCursor = cursor
+        return try listWorkflowRunsResult.get()
+    }
+
     // MARK: - Insight Viewed Status
 
     var markSummaryViewedResult: Result<Void, Error> = .success(())
@@ -494,6 +577,21 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         lastCreateJobDescription = nil
         lastCreateJobAgentType = nil
         listAgentTypesCallCount = 0
+        listWorkflowsCallCount = 0
+        getWorkflowCallCount = 0
+        lastGetWorkflowId = nil
+        createWorkflowCallCount = 0
+        lastCreateWorkflowRequest = nil
+        updateWorkflowCallCount = 0
+        lastUpdateWorkflowId = nil
+        lastUpdateWorkflowRequest = nil
+        deleteWorkflowCallCount = 0
+        lastDeleteWorkflowId = nil
+        runWorkflowCallCount = 0
+        lastRunWorkflowId = nil
+        lastRunWorkflowDocumentPath = nil
+        listWorkflowRunsCallCount = 0
+        lastListWorkflowRunsCursor = nil
     }
     // swiftlint:enable function_body_length
 }

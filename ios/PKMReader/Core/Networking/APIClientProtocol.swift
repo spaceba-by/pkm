@@ -170,6 +170,29 @@ protocol APIClientProtocol: Sendable {
     /// List available agent type configurations
     func listAgentTypes() async throws -> [AgentType]
 
+    // MARK: - Workflows
+
+    /// List custom agent workflow definitions
+    func listWorkflows() async throws -> [Workflow]
+
+    /// Get a workflow with its most recent runs
+    func getWorkflow(id: String) async throws -> Workflow
+
+    /// Create a workflow (admin only)
+    func createWorkflow(request: WorkflowRequest) async throws -> Workflow
+
+    /// Update a workflow; absent request fields are left unchanged (admin only)
+    func updateWorkflow(id: String, request: WorkflowRequest) async throws -> Workflow
+
+    /// Delete a workflow and its run history (admin only)
+    func deleteWorkflow(id: String) async throws
+
+    /// Start a manual run, optionally against one document (admin only)
+    func runWorkflow(id: String, documentPath: String?) async throws -> WorkflowRunResponse
+
+    /// List runs for a workflow, newest first
+    func listWorkflowRuns(workflowId: String, limit: Int, cursor: String?) async throws -> WorkflowRunListResponse
+
     // MARK: - Insight Viewed Status
 
     /// Mark a daily summary as viewed

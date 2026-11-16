@@ -80,7 +80,7 @@ graph LR
     Lambda -->|_agent/ outputs| S3
 ```
 
-**51 functions** in `lambda/functions/` (all Babashka/Clojure): 16 processing + 34 API + 1 CLI utility (`index_embeddings`). See `docs/architecture.md` for the complete function list with endpoints, memory, and timeout details.
+**54 functions** in `lambda/functions/` (all Babashka/Clojure): 18 processing + 35 API + 1 CLI utility (`index_embeddings`). See `docs/architecture.md` for the complete function list with endpoints, memory, and timeout details.
 
 **Bedrock Models** (defined in `terraform/variables.tf`):
 - Haiku 4.5: Fast classification and extraction
@@ -97,8 +97,9 @@ lambda/
 ├── shared/webhooks/      # Webhook signature verification and routing
 ├── shared/search/        # Vector search and semantic indexing
 ├── shared/command/       # Command parsing (parser.clj, context.clj)
+├── shared/workflow/      # Custom agent workflows (engine.clj, triggers.clj, schema.clj)
 ├── shared/tasks/         # Task extraction (extractor.clj)
-├── functions/            # 51 functions (16 processing + 34 API + 1 CLI utility)
+├── functions/            # 54 functions (18 processing + 35 API + 1 CLI utility)
 └── tests/                # Unit tests (173 tests across 25 test files)
 
 terraform/                # All AWS infrastructure
@@ -112,6 +113,7 @@ terraform/                # All AWS infrastructure
 ├── insights.tf           # Insights viewed tracking and counts
 ├── task_extraction.tf    # Task extraction pipeline
 ├── dispatch.tf           # Self-improvement dispatch (ECS Fargate sandbox + local agent API)
+├── workflows.tf          # Custom agent workflows (dispatch/execute Lambdas, schedule rule, API)
 └── ...                   # S3, DynamoDB, EventBridge, Step Functions
 
 scripts/                  # Deployment and testing

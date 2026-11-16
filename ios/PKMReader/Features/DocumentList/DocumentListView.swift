@@ -408,4 +408,36 @@ private final class PreviewAPIClient: APIClientProtocol, @unchecked Sendable {
     func listAgentTypes() async throws -> [AgentType] {
         []
     }
+
+    // MARK: - Workflows
+
+    func listWorkflows() async throws -> [Workflow] {
+        []
+    }
+
+    func getWorkflow(id _: String) async throws -> Workflow {
+        throw APIError.invalidResponse
+    }
+
+    func createWorkflow(request _: WorkflowRequest) async throws -> Workflow {
+        throw APIError.invalidResponse
+    }
+
+    func updateWorkflow(id _: String, request _: WorkflowRequest) async throws -> Workflow {
+        throw APIError.invalidResponse
+    }
+
+    func deleteWorkflow(id _: String) async throws {}
+
+    func runWorkflow(id: String, documentPath _: String?) async throws -> WorkflowRunResponse {
+        WorkflowRunResponse(runId: "preview-run", workflowId: id, status: "queued")
+    }
+
+    func listWorkflowRuns(
+        workflowId _: String,
+        limit _: Int,
+        cursor _: String?
+    ) async throws -> WorkflowRunListResponse {
+        WorkflowRunListResponse(runs: [], count: 0, nextCursor: nil)
+    }
 }

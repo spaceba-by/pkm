@@ -5,11 +5,28 @@
             [aws.lambda :as lambda]
             [command.parser :as parser]
             [markdown.utils :as md]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.string]))
 
 (def s3-bucket (System/getenv "S3_BUCKET_NAME"))
 (def ddb-table (System/getenv "DYNAMODB_TABLE_NAME"))
 (def command-process-fn (System/getenv "COMMAND_PROCESS_FUNCTION_NAME"))
+(def workflow-dispatch-fn (System/getenv "WORKFLOW_DISPATCH_FUNCTION_NAME"))
+
+(defn- dispatch-workflow-commands
+  "Route @workflow:<name> commands to workflow_dispatch. Logged, not
+   rethrown, so a dispatch outage cannot fail metadata extraction."
+  [bucket-name object-key commands]
+  (try
+    (lambda/invoke-async workflow-dispatch-fn
+                         {:trigger "command"
+                          :document-path object-key
+                          :bucket bucket-name
+                          :commands (vec commands)})
+    (println "Dispatched" (count commands) "@workflow commands from" object-key)
+    (catch Exception e
+      (println "Error invoking workflow_dispatch for" object-key ":" (ex-message e))
+      (.printStackTrace e))))
 
 (defn should-skip?
   "Check if file should be skipped based on path"
@@ -84,6 +101,12 @@
                                {:document-path object-key
                                 :commands (vec commands)
                                 :bucket bucket-name})))
+
+      ;; Check for @workflow:<name> commands
+      (when-not (clojure.string/blank? workflow-dispatch-fn)
+        (when-let [commands (seq (parser/parse-workflow-commands content))]
+          (println "Found" (count commands) "@workflow commands in" object-key)
+          (dispatch-workflow-commands bucket-name object-key commands)))
 
       metadata)))
 
