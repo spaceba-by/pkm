@@ -247,16 +247,15 @@ Automatically processes markdown documents from an Obsidian vault: classifies th
   - 8 new Lambdas (dispatch_job, collect_results, 6 job/agent-type API endpoints), Terraform gated by `enable_dispatch` flag
   - iOS dispatch job views with navigation from Insights
 
-### Planned
-
-#### Tier 4 — Advanced Agents
-
-- **Task 0026: Custom Agent Workflows**
+- **Task 0026: Custom Agent Workflows** ✅
 
   - See: [0026-custom-agent-workflows](tasks/0026-custom-agent-workflows.md)
-  - User-defined automation rules with configurable triggers and prompt templates
-  - Workflow execution engine using Bedrock
-  - Depends on: Task 0023
+  - User-defined automation rules: document, schedule, manual and `@workflow:<name>` triggers with path, tag and classification filters
+  - `{{document.*}}`, `{{entity.*}}`, `{{documents.*}}` and `{{command.*}}` template interpolation, Haiku or Sonnet per workflow
+  - Output to `_agent/` files, run records or push notifications; output can never leave `_agent/`
+  - 3 new Lambdas (`workflow-dispatch`, `workflow-execute`, `api-workflows`), 7 API routes, 15-minute schedule poll, iOS management UI
+
+### Planned
 
 #### Tier 5 — Platform Expansion
 

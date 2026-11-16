@@ -1,6 +1,6 @@
 # Task 0026: Custom Agent Workflows
 
-**Status**: In Progress
+**Status**: Done
 
 ## Specifications
 
@@ -201,16 +201,45 @@ Workflows are reached from the Insights tab alongside Dispatch. `WorkflowListVie
 - `lambda/tests/workflows/api_test.clj` — Validation and response formatting
 - `lambda/tests/command/parser_test.clj` — `@workflow:` parsing
 
+## Implementation Notes
+
+Delivered in PR #167 (merged 2026-11-16 as 61508e2). Departures from and additions to the Step 1 design:
+
+- **Output paths reject `..`** rather than dropping the segment, so a path that would still land under `_agent/` after normalization fails loudly instead of writing somewhere unexpected.
+- **Manual runs are allowed on disabled workflows** so a definition can be tested before it is enabled; every other trigger skips disabled workflows.
+- **Dispatch hooks log and continue** when the async invoke of `workflow_dispatch` fails. Failing `classify_document` or `extract_metadata` would make EventBridge retry them and re-spend Bedrock tokens on a step that had already succeeded.
+- **Pre-existing bug fixed in passing:** `command.parser/strip-code-blocks` replaced a fenced block with one newline too many, shifting the line numbers of `@sal` commands after a code block.
+- **CI toolchain:** the iOS workflows now select Xcode 26.6. swift-crypto 5.1 and swift-log 1.17, resolved fresh on every run because `Package.resolved` is gitignored, use `@nonexhaustive`, which the Xcode 26.0 compiler rejects. The Boot simulator step's `grep "26.0"` never matched a device line and now picks the iPhone 17 on the newest runtime.
+- **Coverage:** snapshot tests for the five workflow screens keep unit coverage above the 45% CI floor (55.2% after; main was 49.6% before the PR).
+- **Not done:** the dispatch hooks were not given retries, schedules are UTC only, and templates have no filters or conditionals. The iOS form sends the whole definition on save rather than a partial update.
+
+## Verification (Step 9)
+
+Run against the deployed stack on 2026-11-16 by invoking `pkm-agent-api-workflows` and `pkm-agent-workflow-dispatch` directly with synthetic API Gateway events carrying admin claims, so no note was uploaded to the vault. All test definitions, their runs, cooldown markers, output files and the test notification were removed afterwards.
+
+| Check | Result |
+|---|---|
+| Lambdas, hook env vars, model ids, 7 routes, `rate(15 minutes)` rule | present as designed |
+| Create definition; validation returns all errors; duplicate name (case-insensitive) refused; non-admin 403; unknown id 404 | pass |
+| Manual run against a meeting note | completed in 1.9 s, 753/51 tokens, output written to `_agent/workflows/e2e-manual/` with frontmatter header |
+| Document dispatch: matching note queued once, immediate repeat suppressed by cooldown, non-matching path ignored | pass |
+| Command dispatch: `@workflow:e2e-command` queued, unknown name ignored, `command.args` rendered | pass |
+| Schedule dispatch: forced-due workflow claimed once, second poll queued nothing, `next_run` advanced, 19 documents selected | pass |
+| Notification destination | run record plus `notification#pending#` item with deep link; push delivered via existing dispatcher |
+| Update: enabled toggle and schedule change recompute `next_run`; invalid update 400 | pass |
+| Delete cascades runs and cooldown markers | pass |
+| CloudWatch logs for all three Lambdas | no warnings or errors |
+
 ## Acceptance Criteria
 
-- [ ] Workflows can be created, listed, updated, and deleted via API
-- [ ] Workflows trigger on configured events (document creation, schedule, manual, @command)
-- [ ] Prompt templates support variable interpolation with document and entity data
-- [ ] Workflow output written to configured destination
-- [ ] Workflow output can never be written outside `_agent/`
-- [ ] iOS UI for managing workflows with form for trigger, filter, prompt, and output
-- [ ] Unit tests cover template interpolation, trigger matching, and API handlers
-- [ ] All existing tests continue to pass
+- [x] Workflows can be created, listed, updated, and deleted via API
+- [x] Workflows trigger on configured events (document creation, schedule, manual, @command)
+- [x] Prompt templates support variable interpolation with document and entity data
+- [x] Workflow output written to configured destination
+- [x] Workflow output can never be written outside `_agent/`
+- [x] iOS UI for managing workflows with form for trigger, filter, prompt, and output
+- [x] Unit tests cover template interpolation, trigger matching, and API handlers
+- [x] All existing tests continue to pass
 
 ## Implementation Steps
 
@@ -222,4 +251,4 @@ Workflows are reached from the Insights tab alongside Dispatch. `WorkflowListVie
 - [x] Step 6: Create `workflow_dispatch` Lambda and wire `classify_document` and `extract_metadata` to it
 - [x] Step 7: Add Terraform infrastructure (`workflows.tf`, schedule rule, env vars, routes) and update `docs/architecture.md`
 - [x] Step 8: Create iOS workflow management views
-- [ ] Step 9: End-to-end verification against the deployed stack and final test pass
+- [x] Step 9: End-to-end verification against the deployed stack and final test pass
